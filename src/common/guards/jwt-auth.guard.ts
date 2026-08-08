@@ -54,7 +54,7 @@ export class JwtAuthGuard implements CanActivate {
 
     const secret = process.env.JWT_SECRET || 'fallback-access-secret-key';
     if (!process.env.JWT_SECRET && process.env.NODE_ENV === 'production') {
-      throw new Error(
+      throw new UnauthorizedException(
         'Environment variable JWT_SECRET is required in production',
       );
     }

@@ -35,7 +35,9 @@ export class AuthService {
   private getSecret(key: string, defaultSecret: string): string {
     const val = process.env[key];
     if (!val && process.env.NODE_ENV === 'production') {
-      throw new Error(`Environment variable ${key} is required in production`);
+      throw new UnauthorizedException(
+        `Environment variable ${key} is required in production`,
+      );
     }
     return val || defaultSecret;
   }
