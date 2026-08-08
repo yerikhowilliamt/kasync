@@ -5,5 +5,5 @@ export class CreateBranchDto {
   @ApiProperty({ description: 'Branch name' })
   @IsString()
   @IsNotEmpty()
-  name: string;
+  name!: string;
 }

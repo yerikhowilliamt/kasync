@@ -8,6 +8,7 @@ import { AccountsModule } from './modules/accounts/accounts.module';
 import { ReconciliationModule } from './modules/reconciliation/reconciliation.module';
 import { CategoriesModule } from './modules/categories/categories.module';
 import { BranchesModule } from './modules/branches/branches.module';
+import { LedgerEntriesModule } from './modules/ledger-entries/ledger-entries.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { BranchesModule } from './modules/branches/branches.module';
     ReconciliationModule,
     CategoriesModule,
     BranchesModule,
+    LedgerEntriesModule,
   ],
 })
 export class AppModule {}

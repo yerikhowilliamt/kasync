@@ -44,7 +44,9 @@ describe('CategoriesController', () => {
       mockCategoriesService.create.mockResolvedValue(mockCategory);
       const result = await controller.create({ name: 'test-category' });
       expect(result).toEqual(mockCategory);
-      expect(service.create).toHaveBeenCalledWith({ name: 'test-category' });
+      expect(jest.spyOn(service, 'create')).toHaveBeenCalledWith({
+        name: 'test-category',
+      });
     });
   });
 
@@ -53,7 +55,7 @@ describe('CategoriesController', () => {
       mockCategoriesService.findAll.mockResolvedValue([mockCategory]);
       const result = await controller.findAll();
       expect(result).toEqual([mockCategory]);
-      expect(service.findAll).toHaveBeenCalled();
+      expect(jest.spyOn(service, 'findAll')).toHaveBeenCalled();
     });
   });
 
@@ -62,7 +64,7 @@ describe('CategoriesController', () => {
       mockCategoriesService.findOne.mockResolvedValue(mockCategory);
       const result = await controller.findOne('test-id');
       expect(result).toEqual(mockCategory);
-      expect(service.findOne).toHaveBeenCalledWith('test-id');
+      expect(jest.spyOn(service, 'findOne')).toHaveBeenCalledWith('test-id');
     });
   });
 
@@ -71,7 +73,7 @@ describe('CategoriesController', () => {
       mockCategoriesService.update.mockResolvedValue(mockCategory);
       const result = await controller.update('test-id', { name: 'updated' });
       expect(result).toEqual(mockCategory);
-      expect(service.update).toHaveBeenCalledWith('test-id', {
+      expect(jest.spyOn(service, 'update')).toHaveBeenCalledWith('test-id', {
         name: 'updated',
       });
     });
@@ -82,7 +84,7 @@ describe('CategoriesController', () => {
       mockCategoriesService.remove.mockResolvedValue(mockCategory);
       const result = await controller.remove('test-id');
       expect(result).toEqual(mockCategory);
-      expect(service.remove).toHaveBeenCalledWith('test-id');
+      expect(jest.spyOn(service, 'remove')).toHaveBeenCalledWith('test-id');
     });
   });
 });

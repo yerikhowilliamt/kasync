@@ -42,7 +42,9 @@ describe('BranchesController', () => {
       mockBranchesService.create.mockResolvedValue(mockBranch);
       const result = await controller.create({ name: 'test-branch' });
       expect(result).toEqual(mockBranch);
-      expect(service.create).toHaveBeenCalledWith({ name: 'test-branch' });
+      expect(jest.spyOn(service, 'create')).toHaveBeenCalledWith({
+        name: 'test-branch',
+      });
     });
   });
 
@@ -51,7 +53,7 @@ describe('BranchesController', () => {
       mockBranchesService.findAll.mockResolvedValue([mockBranch]);
       const result = await controller.findAll();
       expect(result).toEqual([mockBranch]);
-      expect(service.findAll).toHaveBeenCalled();
+      expect(jest.spyOn(service, 'findAll')).toHaveBeenCalled();
     });
   });
 
@@ -60,7 +62,7 @@ describe('BranchesController', () => {
       mockBranchesService.findOne.mockResolvedValue(mockBranch);
       const result = await controller.findOne('test-id');
       expect(result).toEqual(mockBranch);
-      expect(service.findOne).toHaveBeenCalledWith('test-id');
+      expect(jest.spyOn(service, 'findOne')).toHaveBeenCalledWith('test-id');
     });
   });
 
@@ -69,7 +71,7 @@ describe('BranchesController', () => {
       mockBranchesService.update.mockResolvedValue(mockBranch);
       const result = await controller.update('test-id', { name: 'updated' });
       expect(result).toEqual(mockBranch);
-      expect(service.update).toHaveBeenCalledWith('test-id', {
+      expect(jest.spyOn(service, 'update')).toHaveBeenCalledWith('test-id', {
         name: 'updated',
       });
     });
@@ -80,7 +82,7 @@ describe('BranchesController', () => {
       mockBranchesService.remove.mockResolvedValue(mockBranch);
       const result = await controller.remove('test-id');
       expect(result).toEqual(mockBranch);
-      expect(service.remove).toHaveBeenCalledWith('test-id');
+      expect(jest.spyOn(service, 'remove')).toHaveBeenCalledWith('test-id');
     });
   });
 });
