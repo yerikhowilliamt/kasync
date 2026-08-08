@@ -52,10 +52,10 @@ export class JwtAuthGuard implements CanActivate {
       throw new UnauthorizedException('Authentication token missing');
     }
 
-    const secret = process.env.JWT_SECRET || 'fallback-access-secret-key';
-    if (!process.env.JWT_SECRET && process.env.NODE_ENV === 'production') {
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
       throw new UnauthorizedException(
-        'Environment variable JWT_SECRET is required in production',
+        'Environment variable JWT_SECRET is required',
       );
     }
 

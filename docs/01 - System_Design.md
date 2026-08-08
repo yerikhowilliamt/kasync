@@ -38,6 +38,7 @@ This document translates the PRD's product requirements into concrete technical 
 | **Allocation** | Manages the `allocation` junction records — creating splits inside a single database transaction (`prisma.$transaction`), validating that allocated portions sum to the transaction amount, tracking unresolved balances. |
 | **Account** | Manages multiple bank/cash accounts per business, source-account tagging for every transaction. |
 | **Reconciliation API / Dashboard** | Read-side: aggregates status (matched / pending review / needs allocation / unresolved), computes recorded vs. actual balance, serves the dashboard views. Proposed matches from matching engine are computed on-the-fly (stateless) or flagged as `PENDING_REVIEW` when user initiates allocation review. |
+| **Health / Metrics** | System health checks (`GET /health`), Prometheus metrics endpoint (`GET /metrics`), request correlation ID middleware for end-to-end tracing. |
 
 **Design principle:** the Matching engine and Allocation validation logic are kept as plain, framework-independent TypeScript classes/functions wrapped by NestJS services — not embedded directly in controllers. This keeps the highest-risk logic (the part most likely to have subtle bugs) testable without spinning up HTTP or a database in tests.
 
@@ -69,6 +70,7 @@ For v1, this flow is fully synchronous within a single request/response cycle �
 | Testing | Jest | Unit tests required for Matching engine and Allocation validation logic specifically |
 | Containerization | Docker + docker-compose | Local dev parity, and portfolio-relevant skill to demonstrate |
 | CI/CD | GitHub Actions | Run tests + lint on every push; deploy pipeline as a stretch goal |
+| Observability | Prometheus (`@willsoto/nestjs-prometheus`, `prom-client`) | Standard metrics format; correlation IDs for request tracing |
 
 ---
 
@@ -86,14 +88,23 @@ Single containerized NestJS application + single PostgreSQL instance. No load ba
 
 - **Data integrity over automation:** every allocation and match requires manual user confirmation in v1 (see PRD). This is a deliberate trade-off — trust is built incrementally with real financial data before considering any auto-confirm behavior.
 - **Testability:** Matching engine and Allocation validation are the highest-risk logic in the system and are structured to be unit-testable independent of the framework and database.
+- **Idempotency for financial mutations:** allocation requests support an optional idempotency key to prevent duplicate records from network retries.
+- **Request correlation:** every request is assigned a UUID correlation ID for end-to-end tracing in structured logs.
+- **API versioning:** all endpoints prefixed with `/api/v1/` to enable non-breaking future evolution.
 - **Data sensitivity:** financial data from the real test user (business owner) must be anonymized before appearing in any public portfolio demo or repo.
 
 ---
 
-## 8. Open Questions (to resolve in ADR)
+## 8. Resolved Questions
 
-- Should the allocation-sum constraint be enforced at the database level (`CHECK`/trigger, added via a raw SQL Prisma migration) or only in application-level transaction logic, or both?
-- CSV column-mapping: hardcode per-bank templates for the banks the test user actually uses, or build a generic mapping UI from day one?
+The following questions from the original system design have been resolved:
+- Allocation-sum constraint enforced at both application level AND database level (trigger with `FOR UPDATE` lock) — see ADR-003.
+- CSV column-mapping uses explicit per-bank parser implementations (Strategy pattern) — see ADR-004.
+- API versioning via global prefix `/api/v1/` — see ADR-011.
+- Idempotency keys for allocation mutations — see ADR-012.
+- Request correlation IDs for observability — see ADR-013.
+- Prometheus metrics integration — see ADR-014.
+- JWT secret management with no fallbacks — see ADR-015.
 
 ---
 

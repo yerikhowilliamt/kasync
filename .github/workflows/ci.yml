@@ -56,4 +56,6 @@ jobs:
       - name: E2E Tests
         env:
           DATABASE_URL: "postgresql://postgres:postgrespassword@localhost:5432/kasync_db?schema=public"
+          JWT_SECRET: "ci-test-access-secret-key"
+          JWT_REFRESH_SECRET: "ci-test-refresh-secret-key"
         run: npm run test:e2e

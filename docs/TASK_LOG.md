@@ -1,3 +1,13 @@
+## Task: Code Review Fixes — Security, API Versioning, Observability, Idempotency (Aug 09 2026)
+
+- **Completed**: Yes
+- **Modules**: System-wide / `MatchingEngine`, `AuthService`, `JwtAuthGuard`, `AllocationService`, `AllocationExceededError`, `ImageMimeTypeValidator`, `main.ts`, `PrismaSchema`, All Controllers, All E2E Tests, All Documentation
+- **Description**: Implemented 19 items from comprehensive code review:
+  1. **Must Fix (6):** Added input size guard to `getSubsets()` (max 20 txns), removed hardcoded JWT fallback secrets, removed `application/octet-stream` from mime validator, refactored `AllocationExceededError` to named parameters, removed dead `reference` property in `MatchingService`, added `.dockerignore`.
+  2. **Can Be Improved (7):** Added API versioning (`/api/v1/` prefix), idempotency key support for allocations, request correlation IDs (`X-Correlation-ID`), Prometheus metrics endpoint (`/metrics`), consistent `@ApiResponse` decorators on all controllers, password `@MaxLength(128)` constraints, sorting options on ledger entries list.
+  3. **Documentation (6):** Updated PRD (API versioning, observability sections), System Design (Prometheus, correlation IDs), ADR (5 new ADRs: 011-015), ERD (idempotencyKey field), Engineering Playbook (API prefix, ADR triggers), Project Handbook (glossary, constraints, architecture).
+- **Git Branch**: `feat/code-review-fixes`
+
 ## Task: Complete Reconciliation E2E Lifecycle Automation Testing (Sun Aug 09 2026)
 
 - **Completed**: Yes
@@ -100,4 +110,3 @@
 - **Modules**: `AccountsModule`, `ImportModule`, `PrismaModule`
 - **Description**: Implemented Account CRUD and Bank CSV file imports (BCA, Mandiri) utilizing a generic BankParser interface and `csv-parse`. Added Jest unit tests and CSV fixtures.
 - **Git Branch**: `feat/accounts-and-import`
-

@@ -31,7 +31,6 @@ export class MatchingService {
       amount: new Decimal(tx.amount.toString()),
       type: tx.type,
       txnDate: new Date(tx.txnDate),
-      reference: tx.description || tx.externalRef || undefined,
     }));
 
     const ledgerInputs: LedgerEntryInput[] = ledgerEntries.map((le) => ({
@@ -39,7 +38,6 @@ export class MatchingService {
       amount: new Decimal(le.amount.toString()),
       type: le.type,
       entryDate: new Date(le.entryDate),
-      reference: le.note || undefined,
     }));
 
     const engine = new MatchingEngine();

@@ -32,14 +32,14 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  private getSecret(key: string, defaultSecret: string): string {
+  private getSecret(key: string): string {
     const val = process.env[key];
-    if (!val && process.env.NODE_ENV === 'production') {
+    if (!val) {
       throw new UnauthorizedException(
-        `Environment variable ${key} is required in production`,
+        `Environment variable ${key} is required`,
       );
     }
-    return val || defaultSecret;
+    return val;
   }
 
   async register(
@@ -108,10 +108,7 @@ export class AuthService {
     let payload: JwtPayload;
     try {
       payload = await this.jwtService.verifyAsync<JwtPayload>(refreshToken, {
-        secret: this.getSecret(
-          'JWT_REFRESH_SECRET',
-          'fallback-refresh-secret-key',
-        ),
+        secret: this.getSecret('JWT_REFRESH_SECRET'),
       });
     } catch {
       throw new UnauthorizedException('Invalid or expired refresh token');
@@ -153,14 +150,8 @@ export class AuthService {
   ): Promise<AuthTokens> {
     const payload = { sub: userId, email };
 
-    const accessTokenSecret = this.getSecret(
-      'JWT_SECRET',
-      'fallback-access-secret-key',
-    );
-    const refreshTokenSecret = this.getSecret(
-      'JWT_REFRESH_SECRET',
-      'fallback-refresh-secret-key',
-    );
+    const accessTokenSecret = this.getSecret('JWT_SECRET');
+    const refreshTokenSecret = this.getSecret('JWT_REFRESH_SECRET');
 
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(payload, {

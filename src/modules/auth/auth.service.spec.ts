@@ -9,6 +9,17 @@ jest.mock('bcrypt');
 
 describe('AuthService', () => {
   let service: AuthService;
+  const originalEnv = process.env;
+
+  beforeEach(() => {
+    process.env = { ...originalEnv };
+    process.env.JWT_SECRET = 'test-access-secret';
+    process.env.JWT_REFRESH_SECRET = 'test-refresh-secret';
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
+  });
   let prismaService: {
     user: {
       findUnique: jest.Mock;

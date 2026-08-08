@@ -18,6 +18,7 @@ export class ReconciliationController {
     description:
       'Dashboard summary containing transaction status counts and balance variance.',
   })
+  @ApiResponse({ status: 400, description: 'Bad Request' })
   async getDashboardSummary(
     @Query() query: DashboardQueryDto,
   ): Promise<DashboardSummaryResponse> {

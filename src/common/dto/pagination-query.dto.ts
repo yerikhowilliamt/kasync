@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsInt, IsOptional, Max, Min } from 'class-validator';
+import { IsIn, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 
 export class PaginationQueryDto {
   @ApiPropertyOptional({ default: 1, description: 'Page number (1-based)' })
@@ -17,6 +17,16 @@ export class PaginationQueryDto {
   @Min(1)
   @Max(100)
   limit?: number = 50;
+
+  @ApiPropertyOptional({
+    default: 'entryDate',
+    description: 'Sort field',
+    enum: ['entryDate', 'amount', 'createdAt'],
+  })
+  @IsOptional()
+  @IsString()
+  @IsIn(['entryDate', 'amount', 'createdAt'])
+  sortBy?: string = 'entryDate';
 }
 
 export interface PaginatedResult<T> {

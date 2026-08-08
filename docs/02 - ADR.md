@@ -219,3 +219,109 @@ The application requires file and media uploading capabilities across multiple d
 **Consequences:**
 - Positive: Domain layer completely decoupled from Cloudinary SDK (DIP compliant), multi-cloud storage (S3/GCS) can be swapped seamlessly, clean NestJS controller layer without `req.user!.sub` non-null assertions.
 - Negative: Extra interface and injection token abstraction.
+
+---
+
+## ADR-011: API Versioning via Global Prefix `/api/v1/`
+
+**Status:** Accepted
+**Date:** August 2026
+
+**Context:**
+The API has grown to 20+ endpoints across 10 modules. As the product evolves, breaking changes to request/response shapes are inevitable. Without versioning, clients must update simultaneously with every breaking change.
+
+**Decision:**
+Apply `app.setGlobalPrefix('api/v1')` in `main.ts`. All routes automatically receive the `/api/v1/` prefix. No per-controller changes needed. Swagger UI remains at `/docs`.
+
+**Consequences:**
+- Positive: Non-breaking future evolution via `/api/v2/` when needed. Standard REST practice. Zero per-controller code changes.
+- Negative: All clients must update base URL once during migration. E2E tests require URL prefix updates.
+
+**Alternatives considered:**
+- *Header-based versioning (`Accept: application/vnd.kasync.v1+json`)* — rejected; more complex, less discoverable in Swagger, non-standard for REST APIs.
+- *No versioning* — rejected; creates risk of breaking clients without migration path.
+
+---
+
+## ADR-012: Idempotency Keys for Financial Mutations
+
+**Status:** Accepted
+**Date:** August 2026
+
+**Context:**
+Network retries, client bugs, or user double-clicks can send duplicate `POST /allocations` requests. For financial data, duplicate allocations corrupt the allocation-sum invariant and create incorrect reconciliation states. The existing `FOR UPDATE` trigger prevents over-allocation but does not prevent creating two identical allocations from two separate requests.
+
+**Decision:**
+Add an optional `idempotencyKey String? @unique` field to the `Allocation` model. When a client includes `idempotencyKey` in the request, the service checks for an existing allocation with that key before creating. If found, returns the existing allocation (idempotent response). The key is optional — backward compatible.
+
+**Consequences:**
+- Positive: Safe retries without duplicate records. Client controls uniqueness scope. Optional — no impact on existing clients.
+- Negative: Extra DB query per allocation with idempotency key. Unique constraint adds index overhead (negligible at current scale).
+
+**Alternatives considered:**
+- *Application-level deduplication only (no DB constraint)* — rejected; race conditions under concurrent requests could still create duplicates.
+- *Composite unique constraint on (bankTransactionId, ledgerEntryId, amountPortion)* — rejected; too restrictive — same transaction can legitimately be allocated to the same ledger entry in separate operations (e.g., revoke + re-allocate).
+
+---
+
+## ADR-013: Request Correlation IDs
+
+**Status:** Accepted
+**Date:** August 2026
+
+**Context:**
+When diagnosing issues in production, engineers need to trace a single request across middleware, controllers, services, and database queries. Without a correlation ID, logs from different requests interleave and make debugging difficult.
+
+**Decision:**
+Add NestJS middleware that generates a UUID v4 for every incoming HTTP request and attaches it to `request.headers['x-correlation-id']`. If the client sends its own `X-Correlation-ID` header, it is preserved. The correlation ID is included in all `pino-http` structured log entries.
+
+**Consequences:**
+- Positive: End-to-end request tracing in logs. Client-supplied IDs enable distributed tracing across systems.
+- Negative: Slight overhead per request (UUID generation is negligible). Middleware must be registered globally.
+
+**Alternatives considered:**
+- *No correlation IDs* — rejected; makes production debugging significantly harder.
+- *OpenTelemetry distributed tracing* — deferred to Phase 2; overkill for single-service monolith at current scale.
+
+---
+
+## ADR-014: Prometheus Metrics Integration
+
+**Status:** Accepted
+**Date:** August 2026
+
+**Context:**
+The application lacks quantitative observability — there are no request rate, error rate, or latency metrics. For a financial system, knowing error rates and response times is critical for operational confidence.
+
+**Decision:**
+Integrate `@willsoto/nestjs-prometheus` with `prom-client`. The `PrometheusModule` registers automatically at `GET /metrics` in standard Prometheus text format. Default metrics (HTTP request duration, count, GC) are collected automatically.
+
+**Consequences:**
+- Positive: Industry-standard metrics format. Zero custom code for basic HTTP metrics. Compatible with Grafana, Datadog, and other Prometheus-compatible dashboards.
+- Negative: New dependencies (`@willsoto/nestjs-prometheus`, `prom-client`). `/metrics` endpoint is unauthenticated (standard for internal metrics endpoints).
+
+**Alternatives considered:**
+- *Custom metrics service* — rejected; reinventing Prometheus client is wasteful.
+- *No metrics* — rejected; operational blind spot for a financial system.
+
+---
+
+## ADR-015: JWT Secret Management — No Fallbacks
+
+**Status:** Accepted
+**Date:** August 2026
+
+**Context:**
+The initial implementation included hardcoded fallback secrets (`'fallback-access-secret-key'`, `'fallback-refresh-secret-key'`) used when `JWT_SECRET` or `JWT_REFRESH_SECRET` environment variables are missing. While a production guard existed (`NODE_ENV === 'production'`), a misconfigured `NODE_ENV` could silently use weak fallback keys, creating a security vulnerability.
+
+**Decision:**
+Remove all hardcoded fallback secrets. The application throws `UnauthorizedException` on startup if `JWT_SECRET` or `JWT_REFRESH_SECRET` are missing, in ALL environments (development, test, production).
+
+**Consequences:**
+- Positive: Impossible to run with weak/missing JWT secrets. Fail-fast behavior prevents silent security vulnerabilities.
+- Negative: Developers must configure `.env` with real secret values before running locally. `.env.example` already contains placeholder values.
+
+**Alternatives considered:**
+- *Keep fallbacks with production-only guard* — rejected; `NODE_ENV` misconfiguration is a realistic failure mode.
+- *Generate random secrets at startup* — rejected; tokens signed with random secrets are useless for refresh flows (server restart invalidates all refresh tokens).
+

@@ -7,6 +7,8 @@ import {
   IsPositive,
   IsNumber,
   ValidateIf,
+  IsString,
+  MaxLength,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -29,6 +31,11 @@ export class CreateSingleAllocationDto {
   )
   @IsNumberString()
   amountPortion!: number | string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  idempotencyKey?: string;
 }
 
 export class CreateAllocationDto {
@@ -60,4 +67,9 @@ export class CreateAllocationDto {
   @ValidateNested({ each: true })
   @Type(() => CreateSingleAllocationDto)
   allocations?: CreateSingleAllocationDto[];
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  idempotencyKey?: string;
 }

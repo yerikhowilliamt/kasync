@@ -59,7 +59,7 @@ export class LedgerEntriesService {
           branch: true,
         },
         orderBy: {
-          entryDate: 'desc',
+          [paginationQuery?.sortBy ?? 'entryDate']: 'desc',
         },
       }),
       this.prisma.ledgerEntry.count(),

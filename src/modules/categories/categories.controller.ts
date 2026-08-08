@@ -22,6 +22,8 @@ export class CategoriesController {
   @Post()
   @ApiOperation({ summary: 'Create category' })
   @ApiResponse({ status: 201, description: 'Created' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 400, description: 'Bad Request' })
   create(@Body() createCategoryDto: CreateCategoryDto) {
     return this.categoriesService.create(createCategoryDto);
   }
@@ -36,7 +38,7 @@ export class CategoriesController {
   @Get(':id')
   @ApiOperation({ summary: 'Get category by id' })
   @ApiResponse({ status: 200, description: 'Success' })
-  @ApiResponse({ status: 404, description: 'Not found' })
+  @ApiResponse({ status: 404, description: 'Category not found' })
   findOne(@Param('id') id: string) {
     return this.categoriesService.findOne(id);
   }
@@ -44,7 +46,7 @@ export class CategoriesController {
   @Patch(':id')
   @ApiOperation({ summary: 'Update category' })
   @ApiResponse({ status: 200, description: 'Success' })
-  @ApiResponse({ status: 404, description: 'Not found' })
+  @ApiResponse({ status: 404, description: 'Category not found' })
   update(
     @Param('id') id: string,
     @Body() updateCategoryDto: UpdateCategoryDto,
@@ -56,7 +58,7 @@ export class CategoriesController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete category' })
   @ApiResponse({ status: 204, description: 'Deleted' })
-  @ApiResponse({ status: 404, description: 'Not found' })
+  @ApiResponse({ status: 404, description: 'Category not found' })
   remove(@Param('id') id: string) {
     return this.categoriesService.remove(id);
   }

@@ -25,6 +25,7 @@ export class AccountsController {
     status: 201,
     description: 'The account has been successfully created.',
   })
+  @ApiResponse({ status: 400, description: 'Bad Request' })
   @HttpCode(HttpStatus.CREATED)
   create(@Body() createAccountDto: CreateAccountDto) {
     return this.accountsService.create(createAccountDto);
@@ -33,6 +34,7 @@ export class AccountsController {
   @Get()
   @ApiOperation({ summary: 'Get all accounts' })
   @ApiResponse({ status: 200, description: 'Return all accounts.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   findAll() {
     return this.accountsService.findAll();
   }

@@ -87,6 +87,7 @@ This single data model is designed to resolve all three root causes identified i
 - User can split a single bank transaction into multiple `allocation` rows, each with its own category and branch/cost center.
 - Real-time validation: running total of allocated portions vs. transaction amount, with clear indication of remaining unallocated balance.
 - Predefined category list + branch/cost center list (configurable by the user).
+- Idempotency key support: clients can include an optional `idempotencyKey` in allocation requests to safely retry without creating duplicates (see ADR-012).
 
 ### 5.4 Reconciliation dashboard
 - Four-way status view per transaction:
@@ -102,15 +103,15 @@ This single data model is designed to resolve all three root causes identified i
 - Immutable allocation records: allocations are append/revoke-only once created to maintain strict financial auditability. Audit trail tracks creation timestamp (`createdAt`).
 
 ### 5.6 Authentication & Access Control
-- User registration (`POST /auth/register`) and authentication (`POST /auth/login`).
+- User registration (`POST /api/v1/auth/register`) and authentication (`POST /api/v1/auth/login`).
 - Dual JWT token mechanism: Access Token (`1d` lifetime) stored in HttpOnly cookie and Refresh Token (`30d` lifetime) stored in HttpOnly cookie and hashed in PostgreSQL (`users.refresh_token_hash`).
-- Refresh flow (`POST /auth/refresh`): Exchanges valid refresh cookie against DB hash to issue a new Access Token.
-- Revocation / Logout (`POST /auth/logout`): Clears `refreshTokenHash` in DB and deletes authentication cookies.
+- Refresh flow (`POST /api/v1/auth/refresh`): Exchanges valid refresh cookie against DB hash to issue a new Access Token.
+- Revocation / Logout (`POST /api/v1/auth/logout`): Clears `refreshTokenHash` in DB and deletes authentication cookies.
 
 ### 5.7 User Profile Management
-- Update Password (`PATCH /users/me/password`): Verifies `oldPassword` via bcrypt and updates hashed password.
-- Update Profile Photo (`POST /users/me/photo`): Accepts image file via multipart upload, streams to Cloudinary, and updates `users.photo_url`.
-- Account Deletion (`DELETE /users/me`): Deletes user account and clears active auth cookies.
+- Update Password (`PATCH /api/v1/users/me/password`): Verifies `oldPassword` via bcrypt and updates hashed password.
+- Update Profile Photo (`POST /api/v1/users/me/photo`): Accepts image file via multipart upload, streams to Cloudinary, and updates `users.photo_url`.
+- Account Deletion (`DELETE /api/v1/users/me`): Deletes user account and clears active auth cookies.
 
 ---
 

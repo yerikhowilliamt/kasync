@@ -34,6 +34,7 @@ describe('Users (e2e)', () => {
       .compile();
 
     app = moduleFixture.createNestApplication();
+    app.setGlobalPrefix('api/v1');
     app.use(cookieParser());
     app.useGlobalPipes(
       new ValidationPipe({ whitelist: true, transform: true }),
@@ -48,7 +49,7 @@ describe('Users (e2e)', () => {
     const regRes = await request(
       app.getHttpServer() as unknown as Parameters<typeof request>[0],
     )
-      .post('/auth/register')
+      .post('/api/v1/auth/register')
       .send({
         email: 'user-e2e@example.com',
         name: 'E2E User',
@@ -77,7 +78,7 @@ describe('Users (e2e)', () => {
       await request(
         app.getHttpServer() as unknown as Parameters<typeof request>[0],
       )
-        .patch('/users/me/password')
+        .patch('/api/v1/users/me/password')
         .set('Cookie', [authCookie])
         .send({
           oldPassword: 'WrongPassword!',
@@ -90,7 +91,7 @@ describe('Users (e2e)', () => {
       await request(
         app.getHttpServer() as unknown as Parameters<typeof request>[0],
       )
-        .patch('/users/me/password')
+        .patch('/api/v1/users/me/password')
         .set('Cookie', [authCookie])
         .send({
           oldPassword: 'Password123!',
@@ -105,7 +106,7 @@ describe('Users (e2e)', () => {
       const res = await request(
         app.getHttpServer() as unknown as Parameters<typeof request>[0],
       )
-        .post('/users/me/photo')
+        .post('/api/v1/users/me/photo')
         .set('Cookie', [authCookie])
         .attach('file', Buffer.from('fake-image'), {
           filename: 'avatar.jpg',
@@ -127,7 +128,7 @@ describe('Users (e2e)', () => {
       const res = await request(
         app.getHttpServer() as unknown as Parameters<typeof request>[0],
       )
-        .delete('/users/me')
+        .delete('/api/v1/users/me')
         .set('Cookie', [authCookie])
         .expect(200);
 

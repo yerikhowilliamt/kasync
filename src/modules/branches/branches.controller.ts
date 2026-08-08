@@ -22,6 +22,8 @@ export class BranchesController {
   @Post()
   @ApiOperation({ summary: 'Create branch' })
   @ApiResponse({ status: 201, description: 'Created' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 400, description: 'Bad Request' })
   create(@Body() createBranchDto: CreateBranchDto) {
     return this.branchesService.create(createBranchDto);
   }
@@ -36,7 +38,7 @@ export class BranchesController {
   @Get(':id')
   @ApiOperation({ summary: 'Get branch by id' })
   @ApiResponse({ status: 200, description: 'Success' })
-  @ApiResponse({ status: 404, description: 'Not found' })
+  @ApiResponse({ status: 404, description: 'Branch not found' })
   findOne(@Param('id') id: string) {
     return this.branchesService.findOne(id);
   }
@@ -44,7 +46,7 @@ export class BranchesController {
   @Patch(':id')
   @ApiOperation({ summary: 'Update branch' })
   @ApiResponse({ status: 200, description: 'Success' })
-  @ApiResponse({ status: 404, description: 'Not found' })
+  @ApiResponse({ status: 404, description: 'Branch not found' })
   update(@Param('id') id: string, @Body() updateBranchDto: UpdateBranchDto) {
     return this.branchesService.update(id, updateBranchDto);
   }
@@ -53,7 +55,7 @@ export class BranchesController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete branch' })
   @ApiResponse({ status: 204, description: 'Deleted' })
-  @ApiResponse({ status: 404, description: 'Not found' })
+  @ApiResponse({ status: 404, description: 'Branch not found' })
   remove(@Param('id') id: string) {
     return this.branchesService.remove(id);
   }

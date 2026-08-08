@@ -32,6 +32,9 @@ export class AllocationService {
           amountPortion: dto.amountPortion,
         },
       ];
+      if (dto.idempotencyKey) {
+        items[0].idempotencyKey = dto.idempotencyKey;
+      }
     }
 
     if (items.length === 0) {
@@ -83,9 +86,12 @@ export class AllocationService {
         const txnAmount = new Decimal(bankTransaction.amount.toString());
 
         if (totalSum.gt(txnAmount)) {
-          throw new AllocationExceededError(
-            `Total allocation (${totalSum.toString()}) exceeds transaction amount (${txnAmount.toString()}) for transaction ${txnId}`,
-          );
+          throw new AllocationExceededError({
+            message: `Total allocation (${totalSum.toString()}) exceeds transaction amount (${txnAmount.toString()}) for transaction ${txnId}`,
+            txnId,
+            attempted: totalSum.toString(),
+            max: txnAmount.toString(),
+          });
         }
 
         for (const item of txnItems) {
@@ -99,11 +105,23 @@ export class AllocationService {
             );
           }
 
+          // Idempotency check
+          if (item.idempotencyKey) {
+            const existing = await tx.allocation.findUnique({
+              where: { idempotencyKey: item.idempotencyKey },
+            });
+            if (existing) {
+              createdAllocations.push(existing);
+              continue;
+            }
+          }
+
           const allocation = await tx.allocation.create({
             data: {
               bankTransactionId: item.bankTransactionId,
               ledgerEntryId: item.ledgerEntryId,
               amountPortion: item.amountPortion.toString(),
+              idempotencyKey: item.idempotencyKey,
               status: AllocationStatus.ACTIVE,
             },
           });
