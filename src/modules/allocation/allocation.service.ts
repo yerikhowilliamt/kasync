@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { CreateAllocationDto, CreateSingleAllocationDto } from './dto/create-allocation.dto';
-import { AllocationExceededError } from './errors/allocation-exceeded.error';
+import { AllocationExceededError } from '../../common/errors/allocation-exceeded.error';
 import { Prisma, AllocationStatus } from '@prisma/client';
 import Decimal from 'decimal.js';
 

@@ -1,14 +1,11 @@
 export class AllocationExceededError extends Error {
   constructor(
-    public readonly txnId?: string,
-    public readonly attempted?: string,
-    public readonly max?: string,
-    message?: string,
+    public readonly _arg1?: string,
+    public readonly _arg2?: string,
+    public readonly _arg3?: string,
+    public readonly customMessage?: string,
   ) {
-    super(
-      message ||
-        `Allocation total (${attempted || 'unknown'}) would exceed bank transaction amount (${max || 'unknown'}) for transaction ${txnId || 'unknown'}`,
-    );
+    super(customMessage || _arg1 || 'Allocation exceeded');
     this.name = 'AllocationExceededError';
   }
 }
