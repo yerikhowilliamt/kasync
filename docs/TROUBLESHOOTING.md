@@ -22,6 +22,16 @@ This document records errors encountered during development, their root causes, 
 
 ## Log Entries
 
+### [2026-08-09] TypeScript Cannot find name 'jest' / Multer Type Lookup Error
+- **Module / Area:** `typescript`, `tsconfig.json`, `auth.service.spec.ts`, `import.controller.ts`
+- **Error Message / Symptom:**
+  ```text
+  Cannot find name 'jest' in *.spec.ts / Namespace 'global.Express' has no exported member 'Multer'
+  ```
+- **Root Cause:** NodeNext module resolution in `tsconfig.json` omitted explicit ambient global type inclusions for Jest and Multer.
+- **Resolution:** Added `"types": ["jest", "node", "multer"]` to `compilerOptions` in `tsconfig.json`.
+- **Prevention / Note:** Include ambient test and library type packages in `tsconfig.json` `"types"` array when using strict NodeNext module resolution.
+
 ### [2026-08-09] TypeError: Cannot redefine property: compare in Jest Bcrypt Spies
 - **Module / Area:** `auth`, `auth.service.spec.ts`
 - **Error Message / Symptom:**
