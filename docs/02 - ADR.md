@@ -134,3 +134,43 @@ Assume single-tenant context and single-currency (IDR) for v1. Categories and Br
 
 **Alternatives considered:**
 - *Full SaaS multi-tenant schema with currency conversion engine* — rejected; over-engineering for v1 target persona.
+
+---
+
+## ADR-007: Fallback SHA-256 Deduplication Hash (`dedupHash`)
+
+**Status:** Accepted
+**Date:** August 2026
+
+**Context:**
+Some banks omit `externalRef` (transaction ID) in their CSV exports. We need a reliable way to deduplicate rows when `externalRef` is null, avoiding double imports of the same statement.
+
+**Decision:**
+Add `dedupHash` (SHA-256 hash of date, amount, description, type, and balance if available) to `BankTransaction`. Add unique constraint `@@unique([accountId, dedupHash])`. 
+
+**Consequences:**
+- Positive: allows safe re-imports for banks lacking transaction IDs.
+- Negative: hash collision risk if two identical transactions occur on the exact same second/day (rare but possible). Application layer must handle these edge cases (e.g., manual override or sequence tracking).
+
+**Alternatives considered:**
+- *Rely solely on externalRef* — rejected; breaks for banks that do not provide it.
+
+---
+
+## ADR-008: Soft-Revoke Allocation Audit Trail
+
+**Status:** Accepted
+**Date:** August 2026
+
+**Context:**
+Allocations represent financial reconciliation decisions. Deleting them destroys the audit trail of who matched what, and when a mistake was un-matched.
+
+**Decision:**
+Use soft-revokes for Allocations. Add `status AllocationStatus @default(ACTIVE)` and `revokedAt DateTime?` to `Allocation`. Update DB triggers to only sum `ACTIVE` allocations.
+
+**Consequences:**
+- Positive: preserves history of reconciliation mistakes and corrections.
+- Negative: DB triggers and application queries must explicitly filter by `status = 'ACTIVE'`.
+
+**Alternatives considered:**
+- *Hard delete allocations* — rejected; loses audit history.

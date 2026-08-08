@@ -80,6 +80,7 @@ This single data model is designed to resolve all three root causes identified i
 - Exact match: same amount, same/near date, one bank transaction to one ledger entry.
 - Fuzzy match: configurable date-tolerance window (e.g. ±2 days) to handle settlement delays.
 - Aggregation match: suggest grouping N small bank transactions against 1 manual entry when amounts sum correctly within a date window.
+  - *Heuristics bound:* Max subset size of $N \le 4$ transactions per match. Max $\pm 3$ days tolerance. Identical transaction type required (INFLOW to INFLOW). Top 20 candidate combinations evaluated per search.
 - Cross-account awareness: when a manual entry doesn't match in one account, check other accounts before flagging it as missing.
 
 ### 5.3 Split allocation

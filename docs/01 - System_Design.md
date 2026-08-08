@@ -31,7 +31,7 @@ This document translates the PRD's product requirements into concrete technical 
 | Module | Responsibility |
 |---|---|
 | **Import** | Parses uploaded CSV bank statements into normalized `bank_transaction` records via a unified `BankParser` interface (Strategy pattern per bank format). |
-| **Matching engine** | Runs exact, fuzzy (date-tolerant), and aggregation matching between `bank_transaction` and `ledger_entry`. Pure business logic, no HTTP/DB dependency in its core so it can be unit tested in isolation. |
+| **Matching engine** | Runs exact, fuzzy (date-tolerant, $\pm 3$ days max), and aggregation matching (bounded to $N \le 4$ subset size, max 20 candidates, identical INFLOW/OUTFLOW type) between `bank_transaction` and `ledger_entry`. Pure business logic, no HTTP/DB dependency in its core so it can be unit tested in isolation. |
 | **Allocation** | Manages the `allocation` junction records — creating splits inside a single database transaction (`prisma.$transaction`), validating that allocated portions sum to the transaction amount, tracking unresolved balances. |
 | **Account** | Manages multiple bank/cash accounts per business, source-account tagging for every transaction. |
 | **Reconciliation API / Dashboard** | Read-side: aggregates status (matched / pending review / needs allocation / unresolved), computes recorded vs. actual balance, serves the dashboard views. Proposed matches from matching engine are computed on-the-fly (stateless) or flagged as `PENDING_REVIEW` when user initiates allocation review. |
@@ -116,3 +116,6 @@ Each bank implementation (e.g. `BcaCsvParser`, `MandiriCsvParser`) implements `B
 
 ### 9.2 Atomic Split Operations (DB Transaction)
 Split allocation operations write or update multiple `allocation` rows simultaneously. All split operations must be executed inside a single database transaction (`prisma.$transaction`) to guarantee atomicity: either all allocation portions persist successfully or none do, preventing partial/corrupted financial states.
+
+### 9.3 Database Trigger Exception Handling
+The Postgres database relies on triggers (like `check_allocation_sum`) that throw PL/pgSQL exceptions. These surface as Prisma error codes (`P2010` for raw query failures or `P2034` for transaction constraint violations). A `PostgresTriggerExceptionFilter` (`src/common/filters/postgres-trigger-exception.filter.ts`) intercepts these specific codes globally, maps them to domain exceptions (like `AllocationExceededError`), and returns an HTTP 400 Bad Request to prevent unhandled 500 errors from raw SQL constraints.

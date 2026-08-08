@@ -18,6 +18,7 @@ BEGIN
   SELECT COALESCE(SUM(amount_portion), 0) INTO total_allocated
   FROM allocations
   WHERE bank_transaction_id = NEW.bank_transaction_id
+    AND status = 'ACTIVE'
     AND id != COALESCE(NEW.id, '00000000-0000-0000-0000-000000000000');
 
   IF (total_allocated + NEW.amount_portion) > txn_amount THEN
@@ -54,7 +55,7 @@ BEGIN
   FROM bank_transactions WHERE id = target_txn_id;
 
   SELECT COALESCE(SUM(amount_portion), 0) INTO total_allocated
-  FROM allocations WHERE bank_transaction_id = target_txn_id;
+  FROM allocations WHERE bank_transaction_id = target_txn_id AND status = 'ACTIVE';
 
   UPDATE bank_transactions
   SET status = CASE

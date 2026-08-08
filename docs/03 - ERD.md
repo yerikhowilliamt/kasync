@@ -12,11 +12,11 @@
 | Entity | Purpose |
 |---|---|
 | `Account` | A bank, cash, or e-wallet account belonging to the business. |
-| `BankTransaction` | Atomic, immutable-in-practice record imported from a bank statement (has amount, type `INFLOW`/`OUTFLOW`, date, status). |
+| `BankTransaction` | Atomic, immutable-in-practice record imported from a bank statement (has amount, type `INFLOW`/`OUTFLOW`, date, status, `dedupHash`). |
 | `Category` | Expense/income category (e.g. raw materials, fuel). |
 | `Branch` | Cost center / business branch. |
 | `LedgerEntry` | A categorized manual record: category + branch + date + amount + type (`INFLOW`/`OUTFLOW`) + note. |
-| `Allocation` | Junction between `BankTransaction` and `LedgerEntry`, carrying the portion of the amount allocated. |
+| `Allocation` | Junction between `BankTransaction` and `LedgerEntry`, carrying the portion of the amount allocated (with `status` and `revokedAt`). |
 
 Full column-level detail lives in `schema.prisma` — this document explains the *design decisions*, not just the columns.
 
@@ -32,8 +32,8 @@ Full column-level detail lives in `schema.prisma` — this document explains the
 
 ## 3. Key Design Decisions
 
-### 3.1 `externalRef` + unique constraint on `(accountId, externalRef)`
-Bank CSV exports usually include some reference/transaction ID column. Storing it and enforcing uniqueness per account prevents the same statement row from being imported twice if a user re-uploads an overlapping date range — a real risk given manual CSV uploads.
+### 3.1 `externalRef`, `dedupHash` + unique constraints
+Bank CSV exports usually include some reference/transaction ID column. Storing it and enforcing uniqueness per account (`@@unique([accountId, externalRef])`) prevents the same statement row from being imported twice. When banks omit this ID, the system computes a SHA-256 fallback hash (`dedupHash`) and enforces uniqueness (`@@unique([accountId, dedupHash])`) to ensure deduplication.
 
 ### 3.2 `status` stored directly on `BankTransaction`, not computed on every read
 `status` (`UNRESOLVED` / `PENDING_REVIEW` / `PARTIALLY_ALLOCATED` / `MATCHED`) is a denormalized, derived field. It could be computed on-the-fly by summing allocations, but for the reconciliation dashboard (which needs to filter/count by status frequently), a stored, trigger-maintained column is simpler to query and index. The trigger in `migration.sql` (`sync_transaction_status`) keeps it consistent automatically — the application layer never has to remember to update it.

@@ -3,7 +3,7 @@
 ## 1. AI Agent Workflow
 - **Token Efficiency:** Be token-efficient; keep responses concise and avoid unnecessary scanning/explanation.
 - **Scope Limit:** Read only relevant files/modules required for the task.
-- **Implementation Plan:** For non-trivial tasks, provide an Implementation Plan with **at least 3 options** (with trade-offs and recommended option).
+- **Implementation Plan:** For major architectural decisions or high-risk multi-system refactors, provide an Implementation Plan with **at least 3 options** (with trade-offs and recommended option). For routine features and bounded implementations, proceed directly with a single concise plan.
 - **Approval Gate:** Stop and wait for explicit approval after presenting the plan before modifying code.
 - **Completion Report:** List every file/folder **created** and **edited** with a short explanation of changes.
 - **Task & Error Documentation:** Append completed task summary to `docs/TASK_LOG.md`. If an error occurs during execution, document the error message, root cause, and resolution in `docs/TROUBLESHOOTING.md`.

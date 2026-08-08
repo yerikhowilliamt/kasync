@@ -29,6 +29,11 @@ enum TransactionStatus {
   MATCHED // sum(allocation) == amount
 }
 
+enum AllocationStatus {
+  ACTIVE
+  REVOKED
+}
+
 model Account {
   id          String   @id @default(uuid())
   name        String
@@ -49,6 +54,7 @@ model BankTransaction {
   type        TransactionType   @default(OUTFLOW)
   description String
   externalRef String?           @map("external_ref") // raw reference/ID from bank statement, for de-duplication
+  dedupHash   String?           @map("dedup_hash")
   status      TransactionStatus @default(UNRESOLVED)
   importedAt  DateTime          @default(now()) @map("imported_at")
   createdAt   DateTime          @default(now()) @map("created_at")
@@ -59,6 +65,7 @@ model BankTransaction {
 
   // Prevents importing the exact same bank row twice within one account
   @@unique([accountId, externalRef])
+  @@unique([accountId, dedupHash])
   @@index([txnDate])
   @@index([status])
   @@map("bank_transactions")
@@ -108,6 +115,8 @@ model Allocation {
   bankTransactionId String   @map("bank_transaction_id")
   ledgerEntryId     String   @map("ledger_entry_id")
   amountPortion     Decimal  @db.Decimal(18, 2) @map("amount_portion")
+  status            AllocationStatus @default(ACTIVE)
+  revokedAt         DateTime? @map("revoked_at")
   createdAt         DateTime @default(now()) @map("created_at")
 
   bankTransaction BankTransaction @relation(fields: [bankTransactionId], references: [id])

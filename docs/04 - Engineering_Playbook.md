@@ -58,7 +58,7 @@ export class AllocationExceededError extends Error {
   }
 }
 ```
-Map domain exceptions to HTTP responses in NestJS global Exception Filters.
+Map domain exceptions to HTTP responses in NestJS global Exception Filters. Specifically, the `PostgresTriggerExceptionFilter` (`src/common/filters/postgres-trigger-exception.filter.ts`) must catch Prisma errors `P2010` and `P2034` thrown by database triggers (e.g. `check_allocation_sum`) and convert them to `AllocationExceededError` yielding HTTP 400 Bad Request.
 
 ---
 
