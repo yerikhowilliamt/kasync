@@ -176,18 +176,29 @@ export class MatchingEngine {
   ): BankTransactionInput[][] {
     const results: BankTransactionInput[][] = [];
     const n = arr.length;
-    // We only want subsets of size 2 to maxSize
-    for (let i = 1; i < 1 << n; i++) {
-      const subset: BankTransactionInput[] = [];
-      for (let j = 0; j < n; j++) {
-        if ((i & (1 << j)) > 0) {
-          subset.push(arr[j]);
-        }
-      }
-      if (subset.length >= 2 && subset.length <= maxSize) {
-        results.push(subset);
-      }
+    const limit = Math.min(maxSize, n);
+
+    for (let size = 2; size <= limit; size++) {
+      this.combine(arr, size, 0, [], results);
     }
     return results;
+  }
+
+  private combine(
+    arr: BankTransactionInput[],
+    size: number,
+    start: number,
+    current: BankTransactionInput[],
+    results: BankTransactionInput[][],
+  ): void {
+    if (current.length === size) {
+      results.push([...current]);
+      return;
+    }
+    for (let i = start; i <= arr.length - (size - current.length); i++) {
+      current.push(arr[i]);
+      this.combine(arr, size, i + 1, current, results);
+      current.pop();
+    }
   }
 }
