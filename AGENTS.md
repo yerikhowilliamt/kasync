@@ -7,6 +7,7 @@
 - **Approval Gate:** Stop and wait for explicit approval after presenting the plan before modifying code.
 - **Completion Report:** List every file/folder **created** and **edited** with a short explanation of changes.
 - **Task & Error Documentation:** Append completed task summary to `docs/TASK_LOG.md`. If an error occurs during execution, document the error message, root cause, and resolution in `docs/TROUBLESHOOTING.md`.
+- **Task Initialization & Git Branching:** Before starting any task, switch to `dev` and pull latest (`git checkout dev && git pull origin dev`), then create and switch to a new task branch (e.g. `feat/xxx`, `fix/xxx`, `docs/xxx`).
 - **Phase Context Handover:** Before starting work on any task or phase, read the latest phase context file in `docs/phases/phase-XX-context.md`. Upon completing a task/phase, create or update `docs/phases/phase-XX-context.md` with key decisions, progress, state changes, and handover notes for future AI sessions.
 - **Source Priority:** Task requirements > Approved ADRs > System Docs > Existing Code > AI Assumptions.
 
