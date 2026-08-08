@@ -1,3 +1,17 @@
+## Task: Complete Reconciliation E2E Lifecycle Automation Testing (Sun Aug 09 2026)
+
+- **Completed**: Yes
+- **Modules**: System-wide Integration / `test/complete-reconciliation-flow.e2e-spec.ts`
+- **Description**: Implemented full end-to-end reconciliation lifecycle automation test suite covering the entire user journey:
+  1. **Authentication & Setup**: Dynamically registers user, extracts HttpOnly `access_token` cookie, creates Account, Category, and Branch.
+  2. **Ledger Entries**: Creates manual internal records via `POST /ledger-entries`.
+  3. **Statement Import**: Uploads Mandiri CSV fixture (`mandiri-valid.csv`) via `POST /import/csv`.
+  4. **Match Proposal**: Runs `POST /matching/propose` updating transactions to `PENDING_REVIEW`.
+  5. **Single & Split Allocations**: Executes single allocation and multi-portion split allocation via `POST /allocations`, auto-syncing status to `MATCHED`.
+  6. **Dashboard Verification**: Queries `GET /reconciliation/dashboard` verifying `MATCHED = 2`, `UNRESOLVED = 0`, actual bank balance, recorded ledger balance, and zero variance (`0.00`).
+  7. **Documentation**: Updated `Engineering_Playbook.md`, `Project_Handbook.md`, `TASK_LOG.md`, and `TROUBLESHOOTING.md`.
+- **Git Branch**: `feat/complete-e2e-flow`
+
 ## Task: Architectural Improvements - Decorator, Storage Abstraksi, & Custom Validator (Sun Aug 09 2026)
 
 - **Completed**: Yes

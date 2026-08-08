@@ -78,7 +78,7 @@ Map domain exceptions to HTTP responses in NestJS global Exception Filters. Spec
 |---|---|---|---|
 | **Unit Tests** | `MatchingEngine`, `BankParser` implementations, `Allocation` math | Jest | **Min 90% Coverage**, 0 DB dependency, fast execution (<1s). Required scenarios: exact match, fuzzy date tolerance, aggregate match, exact/under/over-allocation. |
 | **Integration Tests** | `AllocationService` + Postgres triggers, Prisma queries | Jest + Testcontainers / Local Postgres | Verifies `prisma.$transaction` & DB trigger `check_allocation_sum` |
-| **E2E Tests** | CSV Upload → Match → Split Allocation Flow | Supertest | Verifies full happy path via API controllers |
+| **E2E Tests** | CSV Upload → Match → Split Allocation Flow & Complete Lifecycle | Supertest | Verifies full happy path & complete reconciliation user journey via API controllers (`test/complete-reconciliation-flow.e2e-spec.ts`) |
 
 ---
 
