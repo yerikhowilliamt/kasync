@@ -1,3 +1,10 @@
+## Task: Phase 5 Reconciliation Dashboard & E2E Journey (Sat Aug 08 2026)
+
+- **Completed**: Yes
+- **Modules**: `ReconciliationModule`
+- **Description**: Implemented `ReconciliationService` and `ReconciliationController` (`GET /reconciliation/dashboard`) providing 4-way transaction status breakdown (`UNRESOLVED`, `PENDING_REVIEW`, `PARTIALLY_ALLOCATED`, `MATCHED`), actual bank balance, recorded ledger balance, and variance calculations. Added multi-attribute query filter support (`accountId`, `branchId`, `categoryId`, `startDate`, `endDate`, `type`, `status`) with strict `@IsISO8601()` date validations. Optimised balance calculations using native Prisma SQL `_sum` aggregation queries instead of in-memory looping for O(1) memory scalability. Created comprehensive unit test suite and end-to-end user journey test suite (`reconciliation.e2e-spec.ts`) covering import statement -> propose matches -> allocate/split -> dashboard metrics verification.
+- **Git Branch**: `feat/phase-05-reconciliation-dashboard`
+
 ## Task: Phase 4 Allocation & Split (Sat Aug 08 2026)
 
 - **Completed**: Yes
