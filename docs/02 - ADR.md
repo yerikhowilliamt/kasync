@@ -174,3 +174,27 @@ Use soft-revokes for Allocations. Add `status AllocationStatus @default(ACTIVE)`
 
 **Alternatives considered:**
 - *Hard delete allocations* — rejected; loses audit history.
+
+---
+
+## ADR-009: Dual-Token Authentication via HttpOnly Cookies & DB Refresh Store
+
+**Status:** Accepted
+**Date:** August 2026
+
+**Context:**
+The initial prototype relied on a static `x-api-key` header. The system requires secure multi-user registration and login with protected API routes. Authentication tokens stored in LocalStorage are vulnerable to XSS attacks.
+
+**Decision:**
+Implement JWT Dual-Token Authentication (`@nestjs/jwt`, `bcrypt`):
+1. **Access Token:** Short lifetime (`1d`), sent via HttpOnly, SameSite cookie (`access_token`) and fallback `Authorization: Bearer` header.
+2. **Refresh Token:** Long lifetime (`30d`), sent via HttpOnly cookie (`refresh_token`). A hashed version (`bcrypt`) is stored in `users.refresh_token_hash`.
+3. **Refresh & Revocation:** `POST /auth/refresh` matches incoming cookie token with DB hash before issuing new Access Token. `POST /auth/logout` clears `refreshTokenHash` in DB and deletes cookies.
+
+**Consequences:**
+- Positive: Defense in depth against XSS (HttpOnly cookie), token revocation support via DB hash invalidation, explicit session renewal flow.
+- Negative: Requires `cookie-parser` middleware and cookie-aware testing setups.
+
+**Alternatives considered:**
+- *LocalStorage JWT only* — rejected due to XSS vulnerability.
+- *Server-side Sessions* — rejected to maintain stateless API capabilities for external clients.

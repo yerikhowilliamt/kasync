@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
+import cookieParser from 'cookie-parser';
 import { AppModule } from './../src/app.module';
 import { PrismaClient } from '@prisma/client';
 import { PostgresTriggerExceptionFilter } from '../src/common/filters/postgres-trigger-exception.filter';
@@ -17,12 +18,15 @@ describe('Allocation Split (e2e)', () => {
   let ledgerEntryId1: string;
   let ledgerEntryId2: string;
 
+  let authCookie: string;
+
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
 
     app = moduleFixture.createNestApplication();
+    app.use(cookieParser());
     app.useGlobalPipes(new ValidationPipe({ transform: true }));
     app.useGlobalFilters(new PostgresTriggerExceptionFilter());
     await app.init();
@@ -45,6 +49,19 @@ describe('Allocation Split (e2e)', () => {
       data: { name: `Test Split Branch ${Date.now()}` },
     });
     branchId = branch.id;
+
+    // Register test user & get cookie
+    const regRes = await request(
+      app.getHttpServer() as unknown as Parameters<typeof request>[0],
+    )
+      .post('/auth/register')
+      .send({
+        email: `split-user-${Date.now()}@example.com`,
+        password: 'password123',
+        name: 'Split User',
+      });
+    const cookies = regRes.headers['set-cookie'] as unknown as string[];
+    authCookie = cookies.find((c) => c.startsWith('access_token='))!;
   });
 
   beforeEach(async () => {
@@ -113,9 +130,12 @@ describe('Allocation Split (e2e)', () => {
 
   it('Test full API flow: Allocate split, retrieve, revoke, over-allocate', async () => {
     // 1. POST /allocations with split array
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-    const createRes = await request(app.getHttpServer())
+
+    const createRes = await request(
+      app.getHttpServer() as unknown as Parameters<typeof request>[0],
+    )
       .post('/allocations')
+      .set('Cookie', [authCookie])
       .send({
         allocations: [
           {
@@ -142,27 +162,40 @@ describe('Allocation Split (e2e)', () => {
     expect(tx.status).toBe('MATCHED');
 
     // 3. GET /allocations/transaction/:txnId
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-    const getTxnRes = await request(app.getHttpServer())
+
+    const getTxnRes = await request(
+      app.getHttpServer() as unknown as Parameters<typeof request>[0],
+    )
       .get(`/allocations/transaction/${bankTransactionId}`)
+      .set('Cookie', [authCookie])
       .expect(200);
 
     expect(getTxnRes.body).toHaveLength(2);
-    expect((getTxnRes.body as any[])[0]).toHaveProperty('ledgerEntry');
+    expect((getTxnRes.body as Record<string, unknown>[])[0]).toHaveProperty(
+      'ledgerEntry',
+    );
 
     // 4. GET /allocations/ledger-entry/:ledgerEntryId
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-    const getLeRes = await request(app.getHttpServer())
+
+    const getLeRes = await request(
+      app.getHttpServer() as unknown as Parameters<typeof request>[0],
+    )
       .get(`/allocations/ledger-entry/${ledgerEntryId1}`)
+      .set('Cookie', [authCookie])
       .expect(200);
 
     expect(getLeRes.body).toHaveLength(1);
-    expect((getLeRes.body as any[])[0]).toHaveProperty('bankTransaction');
+    expect((getLeRes.body as Record<string, unknown>[])[0]).toHaveProperty(
+      'bankTransaction',
+    );
 
     // 5. POST /allocations/:id/revoke -> transaction status reverts
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-    await request(app.getHttpServer())
+
+    await request(
+      app.getHttpServer() as unknown as Parameters<typeof request>[0],
+    )
       .post(`/allocations/${allocId1}/revoke`)
+      .set('Cookie', [authCookie])
       .expect(201); // Assuming 201 for POST action.
 
     const txReverted = await prisma.bankTransaction.findUniqueOrThrow({
@@ -177,9 +210,12 @@ describe('Allocation Split (e2e)', () => {
     expect(revokedAlloc.status).toBe('REVOKED');
 
     // 6. POST /allocations with over-allocation (500 when max remaining is 400)
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-    await request(app.getHttpServer())
+
+    await request(
+      app.getHttpServer() as unknown as Parameters<typeof request>[0],
+    )
       .post('/allocations')
+      .set('Cookie', [authCookie])
       .send({
         allocations: [
           {

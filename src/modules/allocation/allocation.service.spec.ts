@@ -75,9 +75,7 @@ describe('AllocationService', () => {
     });
 
     it('should throw NotFoundException if BankTransaction not found', async () => {
-      mockPrismaService.bankTransaction.findUnique.mockResolvedValue(
-        null as any,
-      );
+      mockPrismaService.bankTransaction.findUnique.mockResolvedValue(null);
 
       await expect(
         service.create({
@@ -93,8 +91,8 @@ describe('AllocationService', () => {
         id: 'txn-1',
         amount: new Decimal(200),
         allocations: [],
-      } as any);
-      mockPrismaService.ledgerEntry.findUnique.mockResolvedValue(null as any);
+      });
+      mockPrismaService.ledgerEntry.findUnique.mockResolvedValue(null);
 
       await expect(
         service.create({
@@ -110,7 +108,7 @@ describe('AllocationService', () => {
         id: 'txn-1',
         amount: new Decimal(150),
         allocations: [{ amountPortion: new Decimal(100), status: 'ACTIVE' }],
-      } as any);
+      });
 
       await expect(
         service.create({
@@ -126,15 +124,15 @@ describe('AllocationService', () => {
         id: 'txn-1',
         amount: new Decimal(200),
         allocations: [],
-      } as any);
+      });
       mockPrismaService.ledgerEntry.findUnique.mockResolvedValue({
         id: 'entry-1',
-      } as any);
+      });
       mockPrismaService.allocation.create.mockResolvedValue({
         id: 'alloc-1',
         amountPortion: new Decimal(100),
         status: 'ACTIVE',
-      } as any);
+      });
 
       const result = await service.create({
         bankTransactionId: 'txn-1',
@@ -158,21 +156,21 @@ describe('AllocationService', () => {
         id: 'txn-1',
         amount: new Decimal(200),
         allocations: [],
-      } as any);
+      });
       mockPrismaService.ledgerEntry.findUnique.mockResolvedValue({
         id: 'entry-1',
-      } as any);
+      });
       mockPrismaService.allocation.create
         .mockResolvedValueOnce({
           id: 'alloc-1',
           amountPortion: new Decimal(100),
           status: 'ACTIVE',
-        } as any)
+        })
         .mockResolvedValueOnce({
           id: 'alloc-2',
           amountPortion: new Decimal(50),
           status: 'ACTIVE',
-        } as any);
+        });
 
       const result = await service.create({
         allocations: [
@@ -196,7 +194,7 @@ describe('AllocationService', () => {
 
   describe('revoke', () => {
     it('should throw NotFoundException if allocation not found', async () => {
-      mockPrismaService.allocation.findUnique.mockResolvedValue(null as any);
+      mockPrismaService.allocation.findUnique.mockResolvedValue(null);
 
       await expect(service.revoke('non-existent')).rejects.toThrow(
         NotFoundException,
@@ -206,11 +204,11 @@ describe('AllocationService', () => {
     it('should revoke allocation successfully', async () => {
       mockPrismaService.allocation.findUnique.mockResolvedValue({
         id: 'alloc-1',
-      } as any);
+      });
       mockPrismaService.allocation.update.mockResolvedValue({
         id: 'alloc-1',
         status: AllocationStatus.REVOKED,
-      } as any);
+      });
 
       const result = await service.revoke('alloc-1');
 
@@ -219,8 +217,7 @@ describe('AllocationService', () => {
         where: { id: 'alloc-1' },
         data: {
           status: AllocationStatus.REVOKED,
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-          revokedAt: expect.any(Date),
+          revokedAt: expect.any(Date) as unknown,
         },
       });
     });

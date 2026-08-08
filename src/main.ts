@@ -2,12 +2,14 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { Logger } from 'nestjs-pino';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 import { PostgresTriggerExceptionFilter } from './common/filters/postgres-trigger-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
 
+  app.use(cookieParser());
   app.useLogger(app.get(Logger));
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
   app.useGlobalFilters(new PostgresTriggerExceptionFilter());

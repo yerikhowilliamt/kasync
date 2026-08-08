@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
+import cookieParser from 'cookie-parser';
 import { AppModule } from './../src/app.module';
 import { PrismaClient } from '@prisma/client';
 import { PostgresTriggerExceptionFilter } from '../src/common/filters/postgres-trigger-exception.filter';
@@ -29,6 +30,7 @@ describe('Reconciliation User Journey (e2e)', () => {
   let accountId: string;
   let categoryId: string;
   let branchId: string;
+  let authCookie: string;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -36,6 +38,7 @@ describe('Reconciliation User Journey (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
+    app.use(cookieParser());
     app.useGlobalPipes(new ValidationPipe({ transform: true }));
     app.useGlobalFilters(new PostgresTriggerExceptionFilter());
     await app.init();
@@ -58,6 +61,19 @@ describe('Reconciliation User Journey (e2e)', () => {
       data: { name: `E2E Branch ${Date.now()}` },
     });
     branchId = branch.id;
+
+    // Register user for test authentication
+    const regRes = await request(
+      app.getHttpServer() as unknown as Parameters<typeof request>[0],
+    )
+      .post('/auth/register')
+      .send({
+        email: `recon-user-${Date.now()}@example.com`,
+        password: 'password123',
+        name: 'Recon User',
+      });
+    const cookies = regRes.headers['set-cookie'] as unknown as string[];
+    authCookie = cookies.find((c) => c.startsWith('access_token='))!;
   });
 
   afterAll(async () => {
@@ -86,9 +102,13 @@ describe('Reconciliation User Journey (e2e)', () => {
   it('Complete user journey: Import statement -> Propose match -> Confirm/allocate -> Split -> Dashboard verification', async () => {
     // Step 1: Import bank statement CSV (bca-valid.csv has 2 records)
     const csvPath = path.resolve(__dirname, 'fixtures/bca-valid.csv');
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-    const importRes = await request(app.getHttpServer())
+
+    const server = app.getHttpServer() as unknown as Parameters<
+      typeof request
+    >[0];
+    const importRes = await request(server)
       .post('/import/csv')
+      .set('Cookie', [authCookie])
       .field('accountId', accountId)
       .field('bankFormat', 'BCA')
       .attach('file', csvPath);
@@ -141,9 +161,12 @@ describe('Reconciliation User Journey (e2e)', () => {
     });
 
     // Step 3: Check initial dashboard state
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-    let dashRes = await request(app.getHttpServer())
+
+    let dashRes = await request(
+      app.getHttpServer() as unknown as Parameters<typeof request>[0],
+    )
       .get(`/reconciliation/dashboard?accountId=${accountId}`)
+      .set('Cookie', [authCookie])
       .expect(200);
 
     let dashBody = dashRes.body as DashboardResponse;
@@ -151,9 +174,12 @@ describe('Reconciliation User Journey (e2e)', () => {
     expect(dashBody.counts.MATCHED).toBe(0);
 
     // Step 4: Run matching engine propose
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-    const proposeRes = await request(app.getHttpServer())
+
+    const proposeRes = await request(
+      app.getHttpServer() as unknown as Parameters<typeof request>[0],
+    )
       .post('/matching/propose')
+      .set('Cookie', [authCookie])
       .send({ accountId })
       .expect(200);
 
@@ -166,9 +192,12 @@ describe('Reconciliation User Journey (e2e)', () => {
     expect(tx150Check.status).toBe('PENDING_REVIEW');
 
     // Step 5: Confirm match for tx150 (allocate full amount 1000)
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-    await request(app.getHttpServer())
+
+    await request(
+      app.getHttpServer() as unknown as Parameters<typeof request>[0],
+    )
       .post('/allocations')
+      .set('Cookie', [authCookie])
       .send({
         bankTransactionId: tx150.id,
         ledgerEntryId: le1.id,
@@ -182,9 +211,12 @@ describe('Reconciliation User Journey (e2e)', () => {
     expect(tx150AfterAlloc.status).toBe('MATCHED');
 
     // Step 6: Split allocation for tx50 (500.50 split into 300 + 200.50)
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-    await request(app.getHttpServer())
+
+    await request(
+      app.getHttpServer() as unknown as Parameters<typeof request>[0],
+    )
       .post('/allocations')
+      .set('Cookie', [authCookie])
       .send({
         allocations: [
           {
@@ -207,9 +239,12 @@ describe('Reconciliation User Journey (e2e)', () => {
     expect(tx50AfterAlloc.status).toBe('MATCHED');
 
     // Step 7: Verify final dashboard metrics
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-    dashRes = await request(app.getHttpServer())
+
+    dashRes = await request(
+      app.getHttpServer() as unknown as Parameters<typeof request>[0],
+    )
       .get(`/reconciliation/dashboard?accountId=${accountId}`)
+      .set('Cookie', [authCookie])
       .expect(200);
 
     dashBody = dashRes.body as DashboardResponse;

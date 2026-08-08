@@ -34,6 +34,18 @@ enum AllocationStatus {
   REVOKED
 }
 
+model User {
+  id               String   @id @default(uuid())
+  email            String   @unique
+  name             String
+  passwordHash     String   @map("password_hash")
+  refreshTokenHash String?  @map("refresh_token_hash")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
 model Account {
   id          String   @id @default(uuid())
   name        String

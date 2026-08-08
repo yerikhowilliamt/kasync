@@ -30,6 +30,7 @@ This document translates the PRD's product requirements into concrete technical 
 
 | Module | Responsibility |
 |---|---|
+| **Auth** | Manages user registration, login, token refresh, and logout. Generates JWT Access Tokens (1d) and Refresh Tokens (30d). Validates Refresh Tokens against hashed entries in PostgreSQL. |
 | **Import** | Parses uploaded CSV bank statements into normalized `bank_transaction` records via a unified `BankParser` interface (Strategy pattern per bank format). |
 | **Matching engine** | Runs exact, fuzzy (date-tolerant, $\pm 3$ days max), and aggregation matching (bounded to $N \le 4$ subset size, max 20 candidates, identical INFLOW/OUTFLOW type) between `bank_transaction` and `ledger_entry`. Pure business logic, no HTTP/DB dependency in its core so it can be unit tested in isolation. |
 | **Allocation** | Manages the `allocation` junction records — creating splits inside a single database transaction (`prisma.$transaction`), validating that allocated portions sum to the transaction amount, tracking unresolved balances. |

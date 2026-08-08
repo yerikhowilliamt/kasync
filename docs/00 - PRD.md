@@ -101,6 +101,12 @@ This single data model is designed to resolve all three root causes identified i
 - Every match/allocation is manually confirmed by the user before being marked final (no fully automatic reconciliation in v1 — trust is built incrementally).
 - Immutable allocation records: allocations are append/revoke-only once created to maintain strict financial auditability. Audit trail tracks creation timestamp (`createdAt`).
 
+### 5.6 Authentication & Access Control
+- User registration (`POST /auth/register`) and authentication (`POST /auth/login`).
+- Dual JWT token mechanism: Access Token (`1d` lifetime) stored in HttpOnly cookie and Refresh Token (`30d` lifetime) stored in HttpOnly cookie and hashed in PostgreSQL (`users.refresh_token_hash`).
+- Refresh flow (`POST /auth/refresh`): Exchanges valid refresh cookie against DB hash to issue a new Access Token.
+- Revocation / Logout (`POST /auth/logout`): Clears `refreshTokenHash` in DB and deletes authentication cookies.
+
 ---
 
 ## 6. Key User Flow
