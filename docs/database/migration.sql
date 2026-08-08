@@ -45,7 +45,7 @@ EXECUTE FUNCTION check_allocation_sum();
 CREATE OR REPLACE FUNCTION sync_transaction_status()
 RETURNS TRIGGER AS $$
 DECLARE
-  target_txn_id UUID;
+  target_txn_id TEXT;
   total_allocated DECIMAL(18,2);
   txn_amount DECIMAL(18,2);
 BEGIN
@@ -62,7 +62,7 @@ BEGIN
     WHEN total_allocated = 0 THEN 'UNRESOLVED'
     WHEN total_allocated < txn_amount THEN 'PARTIALLY_ALLOCATED'
     ELSE 'MATCHED'
-  END::"TransactionStatus"
+  END::text::"TransactionStatus"
   WHERE id = target_txn_id;
 
   RETURN NULL;
