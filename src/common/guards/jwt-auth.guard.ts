@@ -49,10 +49,14 @@ export class JwtAuthGuard implements CanActivate {
     }
 
     if (!token) {
-      if (!process.env.JWT_SECRET && process.env.NODE_ENV === 'test') {
-        return true;
-      }
       throw new UnauthorizedException('Authentication token missing');
+    }
+
+    const secret = process.env.JWT_SECRET || 'fallback-access-secret-key';
+    if (!process.env.JWT_SECRET && process.env.NODE_ENV === 'production') {
+      throw new Error(
+        'Environment variable JWT_SECRET is required in production',
+      );
     }
 
     try {
@@ -60,7 +64,7 @@ export class JwtAuthGuard implements CanActivate {
         sub: string;
         email: string;
       }>(token, {
-        secret: process.env.JWT_SECRET || 'fallback-access-secret-key',
+        secret,
       });
       request.user = payload;
     } catch {

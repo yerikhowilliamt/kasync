@@ -32,6 +32,14 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
+  private getSecret(key: string, defaultSecret: string): string {
+    const val = process.env[key];
+    if (!val && process.env.NODE_ENV === 'production') {
+      throw new Error(`Environment variable ${key} is required in production`);
+    }
+    return val || defaultSecret;
+  }
+
   async register(
     dto: RegisterDto,
   ): Promise<{ user: UserResponse; tokens: AuthTokens }> {
@@ -68,15 +76,17 @@ export class AuthService {
       where: { email: dto.email },
     });
 
-    if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
+    // Constant-time mitigation against user enumeration timing attacks
+    const passwordHashToCompare = user
+      ? user.passwordHash
+      : '$2b$10$abcdefghijklmnopqrstuuABCDEFGHIJKLMNOPQRSTU1234567890';
 
     const isPasswordValid = await bcrypt.compare(
       dto.password,
-      user.passwordHash,
+      passwordHashToCompare,
     );
-    if (!isPasswordValid) {
+
+    if (!user || !isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
@@ -93,11 +103,13 @@ export class AuthService {
     if (!refreshToken) {
       throw new UnauthorizedException('Refresh token missing');
     }
-
     let payload: JwtPayload;
     try {
       payload = await this.jwtService.verifyAsync<JwtPayload>(refreshToken, {
-        secret: process.env.JWT_REFRESH_SECRET || 'fallback-refresh-secret-key',
+        secret: this.getSecret(
+          'JWT_REFRESH_SECRET',
+          'fallback-refresh-secret-key',
+        ),
       });
     } catch {
       throw new UnauthorizedException('Invalid or expired refresh token');
@@ -139,10 +151,14 @@ export class AuthService {
   ): Promise<AuthTokens> {
     const payload = { sub: userId, email };
 
-    const accessTokenSecret =
-      process.env.JWT_SECRET || 'fallback-access-secret-key';
-    const refreshTokenSecret =
-      process.env.JWT_REFRESH_SECRET || 'fallback-refresh-secret-key';
+    const accessTokenSecret = this.getSecret(
+      'JWT_SECRET',
+      'fallback-access-secret-key',
+    );
+    const refreshTokenSecret = this.getSecret(
+      'JWT_REFRESH_SECRET',
+      'fallback-refresh-secret-key',
+    );
 
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(payload, {
