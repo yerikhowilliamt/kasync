@@ -6,6 +6,8 @@ import { MatchingModule } from './modules/matching/matching.module';
 import { AllocationModule } from './modules/allocation/allocation.module';
 import { AccountsModule } from './modules/accounts/accounts.module';
 import { ReconciliationModule } from './modules/reconciliation/reconciliation.module';
+import { CategoriesModule } from './modules/categories/categories.module';
+import { BranchesModule } from './modules/branches/branches.module';
 
 @Module({
   imports: [
@@ -23,6 +25,8 @@ import { ReconciliationModule } from './modules/reconciliation/reconciliation.mo
     AllocationModule,
     AccountsModule,
     ReconciliationModule,
+    CategoriesModule,
+    BranchesModule,
   ],
 })
 export class AppModule {}
