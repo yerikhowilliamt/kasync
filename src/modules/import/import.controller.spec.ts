@@ -16,8 +16,8 @@ describe('ImportController', () => {
         {
           provide: PrismaService,
           useValue: {},
-        }
-      ]
+        },
+      ],
     }).compile();
 
     controller = module.get<ImportController>(ImportController);
