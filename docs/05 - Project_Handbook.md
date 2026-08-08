@@ -93,7 +93,7 @@ npm run start:dev
 |---|---|
 | `npm run start:dev` | Start NestJS app in watch mode |
 | `npm run test` | Run unit tests (Matching engine, parsers) |
-| `npm run test:e2e` | Run integration/E2E test suite |
+| `npm run test:e2e` | Run integration/E2E test suite (including complete lifecycle flow) |
 | `npx prisma studio` | Open Prisma visual database manager |
 | `npm run lint` | Run ESLint check |
 | `npx tsc --noEmit` | Execute TypeScript strict type check |
