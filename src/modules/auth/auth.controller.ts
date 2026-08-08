@@ -13,6 +13,7 @@ import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { Public } from '../../common/decorators/public.decorator';
+import { ReqUser } from '../../common/decorators/req-user.decorator';
 
 const COOKIE_OPTIONS = {
   httpOnly: true,
@@ -74,11 +75,11 @@ export class AuthController {
   @ApiOperation({ summary: 'Logout user' })
   @ApiResponse({ status: 200, description: 'User logged out successfully' })
   async logout(
-    @Req() req: Request & { user?: { sub: string } },
+    @ReqUser('sub') userId: string | null,
     @Res({ passthrough: true }) res: Response,
   ) {
-    if (req.user?.sub) {
-      await this.authService.logout(req.user.sub);
+    if (userId) {
+      await this.authService.logout(userId);
     }
     res.clearCookie('access_token', COOKIE_OPTIONS);
     res.clearCookie('refresh_token', COOKIE_OPTIONS);

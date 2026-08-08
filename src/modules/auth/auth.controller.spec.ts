@@ -85,11 +85,8 @@ describe('AuthController', () => {
   });
 
   it('should logout user and clear cookies', async () => {
-    const req = { user: { sub: 'user-1' } } as unknown as Request & {
-      user?: { sub: string };
-    };
     const res = { clearCookie: jest.fn() } as unknown as Response;
-    const result = await controller.logout(req, res);
+    const result = await controller.logout('user-1', res);
 
     expect(result).toEqual({ message: 'Logged out successfully' });
     expect(authService.logout).toHaveBeenCalledWith('user-1');

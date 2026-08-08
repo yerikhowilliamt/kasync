@@ -198,3 +198,24 @@ Implement JWT Dual-Token Authentication (`@nestjs/jwt`, `bcrypt`):
 **Alternatives considered:**
 - *LocalStorage JWT only* — rejected due to XSS vulnerability.
 - *Server-side Sessions* — rejected to maintain stateless API capabilities for external clients.
+
+---
+
+## ADR-010: Centralized Storage Provider Interface & Cloudinary Implementation
+
+**Status:** Accepted
+**Date:** August 2026
+
+**Context:**
+The application requires file and media uploading capabilities across multiple domains (profile photos, statement attachments). Injecting concrete third-party services like `CloudinaryService` directly into domain services violates the Dependency Inversion Principle (DIP) and creates tight coupling to a single cloud vendor.
+
+**Decision:**
+1. Introduce an abstract storage interface `StorageProvider` in `src/common/storage/storage-provider.interface.ts` defining `uploadFile()` and `uploadImage()`.
+2. Register `STORAGE_PROVIDER` injection token in `CloudinaryModule` pointing to `CloudinaryService`.
+3. Inject `@Inject(STORAGE_PROVIDER)` into domain services (`UsersService`).
+4. Validate incoming HTTP files on NestJS controller pipes using a custom `ImageMimeTypeValidator`.
+5. Extract authenticated user details using custom NestJS param decorator `@ReqUser()`.
+
+**Consequences:**
+- Positive: Domain layer completely decoupled from Cloudinary SDK (DIP compliant), multi-cloud storage (S3/GCS) can be swapped seamlessly, clean NestJS controller layer without `req.user!.sub` non-null assertions.
+- Negative: Extra interface and injection token abstraction.
