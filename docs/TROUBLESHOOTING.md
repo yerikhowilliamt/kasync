@@ -43,6 +43,18 @@ This document records errors encountered during development, their root causes, 
 - **Resolution:** Defined explicit `MockPrismaService` type interface for Jest mock objects instead of using untyped `any`.
 - **Prevention / Note:** Always define typed mock interfaces for complex services like `PrismaService` in `.spec.ts` files.
 
+### [2026-08-08] ESLint Unused Variables & Unsafe Any Access in CI Pipeline
+- **Module / Area:** `reconciliation`, `import`, `ci`
+- **Error Message / Symptom:**
+  ```text
+  error  'FileTypeValidator' is defined but never used             @typescript-eslint/no-unused-vars
+  error  'service' is assigned a value but never used              @typescript-eslint/no-unsafe-vars
+  error  Unsafe member access .importedCount on an `any` value     @typescript-eslint/no-unsafe-member-access
+  ```
+- **Root Cause:** Unused imports/variable declarations in controller and spec files, along with untyped Supertest response body assignments (`importRes.body.importedCount` and `dashRes.body.counts`) triggering strict ESLint rules in CI pipeline.
+- **Resolution:** Removed unused variables and imports, and introduced explicit TypeScript interfaces (`ImportResponse` & `DashboardResponse`) for casting Supertest response bodies in `reconciliation.e2e-spec.ts`.
+- **Prevention / Note:** Always run `npm run lint` locally before opening pull requests to ensure strict TypeScript-ESLint compliance.
+
 ### [2026-08-08] Generic Exception / Missing Entity DB Foreign Key Failure
 - **Module / Area:** `allocation`, `allocation.service.ts`
 - **Error Message / Symptom:**
