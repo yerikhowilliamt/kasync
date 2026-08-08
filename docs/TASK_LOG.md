@@ -1,3 +1,39 @@
+## Task: Architectural Improvements - Decorator, Storage Abstraksi, & Custom Validator (Sun Aug 09 2026)
+
+- **Completed**: Yes
+- **Modules**: `CommonDecorators`, `CommonStorage`, `CommonValidators`, `UsersModule`, `AuthModule`
+- **Description**: Implemented 3 key architectural enhancements:
+  1. **Custom `@ReqUser()` Decorator**: Created `ReqUser` param decorator in `src/common/decorators/req-user.decorator.ts` to safely extract authenticated user context without `req.user!.sub` non-null assertion operators across controllers (`UsersController`, `AuthController`).
+  2. **`StorageProvider` Abstraction**: Defined abstract interface `StorageProvider` and `STORAGE_PROVIDER` injection token in `src/common/storage/storage-provider.interface.ts`. `CloudinaryService` implements `StorageProvider`, and `UsersService` receives it via `@Inject(STORAGE_PROVIDER)`, adhering strictly to Dependency Inversion Principle (DIP).
+  3. **Custom `ImageMimeTypeValidator`**: Created dedicated NestJS file validator pipe in `src/common/validators/image-mimetype.validator.ts` verifying both mime-types and file extensions for uploaded image files.
+- **Git Branch**: `feat/users-module`
+
+## Task: Centralized Cloudinary Media Service Standard (Sun Aug 09 2026)
+
+- **Completed**: Yes
+- **Modules**: `CloudinaryModule`, `UsersModule`, System-wide Upload Standard
+- **Description**: Standardized all file/media upload services across the application on `CloudinaryService`. Enhanced `CloudinaryService` with `uploadFile()` (generic buffer stream with configurable `folder` and `resourceType`) and `uploadImage()`. Updated ADR-010 and System Design to enforce Cloudinary as the sole application-wide file/media storage provider. Passed full test suites.
+- **Git Branch**: `feat/users-module`
+
+## Task: Enable CORS & Environmental Origin Setup (Sun Aug 09 2026)
+
+- **Completed**: Yes
+- **Modules**: `main.ts`, System-wide Configuration
+- **Description**: Enabled CORS in NestJS app via `app.enableCors()` in `src/main.ts` with `credentials: true`, allowing cross-origin requests from frontend origins configured via `CORS_ORIGIN` env variable (defaults to `http://localhost:3000`, `http://localhost:5173`, `http://localhost:3001`). Updated `.env`, `.env.example`, and `Project_Handbook.md`.
+- **Git Branch**: `feat/users-module`
+
+## Task: User Profile Management & Cloudinary Integration (Sun Aug 09 2026)
+
+- **Completed**: Yes
+- **Modules**: `UsersModule`, `CloudinaryModule`, `AppModule`, Database & Docs
+- **Description**: Implemented user profile management features:
+  1. **Password Update**: `PATCH /users/me/password` verifying current password via bcrypt and hashing new password.
+  2. **Profile Photo Upload**: `POST /users/me/photo` streaming uploaded images directly to Cloudinary via `CloudinaryService` and updating `User.photoUrl`.
+  3. **Account Deletion**: `DELETE /users/me` deleting user account record from database and clearing authentication cookies (`access_token`, `refresh_token`).
+  4. **Database & Schema**: Added `photoUrl String? @map("photo_url")` to `schema.prisma` and applied Prisma migration `20260808174218_add_user_photo_url`.
+  5. **Docs & Tests**: Added ADR-010, updated PRD, System Design, ERD, Engineering Playbook, Project Handbook. Created unit tests (`users.service.spec.ts`, `users.controller.spec.ts`) and E2E test suite (`test/users.e2e-spec.ts`).
+- **Git Branch**: `feat/users-module`
+
 ## Task: Phase 7 Authentication, Token Refresh, Strict Type Cleanup & Environment Setup (Sun Aug 09 2026)
 
 - **Completed**: Yes

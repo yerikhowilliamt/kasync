@@ -49,11 +49,15 @@ Ensure `.env` contains:
 ```env
 PORT=3000
 NODE_ENV=development
+CORS_ORIGIN="http://localhost:3000,http://localhost:5173"
 DATABASE_URL="postgresql://postgres:postgrespassword@localhost:5432/kasync_db?schema=public"
 JWT_SECRET="super-secret-access-key"
 JWT_REFRESH_SECRET="super-secret-refresh-key"
 JWT_EXPIRES_IN="1d"
 JWT_REFRESH_EXPIRES_IN="30d"
+CLOUDINARY_CLOUD_NAME="your-cloud-name"
+CLOUDINARY_API_KEY="your-api-key"
+CLOUDINARY_API_SECRET="your-api-secret"
 ```
 
 ### Step 2: Spin Up Infrastructure

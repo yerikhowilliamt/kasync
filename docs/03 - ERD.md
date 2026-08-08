@@ -11,7 +11,7 @@
 
 | Entity | Purpose |
 |---|---|
-| `User` | Authenticated user account with bcrypt-hashed password and hashed refresh token for session revocation. |
+| `User` | Authenticated user account with bcrypt-hashed password, hashed refresh token for session revocation, and `photoUrl` (Cloudinary profile picture). |
 | `Account` | A bank, cash, or e-wallet account belonging to the business. |
 | `BankTransaction` | Atomic, immutable-in-practice record imported from a bank statement (has amount, type `INFLOW`/`OUTFLOW`, date, status, `dedupHash`). |
 | `Category` | Expense/income category (e.g. raw materials, fuel). |

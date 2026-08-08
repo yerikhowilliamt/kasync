@@ -29,12 +29,14 @@ This project adheres to standard European engineering practices (Berlin/Amsterda
 ```
 src/
   modules/
-    import/          # CSV parsing, column-mapping config per bank
+    auth/             # Register, login, JWT issuance, token refresh, logout
+    users/            # Password update, profile photo upload (Cloudinary), account deletion
+    import/           # CSV parsing, column-mapping config per bank
     matching/         # Matching engine — pure logic, framework-independent core
     allocation/       # Allocation CRUD + sum-validation logic
     accounts/         # Account management
     reconciliation/   # Read-side: dashboard queries, status aggregation
-  common/              # Shared types, decorators, pipes
+  common/             # Shared types, decorators, guards, Cloudinary service
 prisma/
   schema.prisma
   migrations/

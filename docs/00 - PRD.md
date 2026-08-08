@@ -107,6 +107,11 @@ This single data model is designed to resolve all three root causes identified i
 - Refresh flow (`POST /auth/refresh`): Exchanges valid refresh cookie against DB hash to issue a new Access Token.
 - Revocation / Logout (`POST /auth/logout`): Clears `refreshTokenHash` in DB and deletes authentication cookies.
 
+### 5.7 User Profile Management
+- Update Password (`PATCH /users/me/password`): Verifies `oldPassword` via bcrypt and updates hashed password.
+- Update Profile Photo (`POST /users/me/photo`): Accepts image file via multipart upload, streams to Cloudinary, and updates `users.photo_url`.
+- Account Deletion (`DELETE /users/me`): Deletes user account and clears active auth cookies.
+
 ---
 
 ## 6. Key User Flow

@@ -14,6 +14,7 @@ import { BranchesModule } from './modules/branches/branches.module';
 import { LedgerEntriesModule } from './modules/ledger-entries/ledger-entries.module';
 import { HealthModule } from './modules/health/health.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { UsersModule } from './modules/users/users.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 
 @Module({
@@ -39,6 +40,7 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
     ]),
     PrismaModule,
     AuthModule,
+    UsersModule,
     ImportModule,
     MatchingModule,
     AllocationModule,
