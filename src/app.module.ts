@@ -12,7 +12,8 @@ import { CategoriesModule } from './modules/categories/categories.module';
 import { BranchesModule } from './modules/branches/branches.module';
 import { LedgerEntriesModule } from './modules/ledger-entries/ledger-entries.module';
 import { HealthModule } from './modules/health/health.module';
-import { ApiKeyGuard } from './common/guards/api-key.guard';
+import { AuthModule } from './modules/auth/auth.module';
+import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { ApiKeyGuard } from './common/guards/api-key.guard';
       },
     ]),
     PrismaModule,
+    AuthModule,
     ImportModule,
     MatchingModule,
     AllocationModule,
@@ -48,7 +50,7 @@ import { ApiKeyGuard } from './common/guards/api-key.guard';
     },
     {
       provide: APP_GUARD,
-      useClass: ApiKeyGuard,
+      useClass: JwtAuthGuard,
     },
   ],
 })

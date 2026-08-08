@@ -22,6 +22,28 @@ This document records errors encountered during development, their root causes, 
 
 ## Log Entries
 
+### [2026-08-09] TypeError: Cannot redefine property: compare in Jest Bcrypt Spies
+- **Module / Area:** `auth`, `auth.service.spec.ts`
+- **Error Message / Symptom:**
+  ```text
+  TypeError: Cannot redefine property: compare
+      at ModuleMocker.spyOn (../node_modules/jest-mock/build/index.js:616:16)
+      at Object.<anonymous> (modules/auth/auth.service.spec.ts:103:10)
+  ```
+- **Root Cause:** Attempting to `jest.spyOn(bcrypt, 'compare')` directly failed because `bcrypt` exports CJS non-configurable object properties.
+- **Resolution:** Mocked the module top-level via `jest.mock('bcrypt')` and cast functions via `(bcrypt.compare as jest.Mock)`.
+- **Prevention / Note:** Use `jest.mock('bcrypt')` when mocking native CJS crypto libraries in Jest unit tests.
+
+### [2026-08-09] 401 Unauthorized in E2E Test Suites After Global JwtAuthGuard Integration
+- **Module / Area:** `auth`, `test/allocation-split.e2e-spec.ts`, `test/reconciliation.e2e-spec.ts`
+- **Error Message / Symptom:**
+  ```text
+  Expected 200/201, Received 401 Unauthorized across E2E test scenarios
+  ```
+- **Root Cause:** Replacing `ApiKeyGuard` with global `JwtAuthGuard` blocked test requests lacking an `access_token` HttpOnly cookie.
+- **Resolution:** Added test user registration step (`POST /auth/register`) in `beforeAll` of E2E suites to capture the `access_token` cookie and attached `.set('Cookie', [authCookie])` to all API requests.
+- **Prevention / Note:** Ensure all E2E API tests include valid user registration/login session cookies when protected by global auth guards.
+
 ### [2026-08-08] Module Path Resolution Failure in E2E Jest Tests
 - **Module / Area:** `allocation`, `test/e2e`
 - **Error Message / Symptom:**
