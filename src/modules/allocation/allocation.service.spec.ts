@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AllocationService } from './allocation.service';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { NotFoundException } from '@nestjs/common';
-import { AllocationExceededError } from './errors/allocation-exceeded.error';
+import { AllocationExceededError } from '../../common/errors/allocation-exceeded.error';
 import { AllocationStatus } from '@prisma/client';
 import Decimal from 'decimal.js';
 

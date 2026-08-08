@@ -52,22 +52,12 @@ describe('AllocationController', () => {
     });
   });
 
-  describe('revokePost', () => {
+  describe('revoke', () => {
     it('should call AllocationService.revoke with correct id', async () => {
       const result = { id: 'alloc-1', status: 'REVOKED' };
       mockAllocationService.revoke.mockResolvedValue(result);
 
-      expect(await controller.revokePost('alloc-1')).toBe(result);
-      expect(service.revoke).toHaveBeenCalledWith('alloc-1');
-    });
-  });
-
-  describe('revokeDelete', () => {
-    it('should call AllocationService.revoke with correct id', async () => {
-      const result = { id: 'alloc-1', status: 'REVOKED' };
-      mockAllocationService.revoke.mockResolvedValue(result);
-
-      expect(await controller.revokeDelete('alloc-1')).toBe(result);
+      expect(await controller.revoke('alloc-1')).toBe(result);
       expect(service.revoke).toHaveBeenCalledWith('alloc-1');
     });
   });
