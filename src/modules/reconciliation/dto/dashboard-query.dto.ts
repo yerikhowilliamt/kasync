@@ -28,12 +28,18 @@ export class DashboardQueryDto {
   @IsOptional()
   endDate?: string;
 
-  @ApiPropertyOptional({ description: 'Filter by Transaction Type', enum: TransactionType })
+  @ApiPropertyOptional({
+    description: 'Filter by Transaction Type',
+    enum: TransactionType,
+  })
   @IsEnum(TransactionType)
   @IsOptional()
   type?: TransactionType;
 
-  @ApiPropertyOptional({ description: 'Filter by Transaction Status', enum: TransactionStatus })
+  @ApiPropertyOptional({
+    description: 'Filter by Transaction Status',
+    enum: TransactionStatus,
+  })
   @IsEnum(TransactionStatus)
   @IsOptional()
   status?: TransactionStatus;

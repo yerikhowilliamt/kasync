@@ -5,7 +5,6 @@ import { TransactionStatus } from '@prisma/client';
 
 describe('ReconciliationController', () => {
   let controller: ReconciliationController;
-  let service: ReconciliationService;
 
   const mockReconciliationService = {
     getDashboardSummary: jest.fn(),
@@ -23,7 +22,6 @@ describe('ReconciliationController', () => {
     }).compile();
 
     controller = module.get<ReconciliationController>(ReconciliationController);
-    service = module.get<ReconciliationService>(ReconciliationService);
   });
 
   it('should be defined', () => {
@@ -44,13 +42,17 @@ describe('ReconciliationController', () => {
         variance: '0.00',
       };
 
-      mockReconciliationService.getDashboardSummary.mockResolvedValue(summaryMock);
+      mockReconciliationService.getDashboardSummary.mockResolvedValue(
+        summaryMock,
+      );
 
       const query = { accountId: 'acc-1' };
       const result = await controller.getDashboardSummary(query);
 
       expect(result).toEqual(summaryMock);
-      expect(mockReconciliationService.getDashboardSummary).toHaveBeenCalledWith(query);
+      expect(
+        mockReconciliationService.getDashboardSummary,
+      ).toHaveBeenCalledWith(query);
     });
   });
 });

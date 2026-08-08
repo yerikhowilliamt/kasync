@@ -6,7 +6,6 @@ import Decimal from 'decimal.js';
 
 describe('ReconciliationService', () => {
   let service: ReconciliationService;
-  let prismaService: PrismaService;
 
   const mockPrismaService = {
     bankTransaction: {
@@ -30,7 +29,6 @@ describe('ReconciliationService', () => {
     }).compile();
 
     service = module.get<ReconciliationService>(ReconciliationService);
-    prismaService = module.get<PrismaService>(PrismaService);
 
     jest.clearAllMocks();
   });
@@ -73,8 +71,12 @@ describe('ReconciliationService', () => {
 
     it('should pass filters to Prisma queries correctly', async () => {
       mockPrismaService.bankTransaction.groupBy.mockResolvedValue([]);
-      mockPrismaService.bankTransaction.aggregate.mockResolvedValue({ _sum: { amount: null } });
-      mockPrismaService.ledgerEntry.aggregate.mockResolvedValue({ _sum: { amount: null } });
+      mockPrismaService.bankTransaction.aggregate.mockResolvedValue({
+        _sum: { amount: null },
+      });
+      mockPrismaService.ledgerEntry.aggregate.mockResolvedValue({
+        _sum: { amount: null },
+      });
 
       const query = {
         accountId: 'acc-1',
@@ -88,39 +90,49 @@ describe('ReconciliationService', () => {
 
       await service.getDashboardSummary(query);
 
-      expect(mockPrismaService.bankTransaction.groupBy).toHaveBeenCalledWith({
-        by: ['status'],
-        where: expect.objectContaining({
-          accountId: 'acc-1',
-          type: TransactionType.INFLOW,
-          status: TransactionStatus.MATCHED,
-          txnDate: {
-            gte: new Date(query.startDate),
-            lte: new Date(query.endDate),
-          },
-          allocations: {
-            some: {
-              status: 'ACTIVE',
-              ledgerEntry: {
-                categoryId: 'cat-1',
-                branchId: 'br-1',
-              },
+      const expectedWhere: Record<string, unknown> = {
+        accountId: 'acc-1',
+        type: TransactionType.INFLOW,
+        status: TransactionStatus.MATCHED,
+        txnDate: {
+          gte: new Date(query.startDate),
+          lte: new Date(query.endDate),
+        },
+        allocations: {
+          some: {
+            status: 'ACTIVE',
+            ledgerEntry: {
+              categoryId: 'cat-1',
+              branchId: 'br-1',
             },
           },
-        }),
+        },
+      };
+
+      expect(mockPrismaService.bankTransaction.groupBy).toHaveBeenCalledWith({
+        by: ['status'],
+        where: expect.objectContaining(expectedWhere) as Record<
+          string,
+          unknown
+        >,
         _count: { _all: true },
       });
 
+      const expectedLedgerWhere: Record<string, unknown> = {
+        type: TransactionType.INFLOW,
+        categoryId: 'cat-1',
+        branchId: 'br-1',
+        entryDate: {
+          gte: new Date(query.startDate),
+          lte: new Date(query.endDate),
+        },
+      };
+
       expect(mockPrismaService.ledgerEntry.aggregate).toHaveBeenCalledWith({
-        where: expect.objectContaining({
-          type: TransactionType.INFLOW,
-          categoryId: 'cat-1',
-          branchId: 'br-1',
-          entryDate: {
-            gte: new Date(query.startDate),
-            lte: new Date(query.endDate),
-          },
-        }),
+        where: expect.objectContaining(expectedLedgerWhere) as Record<
+          string,
+          unknown
+        >,
         _sum: {
           amount: true,
         },

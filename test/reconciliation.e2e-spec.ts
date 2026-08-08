@@ -6,6 +6,22 @@ import { PrismaClient } from '@prisma/client';
 import { PostgresTriggerExceptionFilter } from '../src/common/filters/postgres-trigger-exception.filter';
 import * as path from 'path';
 
+interface ImportResponse {
+  importedCount: number;
+}
+
+interface DashboardResponse {
+  counts: {
+    UNRESOLVED: number;
+    PENDING_REVIEW: number;
+    PARTIALLY_ALLOCATED: number;
+    MATCHED: number;
+  };
+  actualBankBalance: string;
+  recordedLedgerBalance: string;
+  variance: string;
+}
+
 describe('Reconciliation User Journey (e2e)', () => {
   let app: INestApplication;
   const prisma = new PrismaClient();
@@ -78,7 +94,8 @@ describe('Reconciliation User Journey (e2e)', () => {
       .attach('file', csvPath);
 
     expect(importRes.status).toBe(200);
-    expect(importRes.body.importedCount).toBe(2);
+    const importBody = importRes.body as ImportResponse;
+    expect(importBody.importedCount).toBe(2);
 
     const importedTxns = await prisma.bankTransaction.findMany({
       where: { accountId },
@@ -129,8 +146,9 @@ describe('Reconciliation User Journey (e2e)', () => {
       .get(`/reconciliation/dashboard?accountId=${accountId}`)
       .expect(200);
 
-    expect(dashRes.body.counts.UNRESOLVED).toBe(2);
-    expect(dashRes.body.counts.MATCHED).toBe(0);
+    let dashBody = dashRes.body as DashboardResponse;
+    expect(dashBody.counts.UNRESOLVED).toBe(2);
+    expect(dashBody.counts.MATCHED).toBe(0);
 
     // Step 4: Run matching engine propose
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
@@ -194,12 +212,13 @@ describe('Reconciliation User Journey (e2e)', () => {
       .get(`/reconciliation/dashboard?accountId=${accountId}`)
       .expect(200);
 
-    expect(dashRes.body.counts.MATCHED).toBe(2);
-    expect(dashRes.body.counts.UNRESOLVED).toBe(0);
-    expect(dashRes.body.counts.PENDING_REVIEW).toBe(0);
-    expect(dashRes.body.counts.PARTIALLY_ALLOCATED).toBe(0);
+    dashBody = dashRes.body as DashboardResponse;
+    expect(dashBody.counts.MATCHED).toBe(2);
+    expect(dashBody.counts.UNRESOLVED).toBe(0);
+    expect(dashBody.counts.PENDING_REVIEW).toBe(0);
+    expect(dashBody.counts.PARTIALLY_ALLOCATED).toBe(0);
 
     // Bank txns in account: +1000.00 (INFLOW) - 500.50 (OUTFLOW) = 499.50
-    expect(dashRes.body.actualBankBalance).toBe('499.50');
+    expect(dashBody.actualBankBalance).toBe('499.50');
   });
 });

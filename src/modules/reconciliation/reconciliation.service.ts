@@ -96,8 +96,12 @@ export class ReconciliationService {
       }),
     ]);
 
-    const bankInflowDec = new Decimal(bankInflowSum._sum.amount?.toString() ?? '0');
-    const bankOutflowDec = new Decimal(bankOutflowSum._sum.amount?.toString() ?? '0');
+    const bankInflowDec = new Decimal(
+      bankInflowSum._sum.amount?.toString() ?? '0',
+    );
+    const bankOutflowDec = new Decimal(
+      bankOutflowSum._sum.amount?.toString() ?? '0',
+    );
     const actualBankBalanceDec = bankInflowDec.minus(bankOutflowDec);
 
     const [ledgerInflowSum, ledgerOutflowSum] = await Promise.all([
@@ -111,8 +115,12 @@ export class ReconciliationService {
       }),
     ]);
 
-    const ledgerInflowDec = new Decimal(ledgerInflowSum._sum.amount?.toString() ?? '0');
-    const ledgerOutflowDec = new Decimal(ledgerOutflowSum._sum.amount?.toString() ?? '0');
+    const ledgerInflowDec = new Decimal(
+      ledgerInflowSum._sum.amount?.toString() ?? '0',
+    );
+    const ledgerOutflowDec = new Decimal(
+      ledgerOutflowSum._sum.amount?.toString() ?? '0',
+    );
     const recordedLedgerBalanceDec = ledgerInflowDec.minus(ledgerOutflowDec);
 
     const varianceDec = actualBankBalanceDec.minus(recordedLedgerBalanceDec);
