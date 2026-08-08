@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import {
   CreateAllocationDto,
@@ -31,7 +35,7 @@ export class AllocationService {
     }
 
     if (items.length === 0) {
-      throw new Error('No allocations provided');
+      throw new BadRequestException('No allocations provided');
     }
 
     const groupedItems = items.reduce(
@@ -85,6 +89,16 @@ export class AllocationService {
         }
 
         for (const item of txnItems) {
+          const ledgerEntry = await tx.ledgerEntry.findUnique({
+            where: { id: item.ledgerEntryId },
+          });
+
+          if (!ledgerEntry) {
+            throw new NotFoundException(
+              `LedgerEntry with id ${item.ledgerEntryId} not found`,
+            );
+          }
+
           const allocation = await tx.allocation.create({
             data: {
               bankTransactionId: item.bankTransactionId,
