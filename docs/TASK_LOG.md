@@ -1,3 +1,10 @@
+## Task: Phase 4 Allocation (Sat Aug 08 2026)
+
+- **Completed**: Yes
+- **Modules**: `AllocationModule`
+- **Description**: Implemented explicit row-locking concurrency controls and trigger-enforced `sync_transaction_status` for transaction statuses. Designed e2e test suite simulating race conditions for concurrency verification and split-allocation scenarios verifying partial-allocation logic, status transitions, revocation, and over-allocation prevention. Updated `PostgresTriggerExceptionFilter` to map trigger errors effectively. 
+- **Git Branch**: `feat/allocation-e2e-tests`
+
 ## Task: Phase 3 Matching Engine (Sat Aug 08 2026)
 
 - **Completed**: Yes
