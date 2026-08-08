@@ -6,11 +6,13 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
 } from '@nestjs/common';
 import { LedgerEntriesService } from './ledger-entries.service';
 import { CreateLedgerEntryDto } from './dto/create-ledger-entry.dto';
 import { UpdateLedgerEntryDto } from './dto/update-ledger-entry.dto';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 
 @ApiTags('ledger-entries')
 @Controller('ledger-entries')
@@ -25,9 +27,9 @@ export class LedgerEntriesController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all ledger entries' })
-  findAll() {
-    return this.ledgerEntriesService.findAll();
+  @ApiOperation({ summary: 'Get all ledger entries (paginated)' })
+  findAll(@Query() paginationQuery?: PaginationQueryDto) {
+    return this.ledgerEntriesService.findAll(paginationQuery);
   }
 
   @Get(':id')

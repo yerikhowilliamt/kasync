@@ -3,6 +3,10 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 import { CreateLedgerEntryDto } from './dto/create-ledger-entry.dto';
 import { UpdateLedgerEntryDto } from './dto/update-ledger-entry.dto';
 import { Prisma } from '@prisma/client';
+import {
+  PaginationQueryDto,
+  PaginatedResult,
+} from '../../common/dto/pagination-query.dto';
 
 @Injectable()
 export class LedgerEntriesService {
@@ -35,16 +39,41 @@ export class LedgerEntriesService {
     }
   }
 
-  async findAll() {
-    return this.prisma.ledgerEntry.findMany({
-      include: {
-        category: true,
-        branch: true,
+  async findAll(paginationQuery?: PaginationQueryDto): Promise<
+    PaginatedResult<
+      Prisma.LedgerEntryGetPayload<{
+        include: { category: true; branch: true };
+      }>
+    >
+  > {
+    const page = Math.max(1, paginationQuery?.page ?? 1);
+    const limit = Math.min(100, Math.max(1, paginationQuery?.limit ?? 50));
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await Promise.all([
+      this.prisma.ledgerEntry.findMany({
+        skip,
+        take: limit,
+        include: {
+          category: true,
+          branch: true,
+        },
+        orderBy: {
+          entryDate: 'desc',
+        },
+      }),
+      this.prisma.ledgerEntry.count(),
+    ]);
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
       },
-      orderBy: {
-        entryDate: 'desc',
-      },
-    });
+    };
   }
 
   async findOne(id: string) {
