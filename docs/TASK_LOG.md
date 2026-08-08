@@ -1,9 +1,9 @@
-## Task: Phase 4 Allocation (Sat Aug 08 2026)
+## Task: Phase 4 Allocation & Split (Sat Aug 08 2026)
 
 - **Completed**: Yes
 - **Modules**: `AllocationModule`
-- **Description**: Implemented explicit row-locking concurrency controls and trigger-enforced `sync_transaction_status` for transaction statuses. Designed e2e test suite simulating race conditions for concurrency verification and split-allocation scenarios verifying partial-allocation logic, status transitions, revocation, and over-allocation prevention. Updated `PostgresTriggerExceptionFilter` to map trigger errors effectively. 
-- **Git Branch**: `feat/allocation-e2e-tests`
+- **Description**: Implemented `AllocationService`, `AllocationController`, DTOs (`CreateAllocationDto`, `CreateSingleAllocationDto`), domain errors (`AllocationExceededError`), and Prisma transaction-based split allocation engine. Added application-level validation using `Decimal`, pre-insert `LedgerEntry` existence checks (`NotFoundException`), and `BadRequestException` for empty payloads. Enforced append-only immutability with soft-revoke (`POST /allocations/:id/revoke`, `DELETE /allocations/:id`). Wrote integration tests verifying PostgreSQL `FOR UPDATE` trigger row-locking under race conditions (`Promise.allSettled`), auto-sync of `BankTransaction` status across 4 states, unit tests (15 tests, 100% coverage), and full API E2E split allocation flow test suite.
+- **Git Branch**: `feat/allocation-split`
 
 ## Task: Phase 3 Matching Engine (Sat Aug 08 2026)
 
