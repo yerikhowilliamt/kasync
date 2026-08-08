@@ -1,3 +1,10 @@
+## Task: Phase 6 Polish & Portfolio Readiness (Sat Aug 08 2026)
+
+- **Completed**: Yes
+- **Modules**: System-wide / Build & Docs
+- **Description**: Prepared project for public portfolio readiness. Created synthetic seed dataset script (`prisma/seed.ts`, `npm run seed`) with GDPR-safe accounts, categories, branches, ledger entries, and bank transactions. Rewrote `README.md` with problem statement, allocation model diagram, Swagger link (`/docs`), setup instructions, and database trigger details. Added multi-stage production `Dockerfile` and updated `docker-compose.yml` to support live containerized deployment. Updated CI pipeline (`ci.yml`) to execute SQL trigger migration. Verified documentation consistency across PRD, System Design, ADR, ERD, Engineering Playbook, and Project Handbook. Passed 100% unit and E2E test suites.
+- **Git Branch**: `feat/phase-06-polish-portfolio`
+
 ## Task: Phase 5 Reconciliation Dashboard & E2E Journey (Sat Aug 08 2026)
 
 - **Completed**: Yes
