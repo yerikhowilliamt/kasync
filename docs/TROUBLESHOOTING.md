@@ -22,6 +22,17 @@ This document records errors encountered during development, their root causes, 
 
 ## Log Entries
 
+### [2026-08-09] CI Pipeline Fails After Removing JWT Fallback Secrets + Missing Prisma Migration
+- **Module / Area:** `.github/workflows/ci.yml`, `prisma/migrations`, `auth`, `ci`
+- **Error Message / Symptom:**
+  ```text
+  CI E2E Tests: expected 200 "OK", got 401 "Unauthorized" on POST /api/v1/auth/login
+  Also: prisma migrate deploy fails with missing migration for idempotencyKey column
+  ```
+- **Root Cause:** Two issues compounded: (1) Removing hardcoded JWT fallback secrets (ADR-015) means the auth service throws `UnauthorizedException` if `JWT_SECRET`/`JWT_REFRESH_SECRET` are missing — CI workflow didn't set these env vars. (2) `idempotencyKey` field was added to `schema.prisma` via `prisma db push --accept-data-loss` locally, but no migration SQL file was committed — CI runs `prisma migrate deploy` which only applies existing migration files.
+- **Resolution:** (1) Added `JWT_SECRET: "ci-test-access-secret-key"` and `JWT_REFRESH_SECRET: "ci-test-refresh-secret-key"` to the E2E Tests step env in `.github/workflows/ci.yml`. (2) Created `prisma/migrations/20260809120000_add_idempotency_key/migration.sql` with `ALTER TABLE "allocations" ADD COLUMN "idempotency_key" TEXT` and `CREATE UNIQUE INDEX`.
+- **Prevention / Note:** When removing env variable fallbacks, always update CI workflow env vars. When adding new Prisma schema fields, always create a migration file via `npx prisma migrate dev` or manually — never rely solely on `prisma db push` since CI uses `prisma migrate deploy`.
+
 ### [2026-08-09] E2E Tests 404 After API Versioning Prefix Without setGlobalPrefix in Tests
 - **Module / Area:** `test/*.e2e-spec.ts`, `main.ts`
 - **Error Message / Symptom:**
