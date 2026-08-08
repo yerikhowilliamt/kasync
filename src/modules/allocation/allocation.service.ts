@@ -1,8 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { CreateAllocationDto, CreateSingleAllocationDto } from './dto/create-allocation.dto';
+import {
+  CreateAllocationDto,
+  CreateSingleAllocationDto,
+} from './dto/create-allocation.dto';
 import { AllocationExceededError } from '../../common/errors/allocation-exceeded.error';
-import { Prisma, AllocationStatus } from '@prisma/client';
+import { AllocationStatus } from '@prisma/client';
 import Decimal from 'decimal.js';
 
 @Injectable()
@@ -13,7 +16,11 @@ export class AllocationService {
     let items: CreateSingleAllocationDto[] = [];
     if (dto.allocations && dto.allocations.length > 0) {
       items = dto.allocations;
-    } else if (dto.bankTransactionId && dto.ledgerEntryId && dto.amountPortion) {
+    } else if (
+      dto.bankTransactionId &&
+      dto.ledgerEntryId &&
+      dto.amountPortion
+    ) {
       items = [
         {
           bankTransactionId: dto.bankTransactionId,
@@ -27,13 +34,16 @@ export class AllocationService {
       throw new Error('No allocations provided');
     }
 
-    const groupedItems = items.reduce((acc, item) => {
-      if (!acc[item.bankTransactionId]) {
-        acc[item.bankTransactionId] = [];
-      }
-      acc[item.bankTransactionId].push(item);
-      return acc;
-    }, {} as Record<string, CreateSingleAllocationDto[]>);
+    const groupedItems = items.reduce(
+      (acc, item) => {
+        if (!acc[item.bankTransactionId]) {
+          acc[item.bankTransactionId] = [];
+        }
+        acc[item.bankTransactionId].push(item);
+        return acc;
+      },
+      {} as Record<string, CreateSingleAllocationDto[]>,
+    );
 
     return this.prisma.$transaction(async (tx) => {
       const createdAllocations = [];
@@ -47,17 +57,22 @@ export class AllocationService {
         });
 
         if (!bankTransaction) {
-          throw new NotFoundException(`BankTransaction with id ${txnId} not found`);
+          throw new NotFoundException(
+            `BankTransaction with id ${txnId} not found`,
+          );
         }
 
         const existingSum = bankTransaction.allocations.reduce(
-          (sum, alloc) => alloc.status === AllocationStatus.ACTIVE ? sum.plus(new Decimal(alloc.amountPortion.toString())) : sum,
-          new Decimal(0)
+          (sum, alloc) =>
+            alloc.status === AllocationStatus.ACTIVE
+              ? sum.plus(new Decimal(alloc.amountPortion.toString()))
+              : sum,
+          new Decimal(0),
         );
 
         const newItemsSum = txnItems.reduce(
           (sum, item) => sum.plus(new Decimal(item.amountPortion.toString())),
-          new Decimal(0)
+          new Decimal(0),
         );
 
         const totalSum = existingSum.plus(newItemsSum);
@@ -65,7 +80,7 @@ export class AllocationService {
 
         if (totalSum.gt(txnAmount)) {
           throw new AllocationExceededError(
-            `Total allocation (${totalSum}) exceeds transaction amount (${txnAmount}) for transaction ${txnId}`
+            `Total allocation (${totalSum.toString()}) exceeds transaction amount (${txnAmount.toString()}) for transaction ${txnId}`,
           );
         }
 

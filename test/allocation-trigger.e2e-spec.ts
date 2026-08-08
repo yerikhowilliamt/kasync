@@ -1,9 +1,6 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 
 describe('Allocation Triggers (e2e)', () => {
-  let app: INestApplication;
   const prisma = new PrismaClient();
 
   // Test data variables
@@ -41,7 +38,7 @@ describe('Allocation Triggers (e2e)', () => {
       data: {
         accountId,
         txnDate: new Date(),
-        amount: 1000.00,
+        amount: 1000.0,
         type: 'INFLOW',
         description: 'Trigger Test Txn',
         status: 'UNRESOLVED',
@@ -54,7 +51,7 @@ describe('Allocation Triggers (e2e)', () => {
         categoryId,
         branchId,
         entryDate: new Date(),
-        amount: 600.00,
+        amount: 600.0,
         type: 'INFLOW',
         note: 'Entry 1',
       },
@@ -66,7 +63,7 @@ describe('Allocation Triggers (e2e)', () => {
         categoryId,
         branchId,
         entryDate: new Date(),
-        amount: 600.00,
+        amount: 600.0,
         type: 'INFLOW',
         note: 'Entry 2',
       },
@@ -85,14 +82,14 @@ describe('Allocation Triggers (e2e)', () => {
     await prisma.bankTransaction.deleteMany({
       where: { id: bankTransactionId },
     });
-    
+
     // Attempt cleanup of shared setup
     try {
-        await prisma.account.delete({ where: { id: accountId } });
-        await prisma.category.delete({ where: { id: categoryId } });
-        await prisma.branch.delete({ where: { id: branchId } });
-    } catch (e) {
-        // Ignore errors if other tests are using these
+      await prisma.account.delete({ where: { id: accountId } });
+      await prisma.category.delete({ where: { id: categoryId } });
+      await prisma.branch.delete({ where: { id: branchId } });
+    } catch {
+      // Ignore errors if other tests are using these
     }
     await prisma.$disconnect();
   });
@@ -111,8 +108,8 @@ describe('Allocation Triggers (e2e)', () => {
     ]);
 
     // One should succeed, one should fail
-    const fulfilled = results.filter(r => r.status === 'fulfilled');
-    const rejected = results.filter(r => r.status === 'rejected');
+    const fulfilled = results.filter((r) => r.status === 'fulfilled');
+    const rejected = results.filter((r) => r.status === 'rejected');
 
     expect(fulfilled).toHaveLength(1);
     expect(rejected).toHaveLength(1);
@@ -128,7 +125,9 @@ describe('Allocation Triggers (e2e)', () => {
 
   it('Test 2: sync_transaction_status trigger across all 4 statuses', async () => {
     // Transaction starts at UNRESOLVED
-    let tx = await prisma.bankTransaction.findUniqueOrThrow({ where: { id: bankTransactionId } });
+    let tx = await prisma.bankTransaction.findUniqueOrThrow({
+      where: { id: bankTransactionId },
+    });
     expect(tx.status).toBe('UNRESOLVED');
 
     // Set proposed status PENDING_REVIEW
@@ -136,7 +135,9 @@ describe('Allocation Triggers (e2e)', () => {
       where: { id: bankTransactionId },
       data: { status: 'PENDING_REVIEW' },
     });
-    tx = await prisma.bankTransaction.findUniqueOrThrow({ where: { id: bankTransactionId } });
+    tx = await prisma.bankTransaction.findUniqueOrThrow({
+      where: { id: bankTransactionId },
+    });
     expect(tx.status).toBe('PENDING_REVIEW');
 
     // Insert active allocation of 400.00 -> PARTIALLY_ALLOCATED
@@ -144,12 +145,14 @@ describe('Allocation Triggers (e2e)', () => {
       data: {
         bankTransactionId,
         ledgerEntryId: ledgerEntryId1,
-        amountPortion: 400.00,
+        amountPortion: 400.0,
         status: 'ACTIVE',
       },
     });
 
-    tx = await prisma.bankTransaction.findUniqueOrThrow({ where: { id: bankTransactionId } });
+    tx = await prisma.bankTransaction.findUniqueOrThrow({
+      where: { id: bankTransactionId },
+    });
     expect(tx.status).toBe('PARTIALLY_ALLOCATED');
 
     // Insert active allocation of 600.00 -> MATCHED
@@ -157,12 +160,14 @@ describe('Allocation Triggers (e2e)', () => {
       data: {
         bankTransactionId,
         ledgerEntryId: ledgerEntryId2,
-        amountPortion: 600.00,
+        amountPortion: 600.0,
         status: 'ACTIVE',
       },
     });
 
-    tx = await prisma.bankTransaction.findUniqueOrThrow({ where: { id: bankTransactionId } });
+    tx = await prisma.bankTransaction.findUniqueOrThrow({
+      where: { id: bankTransactionId },
+    });
     expect(tx.status).toBe('MATCHED');
 
     // Soft-revoke one allocation -> PARTIALLY_ALLOCATED
@@ -171,7 +176,9 @@ describe('Allocation Triggers (e2e)', () => {
       data: { status: 'REVOKED', revokedAt: new Date() },
     });
 
-    tx = await prisma.bankTransaction.findUniqueOrThrow({ where: { id: bankTransactionId } });
+    tx = await prisma.bankTransaction.findUniqueOrThrow({
+      where: { id: bankTransactionId },
+    });
     expect(tx.status).toBe('PARTIALLY_ALLOCATED');
 
     // Hard delete remaining allocation -> UNRESOLVED
@@ -179,7 +186,9 @@ describe('Allocation Triggers (e2e)', () => {
       where: { id: alloc2.id },
     });
 
-    tx = await prisma.bankTransaction.findUniqueOrThrow({ where: { id: bankTransactionId } });
+    tx = await prisma.bankTransaction.findUniqueOrThrow({
+      where: { id: bankTransactionId },
+    });
     expect(tx.status).toBe('UNRESOLVED');
   });
 });

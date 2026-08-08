@@ -48,6 +48,7 @@ describe('AllocationController', () => {
       mockAllocationService.create.mockResolvedValue(result);
 
       expect(await controller.create(dto)).toBe(result);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(service.create).toHaveBeenCalledWith(dto);
     });
   });
@@ -58,6 +59,7 @@ describe('AllocationController', () => {
       mockAllocationService.revoke.mockResolvedValue(result);
 
       expect(await controller.revoke('alloc-1')).toBe(result);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(service.revoke).toHaveBeenCalledWith('alloc-1');
     });
   });
@@ -68,6 +70,7 @@ describe('AllocationController', () => {
       mockAllocationService.findByTransaction.mockResolvedValue(result);
 
       expect(await controller.findByTransaction('txn-1')).toBe(result);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(service.findByTransaction).toHaveBeenCalledWith('txn-1');
     });
   });
@@ -78,6 +81,7 @@ describe('AllocationController', () => {
       mockAllocationService.findByLedgerEntry.mockResolvedValue(result);
 
       expect(await controller.findByLedgerEntry('entry-1')).toBe(result);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(service.findByLedgerEntry).toHaveBeenCalledWith('entry-1');
     });
   });

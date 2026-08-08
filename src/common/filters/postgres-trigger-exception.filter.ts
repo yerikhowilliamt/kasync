@@ -11,15 +11,25 @@ import { AllocationExceededError } from '../errors/allocation-exceeded.error';
 
 @Catch(Error, Prisma.PrismaClientKnownRequestError, HttpException)
 export class PostgresTriggerExceptionFilter implements ExceptionFilter {
-  catch(exception: Error | Prisma.PrismaClientKnownRequestError | HttpException, host: ArgumentsHost) {
+  catch(
+    exception: Error | Prisma.PrismaClientKnownRequestError | HttpException,
+    host: ArgumentsHost,
+  ) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
 
     if (exception instanceof HttpException) {
-      return response.status(exception.getStatus()).json(exception.getResponse());
+      return response
+        .status(exception.getStatus())
+        .json(exception.getResponse());
     }
 
-    if (exception instanceof AllocationExceededError || exception.name === 'AllocationExceededError' || (exception instanceof Error && exception.message.includes('AllocationExceededError'))) {
+    if (
+      exception instanceof AllocationExceededError ||
+      exception.name === 'AllocationExceededError' ||
+      (exception instanceof Error &&
+        exception.message.includes('AllocationExceededError'))
+    ) {
       const dbErrorMessage = exception.message;
       return response.status(HttpStatus.BAD_REQUEST).json({
         statusCode: HttpStatus.BAD_REQUEST,
@@ -58,12 +68,15 @@ export class PostgresTriggerExceptionFilter implements ExceptionFilter {
           message: dbErrorMessage,
         });
       }
-    } else if (exception instanceof Error && exception.message.includes('AllocationExceededError')) {
-       return response.status(HttpStatus.BAD_REQUEST).json({
-          statusCode: HttpStatus.BAD_REQUEST,
-          error: 'AllocationExceededError',
-          message: exception.message,
-        });
+    } else if (
+      exception instanceof Error &&
+      exception.message.includes('AllocationExceededError')
+    ) {
+      return response.status(HttpStatus.BAD_REQUEST).json({
+        statusCode: HttpStatus.BAD_REQUEST,
+        error: 'AllocationExceededError',
+        message: exception.message,
+      });
     }
 
     return response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({

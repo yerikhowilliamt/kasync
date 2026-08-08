@@ -53,7 +53,7 @@ describe('Allocation Split (e2e)', () => {
       data: {
         accountId,
         txnDate: new Date(),
-        amount: 1000.00,
+        amount: 1000.0,
         type: 'INFLOW',
         description: 'Split Test Txn',
         status: 'UNRESOLVED',
@@ -66,7 +66,7 @@ describe('Allocation Split (e2e)', () => {
         categoryId,
         branchId,
         entryDate: new Date(),
-        amount: 600.00,
+        amount: 600.0,
         type: 'INFLOW',
         note: 'Split Entry 1',
       },
@@ -78,7 +78,7 @@ describe('Allocation Split (e2e)', () => {
         categoryId,
         branchId,
         entryDate: new Date(),
-        amount: 400.00,
+        amount: 400.0,
         type: 'INFLOW',
         note: 'Split Entry 2',
       },
@@ -97,14 +97,14 @@ describe('Allocation Split (e2e)', () => {
     await prisma.bankTransaction.deleteMany({
       where: { id: bankTransactionId },
     });
-    
+
     // Attempt cleanup of shared setup
     try {
-        await prisma.account.delete({ where: { id: accountId } });
-        await prisma.category.delete({ where: { id: categoryId } });
-        await prisma.branch.delete({ where: { id: branchId } });
-    } catch (e) {
-        // Ignore
+      await prisma.account.delete({ where: { id: accountId } });
+      await prisma.category.delete({ where: { id: categoryId } });
+      await prisma.branch.delete({ where: { id: branchId } });
+    } catch {
+      // Ignore
     }
 
     await prisma.$disconnect();
@@ -113,6 +113,7 @@ describe('Allocation Split (e2e)', () => {
 
   it('Test full API flow: Allocate split, retrieve, revoke, over-allocate', async () => {
     // 1. POST /allocations with split array
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     const createRes = await request(app.getHttpServer())
       .post('/allocations')
       .send({
@@ -132,42 +133,51 @@ describe('Allocation Split (e2e)', () => {
       .expect(201);
 
     expect(createRes.body).toHaveLength(2);
-    const allocId1 = createRes.body[0].id;
-    const allocId2 = createRes.body[1].id;
+    const allocId1 = (createRes.body as { id: string }[])[0].id;
 
     // 2. Verify transaction status updated to MATCHED
-    const tx = await prisma.bankTransaction.findUniqueOrThrow({ where: { id: bankTransactionId } });
+    const tx = await prisma.bankTransaction.findUniqueOrThrow({
+      where: { id: bankTransactionId },
+    });
     expect(tx.status).toBe('MATCHED');
 
     // 3. GET /allocations/transaction/:txnId
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     const getTxnRes = await request(app.getHttpServer())
       .get(`/allocations/transaction/${bankTransactionId}`)
       .expect(200);
 
     expect(getTxnRes.body).toHaveLength(2);
-    expect(getTxnRes.body[0]).toHaveProperty('ledgerEntry');
+    expect((getTxnRes.body as any[])[0]).toHaveProperty('ledgerEntry');
 
     // 4. GET /allocations/ledger-entry/:ledgerEntryId
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     const getLeRes = await request(app.getHttpServer())
       .get(`/allocations/ledger-entry/${ledgerEntryId1}`)
       .expect(200);
 
     expect(getLeRes.body).toHaveLength(1);
-    expect(getLeRes.body[0]).toHaveProperty('bankTransaction');
+    expect((getLeRes.body as any[])[0]).toHaveProperty('bankTransaction');
 
     // 5. POST /allocations/:id/revoke -> transaction status reverts
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     await request(app.getHttpServer())
       .post(`/allocations/${allocId1}/revoke`)
       .expect(201); // Assuming 201 for POST action.
 
-    const txReverted = await prisma.bankTransaction.findUniqueOrThrow({ where: { id: bankTransactionId } });
+    const txReverted = await prisma.bankTransaction.findUniqueOrThrow({
+      where: { id: bankTransactionId },
+    });
     expect(txReverted.status).toBe('PARTIALLY_ALLOCATED');
-    
+
     // Verify allocation status
-    const revokedAlloc = await prisma.allocation.findUniqueOrThrow({ where: { id: allocId1 } });
+    const revokedAlloc = await prisma.allocation.findUniqueOrThrow({
+      where: { id: allocId1 },
+    });
     expect(revokedAlloc.status).toBe('REVOKED');
 
     // 6. POST /allocations with over-allocation (500 when max remaining is 400)
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     await request(app.getHttpServer())
       .post('/allocations')
       .send({
@@ -177,7 +187,7 @@ describe('Allocation Split (e2e)', () => {
             ledgerEntryId: ledgerEntryId1,
             amountPortion: 700, // Now 700 + 400(active) = 1100 > 1000
           },
-        ]
+        ],
       })
       .expect(400); // Bad Request (AllocationExceededError/Trigger)
   });

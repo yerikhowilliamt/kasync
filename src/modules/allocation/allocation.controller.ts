@@ -1,4 +1,12 @@
-import { Controller, Post, Get, Body, Param, HttpCode, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Body,
+  Param,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
 import { AllocationService } from './allocation.service';
 import { CreateAllocationDto } from './dto/create-allocation.dto';
 
