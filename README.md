@@ -40,7 +40,7 @@ Kasync is a modular monolith, not microservices — one deployable service inter
 
 The allocation-sum invariant (allocated portions can never exceed a transaction's amount) is enforced twice: once in application code, and once by a PostgreSQL trigger — so a bug in the app layer can't silently corrupt financial data.
 
-Full design rationale: see [`docs/technical-design.md`](docs/technical-design.md) and [`docs/adr.md`](docs/adr.md).
+Full design rationale: see [`docs/01 - System_Design.md`](docs/01%20-%20System_Design.md) and [`docs/02 - ADR.md`](docs/02%20-%20ADR.md).
 
 ## Getting Started
 
