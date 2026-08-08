@@ -17,8 +17,14 @@ enum AccountType {
   EWALLET
 }
 
+enum TransactionType {
+  INFLOW
+  OUTFLOW
+}
+
 enum TransactionStatus {
-  UNRESOLVED // no allocation yet
+  UNRESOLVED // no candidate match found / zero allocation
+  PENDING_REVIEW // matching engine proposed candidate, awaiting confirmation
   PARTIALLY_ALLOCATED // sum(allocation) < amount
   MATCHED // sum(allocation) == amount
 }
@@ -36,16 +42,17 @@ model Account {
 }
 
 model BankTransaction {
-  id          String   @id @default(uuid())
-  accountId   String   @map("account_id")
-  txnDate     DateTime @map("txn_date")
-  amount      Decimal  @db.Decimal(18, 2)
+  id          String            @id @default(uuid())
+  accountId   String            @map("account_id")
+  txnDate     DateTime          @map("txn_date")
+  amount      Decimal           @db.Decimal(18, 2)
+  type        TransactionType   @default(OUTFLOW)
   description String
-  externalRef String?  @map("external_ref") // raw reference/ID from bank statement, for de-duplication
+  externalRef String?           @map("external_ref") // raw reference/ID from bank statement, for de-duplication
   status      TransactionStatus @default(UNRESOLVED)
-  importedAt  DateTime @default(now()) @map("imported_at")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  importedAt  DateTime          @default(now()) @map("imported_at")
+  createdAt   DateTime          @default(now()) @map("created_at")
+  updatedAt   DateTime          @updatedAt @map("updated_at")
 
   account     Account      @relation(fields: [accountId], references: [id])
   allocations Allocation[]
@@ -76,13 +83,15 @@ model Branch {
 }
 
 model LedgerEntry {
-  id         String   @id @default(uuid())
-  categoryId String   @map("category_id")
-  branchId   String   @map("branch_id")
-  entryDate  DateTime @map("entry_date")
+  id         String          @id @default(uuid())
+  categoryId String          @map("category_id")
+  branchId   String          @map("branch_id")
+  entryDate  DateTime        @map("entry_date")
+  amount     Decimal         @db.Decimal(18, 2)
+  type       TransactionType @default(OUTFLOW)
   note       String?
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
+  createdAt  DateTime        @default(now()) @map("created_at")
+  updatedAt  DateTime        @updatedAt @map("updated_at")
 
   category    Category     @relation(fields: [categoryId], references: [id])
   branch      Branch       @relation(fields: [branchId], references: [id])

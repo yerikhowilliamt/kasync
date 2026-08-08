@@ -49,45 +49,27 @@ Use Prisma as the ORM.
 
 ---
 
-## ADR-003: Allocation-sum constraint enforcement
+## ADR-003: Allocation-sum constraint enforcement & race condition guard
 
 **Status:** Accepted
 **Date:** August 2026
 
 **Context:**
-The core data-integrity rule of this system is that the sum of `amount_portion` across all `allocation` rows tied to one `bank_transaction` must never exceed that transaction's total amount (and should eventually equal it, for a fully resolved transaction). This is financial data — silent violations of this invariant would undermine the entire purpose of the tool.
+The core data-integrity rule of this system is that the sum of `amount_portion` across all `allocation` rows tied to one `bank_transaction` must never exceed that transaction's total amount (and should eventually equal it, for a fully resolved transaction). This is financial data — silent violations of this invariant would undermine the entire purpose of the tool. Furthermore, concurrent writes could lead to check-then-act race conditions (TOCTOU) if the database query checking current total does not acquire a lock.
 
 **Decision:**
 Enforce the constraint at **both** the application level and the database level:
-- Application level: validate the running total before persisting a new allocation, and reject/flag over-allocation with a clear error the user can act on.
-- Database level: add a `CHECK` constraint (or a trigger, if a `CHECK` alone can't express a cross-row sum) via a raw SQL Prisma migration, as a last line of defense against bugs, race conditions, or future code paths that bypass the application-level check.
+- Application level: validate the running total inside an atomic transaction before persisting a new allocation, rejecting over-allocation with a clear error.
+- Database level: add a trigger (`check_allocation_sum`) via raw SQL migration that acquires an explicit row lock (`SELECT amount FROM bank_transactions WHERE id = NEW.bank_transaction_id FOR UPDATE`) before checking `SUM(amount_portion)`, preventing concurrent race conditions.
 
 **Consequences:**
-- Positive: defense in depth — a bug in application logic can't silently corrupt financial data, since the database itself refuses an invalid state.
-- Positive: this dual-layer approach is a concrete, explainable example of engineering judgment for interviews — a common interview topic ("where would you put this validation and why").
-- Negative: slightly more implementation work than relying on application logic alone; requires a raw SQL migration alongside the Prisma schema (Prisma doesn't express cross-row aggregate constraints natively).
+- Positive: defense in depth — a bug in application logic or concurrent client requests cannot corrupt financial data.
+- Positive: explicit row locking (`FOR UPDATE`) prevents check-then-act race conditions at the database level.
+- Negative: slightly more implementation work; requires raw SQL migration alongside Prisma schema.
 
 **Alternatives considered:**
-- *Application-level only* — rejected; a single missed code path (e.g. a future bulk-import feature that bypasses the normal allocation service) could corrupt data with no safety net.
-- *Database-level only* — rejected; would give the user a raw database error instead of a clear, actionable validation message.
-
----
-
-## ADR-005: Split allocation atomicity via DB transactions
-
-**Status:** Accepted
-**Date:** August 2026
-
-**Context:**
-A single bank transaction can be split into multiple allocations. Creating or updating multiple `allocation` rows non-atomically risks partial writes (e.g. 2 out of 3 allocations inserted before an error occurred), leaving financial records in an inconsistent state.
-
-**Decision:**
-Execute all multi-allocation write operations inside a single Prisma database transaction (`prisma.$transaction`).
-
-**Consequences:**
-- Positive: guarantees atomicity — all allocation rows for a split transaction either commit together or rollback completely on failure.
-- Positive: works seamlessly with database triggers (ADR-003) to ensure total balance validations check against a fully committed batch.
-- Negative: slight lock duration increase during transaction execution — negligible given low transaction volume.
+- *Application-level only without DB locks* — rejected; vulnerable to concurrent write race conditions and missed code paths in bulk operations.
+- *Database-level check constraint without FOR UPDATE* — rejected; standard PL/pgSQL trigger without locking parent row allows race conditions under READ COMMITTED isolation.
 
 ---
 
@@ -111,3 +93,44 @@ Bank statement CSV exports vary in column layout across banks (column names, dat
 
 **Alternatives considered:**
 - *Generic mapping UI* (let any user map arbitrary CSV columns to fields) — deferred to a later phase; correctly identified as a feature for when/if the tool has multiple users with unknown bank formats, not a v1 requirement.
+
+---
+
+## ADR-005: Split allocation atomicity via DB transactions
+
+**Status:** Accepted
+**Date:** August 2026
+
+**Context:**
+A single bank transaction can be split into multiple allocations. Creating or updating multiple `allocation` rows non-atomically risks partial writes (e.g. 2 out of 3 allocations inserted before an error occurred), leaving financial records in an inconsistent state.
+
+**Decision:**
+Execute all multi-allocation write operations inside a single Prisma database transaction (`prisma.$transaction`).
+
+**Consequences:**
+- Positive: guarantees atomicity — all allocation rows for a split transaction either commit together or rollback completely on failure.
+- Positive: works seamlessly with database triggers (ADR-003) to ensure total balance validations check against a fully committed batch.
+- Negative: slight lock duration increase during transaction execution — negligible given low transaction volume.
+
+**Alternatives considered:**
+- *Per-row insert without transaction and manual rollback* — rejected; error-prone and leaves windows where orphaned partial allocations exist if application crashes mid-loop.
+
+---
+
+## ADR-006: Single-tenant and single-currency domain scope
+
+**Status:** Accepted
+**Date:** August 2026
+
+**Context:**
+The initial application target is a single small business operating in Indonesia using IDR across all branches and bank accounts. Multi-tenancy isolation and multi-currency exchange rate conversions add database and UI complexity.
+
+**Decision:**
+Assume single-tenant context and single-currency (IDR) for v1. Categories and Branches are unique globally across the business deployment.
+
+**Consequences:**
+- Positive: clean, uncluttered schema and domain logic without `tenant_id` or `currency_code` joins.
+- Negative: scaling to SaaS multi-tenancy or multi-currency businesses will require schema migration to introduce `tenant_id` and rate fields later.
+
+**Alternatives considered:**
+- *Full SaaS multi-tenant schema with currency conversion engine* — rejected; over-engineering for v1 target persona.

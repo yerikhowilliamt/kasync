@@ -88,13 +88,17 @@ This single data model is designed to resolve all three root causes identified i
 - Predefined category list + branch/cost center list (configurable by the user).
 
 ### 5.4 Reconciliation dashboard
-- Three-way status view per transaction: **Matched**, **Needs allocation** (bank transaction imported but not yet categorized/split), **Unresolved** (no matching manual record found — candidate for a truly missing or unrecorded transaction).
+- Four-way status view per transaction:
+  - **Matched**: bank transaction whose allocations sum exactly to its total amount.
+  - **Pending Review**: matching engine proposed a candidate match, awaiting user confirmation.
+  - **Needs Allocation / Partially Allocated**: bank transaction imported or partially allocated, awaiting split/categorization.
+  - **Unresolved**: matching engine ran and found no candidate manual record — candidate for a truly missing or unrecorded transaction.
 - Recorded balance vs. actual bank balance, with variance shown clearly.
 - Filterable by account, branch, category, date range, and status.
 
 ### 5.5 Review & audit
 - Every match/allocation is manually confirmed by the user before being marked final (no fully automatic reconciliation in v1 — trust is built incrementally).
-- Basic audit trail: when an allocation was created/edited.
+- Immutable allocation records: allocations are append/revoke-only once created to maintain strict financial auditability. Audit trail tracks creation timestamp (`createdAt`).
 
 ---
 

@@ -12,10 +12,10 @@
 | Entity | Purpose |
 |---|---|
 | `Account` | A bank, cash, or e-wallet account belonging to the business. |
-| `BankTransaction` | Atomic, immutable-in-practice record imported from a bank statement. |
+| `BankTransaction` | Atomic, immutable-in-practice record imported from a bank statement (has amount, type `INFLOW`/`OUTFLOW`, date, status). |
 | `Category` | Expense/income category (e.g. raw materials, fuel). |
 | `Branch` | Cost center / business branch. |
-| `LedgerEntry` | A categorized manual record: one category + one branch + date + note. |
+| `LedgerEntry` | A categorized manual record: category + branch + date + amount + type (`INFLOW`/`OUTFLOW`) + note. |
 | `Allocation` | Junction between `BankTransaction` and `LedgerEntry`, carrying the portion of the amount allocated. |
 
 Full column-level detail lives in `schema.prisma` — this document explains the *design decisions*, not just the columns.
@@ -36,13 +36,13 @@ Full column-level detail lives in `schema.prisma` — this document explains the
 Bank CSV exports usually include some reference/transaction ID column. Storing it and enforcing uniqueness per account prevents the same statement row from being imported twice if a user re-uploads an overlapping date range — a real risk given manual CSV uploads.
 
 ### 3.2 `status` stored directly on `BankTransaction`, not computed on every read
-`status` (`UNRESOLVED` / `PARTIALLY_ALLOCATED` / `MATCHED`) is a denormalized, derived field. It could be computed on-the-fly by summing allocations, but for the reconciliation dashboard (which needs to filter/count by status frequently), a stored, trigger-maintained column is simpler to query and index. The trigger in `migration.sql` (`sync_transaction_status`) keeps it consistent automatically — the application layer never has to remember to update it.
+`status` (`UNRESOLVED` / `PENDING_REVIEW` / `PARTIALLY_ALLOCATED` / `MATCHED`) is a denormalized, derived field. It could be computed on-the-fly by summing allocations, but for the reconciliation dashboard (which needs to filter/count by status frequently), a stored, trigger-maintained column is simpler to query and index. The trigger in `migration.sql` (`sync_transaction_status`) keeps it consistent automatically — the application layer never has to remember to update it.
 
-### 3.3 `Decimal(18, 2)` for all money columns
-Money is never stored as a floating-point type — `Decimal` avoids rounding errors that would silently break the allocation-sum invariant (a `float` sum that's off by a fraction of a cent would make correct allocations look invalid).
+### 3.3 `Decimal(18, 2)` and `type` (`INFLOW`/`OUTFLOW`) for amounts
+Money is never stored as a floating-point type — `Decimal` avoids rounding errors. Furthermore, both `BankTransaction` and `LedgerEntry` specify `type` (`INFLOW` vs `OUTFLOW`) to enforce strict matching directionality.
 
-### 3.4 The allocation-sum constraint lives in a trigger, not a `CHECK`
-A standard PostgreSQL `CHECK` constraint can only validate columns within the same row — it cannot sum `amount_portion` across all `Allocation` rows for a given `bank_transaction_id`. That's why ADR-003's database-level enforcement is implemented as a `BEFORE INSERT OR UPDATE` trigger (`check_allocation_sum` in `migration.sql`), which runs the aggregate check manually and raises an exception on violation.
+### 3.4 The allocation-sum constraint lives in a trigger with explicit row locking
+A standard PostgreSQL `CHECK` constraint can only validate columns within the same row — it cannot sum `amount_portion` across all `Allocation` rows for a given `bank_transaction_id`. That's why ADR-003's database-level enforcement is implemented as a `BEFORE INSERT OR UPDATE` trigger (`check_allocation_sum` in `migration.sql`) using `SELECT ... FOR UPDATE` on `bank_transactions` to lock the parent row and prevent race conditions.
 
 ### 3.5 No `category`/`branch` fields on `Allocation` itself
 The category and branch live on `LedgerEntry`, not duplicated onto `Allocation`. This keeps a single source of truth: if a `LedgerEntry`'s category needs correcting, it's fixed in one place rather than needing to update every `Allocation` row that points to it.

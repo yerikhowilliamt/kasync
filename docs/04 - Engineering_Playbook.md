@@ -74,7 +74,7 @@ Map domain exceptions to HTTP responses in NestJS global Exception Filters.
 
 | Level | Target Scope | Technology | Requirement |
 |---|---|---|---|
-| **Unit Tests** | `MatchingEngine`, `BankParser` implementations, `Allocation` math | Jest | **100% Coverage**, 0 DB dependency, fast execution (<1s) |
+| **Unit Tests** | `MatchingEngine`, `BankParser` implementations, `Allocation` math | Jest | **Min 90% Coverage**, 0 DB dependency, fast execution (<1s). Required scenarios: exact match, fuzzy date tolerance, aggregate match, exact/under/over-allocation. |
 | **Integration Tests** | `AllocationService` + Postgres triggers, Prisma queries | Jest + Testcontainers / Local Postgres | Verifies `prisma.$transaction` & DB trigger `check_allocation_sum` |
 | **E2E Tests** | CSV Upload → Match → Split Allocation Flow | Supertest | Verifies full happy path via API controllers |
 
@@ -150,13 +150,4 @@ Not every decision needs an ADR — the trigger is genuine alternatives with rea
  
 - **Requires an ADR:** choice of ORM, how the allocation-sum constraint is enforced, CSV import strategy, system shape (monolith vs. services) — decisions where a different reasonable engineer could have chosen differently, and the "why" matters later.
 - **Does not require an ADR:** variable naming, which utility function to use, minor refactors that don't change behavior or public interfaces.
----
- 
-## Suggested edits to existing sections
- 
-**Section 4 (Testing Strategy) — reconsider "100% Coverage" for Unit Tests:**
-100% coverage as a target tends to reward touching every line over verifying the risky ones — it's easy to hit the number with weak assertions on trivial code (getters, simple mappers) while under-testing the actual edge cases that matter (over-allocation, ambiguous aggregation grouping, boundary of the date-tolerance window). Suggest replacing the blanket "100% Coverage" cell with:
-- A coverage floor (e.g. 90%) as a baseline signal, **plus**
-- An explicit list of required scenarios for `MatchingEngine` and `Allocation`: exact match, fuzzy match (in/out of tolerance window), aggregation match, exact-sum allocation, under-allocation, over-allocation (rejected), boundary case (sum exactly equals amount).
-This keeps the rigor but points it at what's actually risky, not just what's easy to cover.
  

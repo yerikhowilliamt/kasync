@@ -9,9 +9,11 @@ DECLARE
   total_allocated DECIMAL(18,2);
   txn_amount DECIMAL(18,2);
 BEGIN
+  -- Acquire explicit row lock (FOR UPDATE) to guard against check-then-act race conditions
   SELECT amount INTO txn_amount
   FROM bank_transactions
-  WHERE id = NEW.bank_transaction_id;
+  WHERE id = NEW.bank_transaction_id
+  FOR UPDATE;
 
   SELECT COALESCE(SUM(amount_portion), 0) INTO total_allocated
   FROM allocations

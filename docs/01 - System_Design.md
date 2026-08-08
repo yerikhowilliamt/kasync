@@ -34,7 +34,7 @@ This document translates the PRD's product requirements into concrete technical 
 | **Matching engine** | Runs exact, fuzzy (date-tolerant), and aggregation matching between `bank_transaction` and `ledger_entry`. Pure business logic, no HTTP/DB dependency in its core so it can be unit tested in isolation. |
 | **Allocation** | Manages the `allocation` junction records — creating splits inside a single database transaction (`prisma.$transaction`), validating that allocated portions sum to the transaction amount, tracking unresolved balances. |
 | **Account** | Manages multiple bank/cash accounts per business, source-account tagging for every transaction. |
-| **Reconciliation API / Dashboard** | Read-side: aggregates status (matched / needs allocation / unresolved), computes recorded vs. actual balance, serves the dashboard views. |
+| **Reconciliation API / Dashboard** | Read-side: aggregates status (matched / pending review / needs allocation / unresolved), computes recorded vs. actual balance, serves the dashboard views. Proposed matches from matching engine are computed on-the-fly (stateless) or flagged as `PENDING_REVIEW` when user initiates allocation review. |
 
 **Design principle:** the Matching engine and Allocation validation logic are kept as plain, framework-independent TypeScript classes/functions wrapped by NestJS services — not embedded directly in controllers. This keeps the highest-risk logic (the part most likely to have subtle bugs) testable without spinning up HTTP or a database in tests.
 
@@ -97,12 +97,12 @@ Single containerized NestJS application + single PostgreSQL instance. No load ba
 ## 9. Code Abstractions & Patterns
 
 ### 9.1 `BankParser` Interface (Strategy Pattern)
-To keep the **Import** module extensible for multiple bank statement formats without modifying core business logic:
+To keep the **Import** module extensible for multiple bank statement formats without modifying core business logic (monetary amounts are returned as raw string representations from the file to avoid JavaScript floating-point rounding errors prior to `Decimal` conversion):
 
 ```typescript
 export interface ParsedTransaction {
   txnDate: Date;
-  amount: number;
+  amount: string;
   description: string;
   externalRef?: string;
 }

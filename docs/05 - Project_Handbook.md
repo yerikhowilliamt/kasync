@@ -94,7 +94,7 @@ npm run start:dev
 
 ## 5. Synthetic Fixtures & Data Safety
 
-- Never import production CSV statements containing real customer/friend bank data directly into repository fixtures.
+- The problem this project solves — and the early test scenarios used to validate it — come from a real small business owner's actual reconciliation struggles. That source data (and anything derived closely enough from it to be identifiable) must never be committed, demoed publicly, or included in fixtures — synthetic data only, always.
 - All CSV test fixtures stored under `test/fixtures/` must be anonymized using synthetic account numbers, random business names, and rounded test amounts.
 
 ## 6. Architecture at a Glance
@@ -126,14 +126,15 @@ A `BankTransaction` and a `LedgerEntry` are never linked directly. They're conne
 ---
  
 ## 8. Documentation Index
- 
+
 | Looking for... | Go to |
 |---|---|
-| Product requirements / scope | `docs/prd.md` |
-| Why a technical decision was made | `docs/adr.md` |
-| System architecture & component design | `docs/technical-design.md` |
-| Database schema & design rationale | `docs/erd.md`, `prisma/schema.prisma` |
-| Coding conventions, testing, review standards | `docs/engineering-playbook.md` |
+| Product requirements / scope | `docs/00 - PRD.md` |
+| System architecture & component design | `docs/01 - System_Design.md` |
+| Why a technical decision was made | `docs/02 - ADR.md` |
+| Database schema & design rationale | `docs/03 - ERD.md`, `docs/database/schema.prisma` |
+| Coding conventions, testing, review standards | `docs/04 - Engineering_Playbook.md` |
+| Project Handbook & Setup | `docs/05 - Project_Handbook.md` |
  
 This handbook is the map — start here, then go deep in the doc that covers what you actually need.
  
@@ -156,17 +157,9 @@ Follow the branching, commit, and self-review conventions in `docs/engineering-p
 ---
  
 ## 11. Troubleshooting
- 
+
 | Problem | Likely cause / fix |
 |---|---|
 | `docker-compose up -d` fails, port 5432 already in use | Another local Postgres instance is running. Stop it, or remap the port in `docker-compose.yml` and update `DATABASE_URL` accordingly. |
 | `prisma migrate dev` succeeds but allocation over-limits aren't rejected | The raw SQL trigger migration (`docs/database/migration.sql`) wasn't applied — Prisma migrations alone don't include it; re-run Step 3 in Section 3. |
 | Seed script fails with a foreign key error | Run `npx prisma migrate reset` to get a clean schema before reseeding — usually caused by seeding against a partially-migrated database. |
- 
----
- 
-## Suggested edit to existing Section 5 (Synthetic Fixtures & Data Safety)
- 
-Consider adding one line making the *source* of the data-safety requirement explicit, not just the format rule:
- 
-> The problem this project solves — and the early test scenarios used to validate it — come from a real small business owner's actual reconciliation struggles. That source data (and anything derived closely enough from it to be identifiable) must never be committed, demoed publicly, or included in fixtures — synthetic data only, always.
