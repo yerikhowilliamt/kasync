@@ -16,6 +16,7 @@ async function bootstrap() {
     .setTitle('Cash Flow Reconciliation & Allocation Tool API')
     .setDescription('API documentation for kasync tool')
     .setVersion('1.0')
+    .addApiKey({ type: 'apiKey', name: 'x-api-key', in: 'header' }, 'x-api-key')
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, document);

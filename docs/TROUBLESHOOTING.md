@@ -55,6 +55,18 @@ This document records errors encountered during development, their root causes, 
 - **Resolution:** Removed unused variables and imports, and introduced explicit TypeScript interfaces (`ImportResponse` & `DashboardResponse`) for casting Supertest response bodies in `reconciliation.e2e-spec.ts`.
 - **Prevention / Note:** Always run `npm run lint` locally before opening pull requests to ensure strict TypeScript-ESLint compliance.
 
+### [2026-08-08] ts-node Module Not Found Error During Prisma Database Seeding
+- **Module / Area:** `prisma`, `scripts`, `devops`
+- **Error Message / Symptom:**
+  ```text
+  An error occurred while running the seed command:
+  Error: Cannot find module './util'
+  Require stack: - node_modules/.bin/ts-node
+  ```
+- **Root Cause:** Invoking global/standalone `ts-node` CLI binary directly via `npx prisma db seed` failed due to Node.js v24 CJS loader module resolution conflicts with `ts-node` internals.
+- **Resolution:** Configured Prisma seed command in `package.json` to use Node's native module registration: `"prisma": { "seed": "node -r ts-node/register prisma/seed.ts" }`.
+- **Prevention / Note:** Always execute TypeScript seed scripts via `node -r ts-node/register` when using Node >= 20 to avoid standalone `ts-node` CJS wrapper resolution errors.
+
 ### [2026-08-08] Generic Exception / Missing Entity DB Foreign Key Failure
 - **Module / Area:** `allocation`, `allocation.service.ts`
 - **Error Message / Symptom:**

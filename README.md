@@ -1,106 +1,191 @@
 # KAsync — Cash Flow Reconciliation & Allocation Tool
 
-A NestJS + PostgreSQL + Prisma application for importing bank transactions, matching them against ledger entries, and managing allocation splits with database-level integrity constraints.
+[![CI Pipeline](https://github.com/yerikhowilliamt/kasync/actions/workflows/ci.yml/badge.svg)](https://github.com/yerikhowilliamt/kasync/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Node.js Version](https://img.shields.io/badge/node-%3E%3D20-brightgreen.svg)](https://nodejs.org)
 
-## Tech Stack
+KAsync is a NestJS + PostgreSQL + Prisma application designed for small multi-branch business owners to reconcile bank statements against manual internal cash records, manage multi-category split allocations, and maintain strict financial auditability.
 
-- **Runtime:** Node.js >= 20
+---
+
+## 📌 Problem & Core Concept
+
+Small business owners routinely struggle with cash flow reconciliation due to three main root causes:
+1. **Timing Gaps:** Settlement delays between manual logging and bank clearing.
+2. **Aggregated Transactions:** Multiple small cash deposits corresponding to one manual record (or vice versa).
+3. **Multi-purpose Transfers:** A single bank transaction funding multiple expense categories across multiple branches.
+
+### The Allocation Model
+`BankTransaction` and `LedgerEntry` are linked via an **`Allocation`** junction entity. 
+- **1:1 Matches:** Direct single allocation matching total transaction amount.
+- **1:Many Splits:** Single bank transaction split into multiple allocations across different categories/branches.
+- **Many:1 Aggregations:** Multiple bank transactions allocated to a single ledger entry.
+- **Database-Level Invariant:** The sum of active allocation portions for any bank transaction cannot exceed its total amount (`sum(amountPortion) <= bank_transaction.amount`).
+
+---
+
+## 🏗️ Technical Stack
+
+- **Runtime & Language:** Node.js >= 20, TypeScript (`strict: true`)
 - **Framework:** NestJS (modular monolith)
-- **ORM:** Prisma
 - **Database:** PostgreSQL 16
-- **Validation:** class-validator / class-transformer
-- **Logging:** nestjs-pino
-- **API Docs:** @nestjs/swagger (Swagger UI at `/docs`)
+- **ORM:** Prisma ORM
+- **Financial Math:** `decimal.js` / Prisma `Decimal` (Banker's Rounding `ROUND_HALF_EVEN`)
+- **Logging:** `nestjs-pino` (GDPR-safe structured logging)
+- **API Documentation:** `@nestjs/swagger` (Interactive UI at [/docs](http://localhost:3000/docs))
+- **Testing:** Jest (Unit tests), Supertest (E2E & PostgreSQL Trigger tests)
 
-## Prerequisites
+---
 
-- Node.js >= 20
+## 🚀 Quick Start & Setup
+
+### Prerequisites
+- Node.js >= 20.x
+- npm >= 10.x
 - Docker & Docker Compose
-- npm
 
-## Setup
+### 1. Clone & Install
+```bash
+git clone https://github.com/yerikhowilliamt/kasync.git
+cd kasync
+npm install
+```
 
-### 1. Start PostgreSQL
+### 2. Configure Environment
+```bash
+cp .env.example .env
+```
+Default `.env`:
+```env
+PORT=3000
+NODE_ENV=development
+DATABASE_URL="postgresql://postgres:postgrespassword@localhost:5432/kasync_db?schema=public"
+```
 
+### 3. Start PostgreSQL Container
 ```bash
 docker compose up -d
 ```
 
-This starts a PostgreSQL 16 container on port 5432 with database `kasync_db`.
-
-### 2. Install Dependencies
-
-```bash
-npm install
-```
-
-### 3. Configure Environment
-
-```bash
-cp .env.example .env
-```
-
-Default `.env` values:
-
-```
-DATABASE_URL="postgresql://postgres:postgrespassword@localhost:5432/kasync_db?schema=public"
-PORT=3000
-```
-
-### 4. Run Migrations
-
+### 4. Run Migrations & Apply Database Triggers
 ```bash
 npx prisma migrate dev
+npx prisma db execute --file ./docs/database/migration.sql
+```
+*Note: The raw SQL triggers (`check_allocation_sum` with `FOR UPDATE` lock and `sync_transaction_status`) are located in `docs/database/migration.sql`.*
+
+### 5. Seed Synthetic Demo Data
+```bash
+npm run seed
 ```
 
-### 5. Start Development Server
-
+### 6. Start Application
 ```bash
 npm run start:dev
 ```
+Access Swagger API Docs: [http://localhost:3000/docs](http://localhost:3000/docs)
 
-The API docs are available at [http://localhost:3000/docs](http://localhost:3000/docs).
+---
 
-## Scripts
+## 📖 API Documentation & Key Endpoints
 
-| Command | Description |
-|---|---|
-| `npm run start:dev` | Start in watch mode |
-| `npm run build` | Build for production |
-| `npm run start:prod` | Start production build |
-| `npm run test` | Unit tests |
-| `npm run test:e2e` | Integration/E2E tests (requires Postgres) |
-| `npm run test:cov` | Test coverage report |
-| `npm run lint` | ESLint |
-| `npx tsc --noEmit` | Typecheck |
+Swagger UI is exposed at **`/docs`**. Key modules include:
 
-## Architecture
+| Module | Endpoint | Description |
+|---|---|---|
+| **Import** | `POST /import/csv` | Upload bank CSV statement (BCA, Mandiri) |
+| **Accounts** | `GET /accounts`, `POST /accounts` | Manage bank, cash, and e-wallet accounts |
+| **Ledger** | `GET /ledger-entries`, `POST /ledger-entries` | CRUD categorized internal business records |
+| **Matching** | `POST /matching/propose` | Run exact, fuzzy, & aggregate matching engine |
+| **Allocation** | `POST /allocations`, `POST /allocations/:id/revoke` | Create split allocations or revoke allocations |
+| **Reconciliation** | `GET /reconciliation/dashboard` | 4-way transaction status breakdown & balance variance |
 
-Module-per-domain, no cross-module DB access:
+---
+
+## 🔄 Reconciliation Flow Walkthrough
+
+```
++-------------------+      +----------------------+      +----------------------+
+|  1. Upload CSV    | ---> | 2. Propose Matches   | ---> | 3. Confirm / Split   |
+|  (BCA / Mandiri)  |      | (Exact/Fuzzy/Agg)    |      | (Create Allocations) |
++-------------------+      +----------------------+      +----------------------+
+                                                                    |
+                                                                    v
+                                                         +----------------------+
+                                                         | 4. View Dashboard    |
+                                                         | (Status & Variance)  |
+                                                         +----------------------+
+```
+
+1. **Upload Bank Statement:** Client uploads statement CSV via `POST /import/csv?accountId={id}&bankType=BCA`.
+2. **Propose Matches:** Run `POST /matching/propose` to evaluate exact, fuzzy ($\pm 3$ days window), and aggregate ($N \le 4$) candidates, moving transactions to `PENDING_REVIEW`.
+3. **Split & Allocate:** Perform single or split allocations via `POST /allocations` linking bank transactions to ledger entries.
+4. **Monitor Dashboard:** Query `GET /reconciliation/dashboard` to inspect actual bank balance, recorded ledger balance, variance, and status breakdown (`MATCHED`, `PARTIALLY_ALLOCATED`, `PENDING_REVIEW`, `UNRESOLVED`).
+
+---
+
+## 🔒 Database-Level Integrity & Triggers
+
+To prevent race conditions and guarantee financial data integrity, two SQL triggers enforce rules directly in PostgreSQL (`docs/database/migration.sql`):
+
+1. **`trg_check_allocation_sum` (`BEFORE INSERT OR UPDATE ON allocations`)**:
+   - Acquires row lock via `SELECT amount FROM bank_transactions WHERE id = NEW.bank_transaction_id FOR UPDATE`.
+   - Rejects write if `sum(active_allocations) + NEW.amount_portion > bank_transaction.amount`.
+   - Intercepted globally by `PostgresTriggerExceptionFilter` returning HTTP 400 Bad Request.
+
+2. **`trg_sync_transaction_status` (`AFTER INSERT OR UPDATE OR DELETE ON allocations`)**:
+   - Auto-syncs `bank_transactions.status` between `UNRESOLVED`, `PARTIALLY_ALLOCATED`, and `MATCHED`.
+
+---
+
+## 🧪 Testing & Verification
+
+```bash
+# Run unit tests (Matching engine, parsers, services)
+npm run test
+
+# Run integration & E2E tests (requires PostgreSQL container)
+npm run test:e2e
+
+# Run test coverage report
+npm run test:cov
+
+# Typecheck & Lint
+npx tsc --noEmit && npm run lint
+```
+
+---
+
+## 📂 Project Architecture
 
 ```
 src/
-  modules/
-    import/          # CSV parsing, column-mapping config per bank
-    matching/        # Matching engine — pure logic
-    allocation/      # Allocation CRUD + sum-validation logic
-    accounts/        # Account management
-    reconciliation/  # Read-side: dashboard queries, status aggregation
-  common/
-    errors/          # Domain exceptions (e.g. AllocationExceededError)
-    filters/         # Exception filters (e.g. PostgresTriggerExceptionFilter)
-    prisma/          # Global PrismaModule + PrismaService
+├── modules/
+│   ├── import/          # Bank statement CSV parsers (BCA, Mandiri strategy pattern)
+│   ├── accounts/        # Account management (Bank, Cash, E-Wallet)
+│   ├── matching/        # Matching Engine (Pure TS, exact/fuzzy/aggregate logic)
+│   ├── allocation/      # Split allocation engine & soft-revoke audit trail
+│   ├── ledger-entries/  # Internal categorized business records
+│   ├── categories/      # Expense/income categories
+│   ├── branches/        # Cost centers / branches
+│   └── reconciliation/  # Read-side aggregate dashboard queries
+├── common/
+│   ├── filters/         # Exception filters (PostgresTriggerExceptionFilter)
+│   ├── errors/          # Domain errors (AllocationExceededError)
+│   └── prisma/          # Prisma Module & Service
+docs/
+├── 00 - PRD.md
+├── 01 - System_Design.md
+├── 02 - ADR.md
+├── 03 - ERD.md
+├── 04 - Engineering_Playbook.md
+├── 05 - Project_Handbook.md
+├── database/            # schema.prisma & migration.sql
+└── phases/              # Phase execution contexts
 ```
 
-## Database Triggers
+---
 
-Two PostgreSQL triggers enforce financial invariants at the DB level (ADR-003):
+## 📄 License
 
-- **`trg_check_allocation_sum`** — BEFORE INSERT/UPDATE on `allocations`: ensures `sum(amount_portion) <= bank_transactions.amount` per transaction. Uses `FOR UPDATE` row lock to prevent race conditions.
-- **`trg_sync_transaction_status`** — AFTER INSERT/UPDATE/DELETE on `allocations`: auto-syncs `bank_transactions.status` (`UNRESOLVED` / `PARTIALLY_ALLOCATED` / `MATCHED`).
-
-Both triggers are defined in `prisma/migrations/` and applied via `prisma migrate`.
-
-## License
-
-MIT
+This project is licensed under the [MIT License](LICENSE).

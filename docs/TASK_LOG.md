@@ -1,3 +1,21 @@
+## Task: Auth Guard, Rate Limiting, HealthCheck, and Pagination Improvements (Sat Aug 08 2026)
+
+- **Completed**: Yes
+- **Modules**: System-wide / `HealthModule`, `AppModule`, `LedgerEntriesModule`, `ReconciliationModule`
+- **Description**: Implemented all optional enhancement items identified during technical review:
+  1. **Health Check Module**: Added `@nestjs/terminus` integration with `GET /health` checking DB status (`@Public()` accessible).
+  2. **API Rate Limiting**: Added `@nestjs/throttler` global guard (100 reqs/min per IP).
+  3. **API Key Authentication Guard**: Added global `ApiKeyGuard` enforcing `x-api-key` header protection (bypassable via `@Public()` decorator for `/health` or when `API_KEY` env is unset in dev). Updated Swagger spec with `x-api-key` header config.
+  4. **Pagination**: Created `PaginationQueryDto` and updated `LedgerEntriesController` & `ReconciliationDashboard` DTOs with `page` and `limit` controls, returning structured `{ data, meta }` response objects.
+- **Git Branch**: `feat/improvements-auth-health-throttler-pagination`
+
+## Task: Phase 6 Polish & Portfolio Readiness (Sat Aug 08 2026)
+
+- **Completed**: Yes
+- **Modules**: System-wide / Build & Docs
+- **Description**: Prepared project for public portfolio readiness. Created synthetic seed dataset script (`prisma/seed.ts`, `npm run seed`) with GDPR-safe accounts, categories, branches, ledger entries, and bank transactions. Rewrote `README.md` with problem statement, allocation model diagram, Swagger link (`/docs`), setup instructions, and database trigger details. Added multi-stage production `Dockerfile` and updated `docker-compose.yml` to support live containerized deployment. Updated CI pipeline (`ci.yml`) to execute SQL trigger migration. Verified documentation consistency across PRD, System Design, ADR, ERD, Engineering Playbook, and Project Handbook. Passed 100% unit and E2E test suites.
+- **Git Branch**: `feat/phase-06-polish-portfolio`
+
 ## Task: Phase 5 Reconciliation Dashboard & E2E Journey (Sat Aug 08 2026)
 
 - **Completed**: Yes

@@ -1,5 +1,14 @@
-import { IsEnum, IsISO8601, IsOptional, IsUUID } from 'class-validator';
+import {
+  IsEnum,
+  IsISO8601,
+  IsInt,
+  IsOptional,
+  IsUUID,
+  Max,
+  Min,
+} from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 import { TransactionType, TransactionStatus } from '@prisma/client';
 
 export class DashboardQueryDto {
@@ -43,4 +52,25 @@ export class DashboardQueryDto {
   @IsEnum(TransactionStatus)
   @IsOptional()
   status?: TransactionStatus;
+
+  @ApiPropertyOptional({
+    default: 1,
+    description: 'Page number for paginated list (1-based)',
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  page?: number = 1;
+
+  @ApiPropertyOptional({
+    default: 50,
+    description: 'Items per page for paginated list',
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  limit?: number = 50;
 }
