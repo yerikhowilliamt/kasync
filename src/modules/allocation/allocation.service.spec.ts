@@ -190,6 +190,104 @@ describe('AllocationService', () => {
       expect(result).toHaveLength(2);
       expect(mockPrismaService.allocation.create).toHaveBeenCalledTimes(2);
     });
+
+    it('should return existing allocation when idempotencyKey matches', async () => {
+      mockPrismaService.bankTransaction.findUnique.mockResolvedValue({
+        id: 'txn-1',
+        amount: new Decimal(500),
+        allocations: [],
+      });
+      mockPrismaService.ledgerEntry.findUnique.mockResolvedValue({
+        id: 'entry-1',
+      });
+      const existingAllocation = {
+        id: 'existing-alloc-1',
+        bankTransactionId: 'txn-1',
+        ledgerEntryId: 'entry-1',
+        amountPortion: new Decimal(100),
+        status: 'ACTIVE',
+        idempotencyKey: 'key-1',
+      };
+      mockPrismaService.allocation.findUnique.mockResolvedValue(
+        existingAllocation,
+      );
+
+      const result = await service.create({
+        bankTransactionId: 'txn-1',
+        ledgerEntryId: 'entry-1',
+        amountPortion: 100,
+        idempotencyKey: 'key-1',
+      });
+
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe('existing-alloc-1');
+      expect(mockPrismaService.allocation.findUnique).toHaveBeenCalledWith({
+        where: { idempotencyKey: 'key-1' },
+      });
+      expect(mockPrismaService.allocation.create).not.toHaveBeenCalled();
+    });
+
+    it('should create allocation normally when no idempotencyKey provided', async () => {
+      mockPrismaService.bankTransaction.findUnique.mockResolvedValue({
+        id: 'txn-1',
+        amount: new Decimal(500),
+        allocations: [],
+      });
+      mockPrismaService.ledgerEntry.findUnique.mockResolvedValue({
+        id: 'entry-1',
+      });
+      mockPrismaService.allocation.create.mockResolvedValue({
+        id: 'alloc-new-1',
+        amountPortion: new Decimal(100),
+        status: 'ACTIVE',
+      });
+
+      const result = await service.create({
+        bankTransactionId: 'txn-1',
+        ledgerEntryId: 'entry-1',
+        amountPortion: 100,
+      });
+
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe('alloc-new-1');
+      expect(mockPrismaService.allocation.findUnique).not.toHaveBeenCalled();
+      expect(mockPrismaService.allocation.create).toHaveBeenCalled();
+    });
+
+    it('should forward top-level idempotencyKey to single allocation create', async () => {
+      mockPrismaService.bankTransaction.findUnique.mockResolvedValue({
+        id: 'txn-1',
+        amount: new Decimal(500),
+        allocations: [],
+      });
+      mockPrismaService.ledgerEntry.findUnique.mockResolvedValue({
+        id: 'entry-1',
+      });
+      mockPrismaService.allocation.create.mockResolvedValue({
+        id: 'alloc-1',
+        amountPortion: new Decimal(100),
+        status: 'ACTIVE',
+        idempotencyKey: 'top-level-key',
+      });
+
+      const result = await service.create({
+        bankTransactionId: 'txn-1',
+        ledgerEntryId: 'entry-1',
+        amountPortion: 100,
+        idempotencyKey: 'top-level-key',
+      });
+
+      expect(result).toHaveLength(1);
+      expect(mockPrismaService.allocation.create).toHaveBeenCalledWith({
+        data: {
+          bankTransactionId: 'txn-1',
+          ledgerEntryId: 'entry-1',
+          amountPortion: '100',
+          idempotencyKey: 'top-level-key',
+          status: AllocationStatus.ACTIVE,
+        },
+      });
+    });
   });
 
   describe('revoke', () => {
