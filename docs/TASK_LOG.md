@@ -1,8 +1,8 @@
 ## Task: Auth Guard, Rate Limiting, HealthCheck, and Pagination Improvements (Sat Aug 08 2026)
 
 - **Completed**: Yes
-- **Modules**: System-wide / `HealthModule`, `AppModule`
-- **Description**: Implemented all optional enhancement items from review:
+- **Modules**: System-wide / `HealthModule`, `AppModule`, `LedgerEntriesModule`, `ReconciliationModule`
+- **Description**: Implemented all optional enhancement items identified during technical review:
   1. **Health Check Module**: Added `@nestjs/terminus` integration with `GET /health` checking DB status (`@Public()` accessible).
   2. **API Rate Limiting**: Added `@nestjs/throttler` global guard (100 reqs/min per IP).
   3. **API Key Authentication Guard**: Added global `ApiKeyGuard` enforcing `x-api-key` header protection (bypassable via `@Public()` decorator for `/health` or when `API_KEY` env is unset in dev). Updated Swagger spec with `x-api-key` header config.
