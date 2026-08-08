@@ -1,7 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ImportService } from './import.service';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '../../common/prisma/prisma.service';
 import { NotFoundException } from '@nestjs/common';
+import { BankParserFactory } from './bank-parser.factory';
 
 describe('ImportService', () => {
   let service: ImportService;
@@ -11,6 +12,7 @@ describe('ImportService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ImportService,
+        BankParserFactory,
         {
           provide: PrismaService,
           useValue: {

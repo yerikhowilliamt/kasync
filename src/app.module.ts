@@ -6,7 +6,6 @@ import { MatchingModule } from './modules/matching/matching.module';
 import { AllocationModule } from './modules/allocation/allocation.module';
 import { AccountsModule } from './modules/accounts/accounts.module';
 import { ReconciliationModule } from './modules/reconciliation/reconciliation.module';
-import { PrismaModule } from './modules/prisma/prisma.module';
 
 @Module({
   imports: [

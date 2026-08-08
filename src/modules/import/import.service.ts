@@ -1,16 +1,13 @@
-import {
-  Injectable,
-  BadRequestException,
-  NotFoundException,
-} from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { BcaCsvParser } from './parsers/bca-csv.parser';
-import { MandiriCsvParser } from './parsers/mandiri-csv.parser';
-import { BankParser } from './interfaces/bank-parser.interface';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '../../common/prisma/prisma.service';
+import { BankParserFactory } from './bank-parser.factory';
 
 @Injectable()
 export class ImportService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private bankParserFactory: BankParserFactory,
+  ) {}
 
   async importCsv(accountId: string, format: string, fileBuffer: Buffer) {
     // Validate account
@@ -22,17 +19,7 @@ export class ImportService {
       throw new NotFoundException(`Account ${accountId} not found`);
     }
 
-    let parser: BankParser;
-    switch (format.toUpperCase()) {
-      case 'BCA':
-        parser = new BcaCsvParser();
-        break;
-      case 'MANDIRI':
-        parser = new MandiriCsvParser();
-        break;
-      default:
-        throw new BadRequestException(`Unsupported format: ${format}`);
-    }
+    const parser = this.bankParserFactory.getParser(format);
 
     const parsedData = await parser.parse(fileBuffer);
 

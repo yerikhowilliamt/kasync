@@ -5,6 +5,7 @@ import {
 import { parse } from 'csv-parse/sync';
 import * as crypto from 'crypto';
 import { TransactionType } from '@prisma/client';
+import { Decimal } from 'decimal.js';
 
 export class MandiriCsvParser implements BankParser {
   parse(fileBuffer: Buffer): Promise<ParsedTransaction[]> {
@@ -25,9 +26,15 @@ export class MandiriCsvParser implements BankParser {
       }
 
       const [day, month, year] = dateStr.split('/');
-      const txnDate = new Date(
-        Date.UTC(Number(year), Number(month) - 1, Number(day)),
-      );
+      const m = Number(month);
+      const d = Number(day);
+      const y = Number(year);
+      if (m < 1 || m > 12) continue;
+
+      const daysInMonth = new Date(y, m, 0).getDate();
+      if (d < 1 || d > daysInMonth) continue;
+
+      const txnDate = new Date(Date.UTC(y, m - 1, d));
 
       const description = record[1];
       const externalRef = record[2] ? record[2] : null;
@@ -38,16 +45,20 @@ export class MandiriCsvParser implements BankParser {
       let amount = '0.00';
       let type: TransactionType = TransactionType.OUTFLOW;
 
-      const inflowVal = parseFloat(inflowRaw) || 0;
-      const outflowVal = parseFloat(outflowRaw) || 0;
+      try {
+        const inflowVal = new Decimal(inflowRaw || 0);
+        const outflowVal = new Decimal(outflowRaw || 0);
 
-      if (inflowVal > 0) {
-        amount = inflowVal.toFixed(2);
-        type = TransactionType.INFLOW;
-      } else if (outflowVal > 0) {
-        amount = outflowVal.toFixed(2);
-        type = TransactionType.OUTFLOW;
-      } else {
+        if (inflowVal.greaterThan(0)) {
+          amount = inflowVal.toFixed(2);
+          type = TransactionType.INFLOW;
+        } else if (outflowVal.greaterThan(0)) {
+          amount = outflowVal.toFixed(2);
+          type = TransactionType.OUTFLOW;
+        } else {
+          continue;
+        }
+      } catch {
         continue;
       }
 

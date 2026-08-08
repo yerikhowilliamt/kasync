@@ -5,6 +5,7 @@ import {
 import { parse } from 'csv-parse/sync';
 import * as crypto from 'crypto';
 import { TransactionType } from '@prisma/client';
+import { Decimal } from 'decimal.js';
 
 export class BcaCsvParser implements BankParser {
   parse(fileBuffer: Buffer): Promise<ParsedTransaction[]> {
@@ -25,9 +26,15 @@ export class BcaCsvParser implements BankParser {
       }
 
       const [day, month, year] = dateStr.split('/');
-      const txnDate = new Date(
-        Date.UTC(Number(year), Number(month) - 1, Number(day)),
-      );
+      const m = Number(month);
+      const d = Number(day);
+      const y = Number(year);
+      if (m < 1 || m > 12) continue;
+
+      const daysInMonth = new Date(y, m, 0).getDate();
+      if (d < 1 || d > daysInMonth) continue;
+
+      const txnDate = new Date(Date.UTC(y, m - 1, d));
 
       let description = record[1];
       if (record[2] && record[2].length > 0 && record[2] !== '0000') {
@@ -35,7 +42,12 @@ export class BcaCsvParser implements BankParser {
       }
 
       const rawAmount = record[3].replace(/,/g, '');
-      const amount = parseFloat(rawAmount).toFixed(2);
+      let amount: string;
+      try {
+        amount = new Decimal(rawAmount).toFixed(2);
+      } catch {
+        continue;
+      }
 
       const typeStr = record[4].toUpperCase();
       const type =

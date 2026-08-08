@@ -4,13 +4,16 @@ import {
   UseInterceptors,
   UploadedFile,
   Body,
-  BadRequestException,
   HttpCode,
   HttpStatus,
+  ParseFilePipe,
+  MaxFileSizeValidator,
+  FileTypeValidator,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ImportService } from './import.service';
 import { ApiTags, ApiOperation, ApiConsumes, ApiBody } from '@nestjs/swagger';
+import { ImportCsvDto } from './dto/import-csv.dto';
 
 @ApiTags('import')
 @Controller('import')
@@ -37,20 +40,21 @@ export class ImportController {
   @UseInterceptors(FileInterceptor('file'))
   @HttpCode(HttpStatus.OK)
   async importCsv(
-    @UploadedFile() file: Express.Multer.File,
-    @Body('accountId') accountId: string,
-    @Body('bankFormat') bankFormat: string,
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({ maxSize: 5 * 1024 * 1024 }),
+          new FileTypeValidator({ fileType: '.(csv|text|plain)' }),
+        ],
+      }),
+    )
+    file: Express.Multer.File,
+    @Body() dto: ImportCsvDto,
   ) {
-    if (!file) {
-      throw new BadRequestException('File is required');
-    }
-    if (!accountId) {
-      throw new BadRequestException('accountId is required');
-    }
-    if (!bankFormat) {
-      throw new BadRequestException('bankFormat is required');
-    }
-
-    return this.importService.importCsv(accountId, bankFormat, file.buffer);
+    return this.importService.importCsv(
+      dto.accountId,
+      dto.bankFormat,
+      file.buffer,
+    );
   }
 }
