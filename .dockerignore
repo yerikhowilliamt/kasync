@@ -1,0 +1,14 @@
+node_modules
+.git
+.env
+.env.*
+test/
+coverage/
+dist/
+docs/
+*.md
+.github/
+.vscode/
+.prettierrc
+eslint.config.mjs
+nest-cli.json

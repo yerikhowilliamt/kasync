@@ -11,7 +11,6 @@ export class ImageMimeTypeValidator extends FileValidator<ImageMimeTypeValidator
     'image/png',
     'image/webp',
     'image/gif',
-    'application/octet-stream', // required for test buffer uploads
   ];
 
   constructor(options: ImageMimeTypeValidatorOptions = {}) {

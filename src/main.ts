@@ -26,11 +26,12 @@ async function bootstrap() {
 
   app.use(cookieParser());
   app.useLogger(app.get(Logger));
+  app.setGlobalPrefix('api/v1');
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
   app.useGlobalFilters(new PostgresTriggerExceptionFilter());
 
   const config = new DocumentBuilder()
-    .setTitle('Cash Flow Reconciliation & Allocation Tool API')
+    .setTitle('KAsync v1 — Cash Flow Reconciliation & Allocation Tool API')
     .setDescription('API documentation for kasync tool')
     .setVersion('1.0')
     .addApiKey({ type: 'apiKey', name: 'x-api-key', in: 'header' }, 'x-api-key')

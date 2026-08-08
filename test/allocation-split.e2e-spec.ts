@@ -26,6 +26,7 @@ describe('Allocation Split (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
+    app.setGlobalPrefix('api/v1');
     app.use(cookieParser());
     app.useGlobalPipes(new ValidationPipe({ transform: true }));
     app.useGlobalFilters(new PostgresTriggerExceptionFilter());
@@ -54,7 +55,7 @@ describe('Allocation Split (e2e)', () => {
     const regRes = await request(
       app.getHttpServer() as unknown as Parameters<typeof request>[0],
     )
-      .post('/auth/register')
+      .post('/api/v1/auth/register')
       .send({
         email: `split-user-${Date.now()}@example.com`,
         password: 'password123',
@@ -134,7 +135,7 @@ describe('Allocation Split (e2e)', () => {
     const createRes = await request(
       app.getHttpServer() as unknown as Parameters<typeof request>[0],
     )
-      .post('/allocations')
+      .post('/api/v1/allocations')
       .set('Cookie', [authCookie])
       .send({
         allocations: [
@@ -166,7 +167,7 @@ describe('Allocation Split (e2e)', () => {
     const getTxnRes = await request(
       app.getHttpServer() as unknown as Parameters<typeof request>[0],
     )
-      .get(`/allocations/transaction/${bankTransactionId}`)
+      .get(`/api/v1/allocations/transaction/${bankTransactionId}`)
       .set('Cookie', [authCookie])
       .expect(200);
 
@@ -180,7 +181,7 @@ describe('Allocation Split (e2e)', () => {
     const getLeRes = await request(
       app.getHttpServer() as unknown as Parameters<typeof request>[0],
     )
-      .get(`/allocations/ledger-entry/${ledgerEntryId1}`)
+      .get(`/api/v1/allocations/ledger-entry/${ledgerEntryId1}`)
       .set('Cookie', [authCookie])
       .expect(200);
 
@@ -194,9 +195,9 @@ describe('Allocation Split (e2e)', () => {
     await request(
       app.getHttpServer() as unknown as Parameters<typeof request>[0],
     )
-      .post(`/allocations/${allocId1}/revoke`)
+      .post(`/api/v1/allocations/${allocId1}/revoke`)
       .set('Cookie', [authCookie])
-      .expect(201); // Assuming 201 for POST action.
+      .expect(200); // Revoke returns 200 OK
 
     const txReverted = await prisma.bankTransaction.findUniqueOrThrow({
       where: { id: bankTransactionId },
@@ -214,7 +215,7 @@ describe('Allocation Split (e2e)', () => {
     await request(
       app.getHttpServer() as unknown as Parameters<typeof request>[0],
     )
-      .post('/allocations')
+      .post('/api/v1/allocations')
       .set('Cookie', [authCookie])
       .send({
         allocations: [

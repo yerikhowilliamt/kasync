@@ -136,7 +136,7 @@ A failing pipeline blocks merge to `main`. Deployment automation is out of scope
  
 ## 10. API Documentation
  
-Every controller endpoint is documented via `@nestjs/swagger` decorators (`@ApiOperation`, `@ApiResponse`, DTOs annotated with `@ApiProperty`). Swagger UI is exposed at `/docs` in non-production environments. This isn't optional polish — an undocumented API is a real gap for a portfolio project meant to be readable by someone who didn't build it.
+Every controller endpoint is documented via `@nestjs/swagger` decorators (`@ApiOperation`, `@ApiResponse`, DTOs annotated with `@ApiProperty`). All endpoints are prefixed with `/api/v1/` (see ADR-011). Swagger UI is exposed at `/docs` in non-production environments. This isn't optional polish — an undocumented API is a real gap for a portfolio project meant to be readable by someone who didn't build it.
  
 ---
  
@@ -151,5 +151,6 @@ Every controller endpoint is documented via `@nestjs/swagger` decorators (`@ApiO
 Not every decision needs an ADR — the trigger is genuine alternatives with real trade-offs, not implementation detail:
  
 - **Requires an ADR:** choice of ORM, how the allocation-sum constraint is enforced, CSV import strategy, system shape (monolith vs. services) — decisions where a different reasonable engineer could have chosen differently, and the "why" matters later.
+- API versioning strategy, idempotency key design, observability tooling choices, JWT secret management changes.
 - **Does not require an ADR:** variable naming, which utility function to use, minor refactors that don't change behavior or public interfaces.
  

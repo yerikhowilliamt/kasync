@@ -116,6 +116,8 @@ A `BankTransaction` and a `LedgerEntry` are never linked directly. They're conne
 - **Aggregated transactions** (3 small deposits = 1 manual record) → multiple `BankTransaction` rows point to one `LedgerEntry`, via separate `Allocation` rows.
 - **Multi-category / multi-branch transfers** (1 transfer = raw materials + fuel, split across branches) → one `BankTransaction` is split across multiple `Allocation` rows, each pointing to a different `LedgerEntry` (different category/branch).
 **The invariant that must never break:** the sum of `Allocation.amountPortion` for any given `BankTransaction` can never exceed that transaction's `amount`. This is enforced twice — once in application code, once by a PostgreSQL trigger (`check_allocation_sum` in `docs/database/migration.sql`) — so a bug in the app layer alone can't corrupt financial data. If you're changing anything inside `modules/allocation/` or `modules/matching/`, read the relevant ADR entry first (see Section 8).
+
+**Idempotency:** Allocation requests support an optional `idempotencyKey` — if two identical requests arrive with the same key, the second returns the existing allocation instead of creating a duplicate. This prevents double-allocations from network retries.
  
 ---
  
@@ -130,6 +132,9 @@ A `BankTransaction` and a `LedgerEntry` are never linked directly. They're conne
 | **Partially allocated** | A bank transaction with some, but not all, of its amount allocated. |
 | **Unresolved** | A bank transaction with zero allocations — no proposed or confirmed match yet. |
 | **Aggregation match** | A proposed match where multiple bank transactions together sum to one ledger entry's amount. |
+| **Idempotency Key** | An optional client-supplied unique identifier for a request. If two requests carry the same key, the second returns the existing result instead of creating a duplicate. |
+| **Correlation ID** | A UUID v4 assigned to every HTTP request for end-to-end tracing in structured logs. Clients may supply their own via `X-Correlation-ID` header. |
+| **Prometheus Metrics** | Standard-formatted metrics exposed at `GET /api/v1/metrics` for dashboarding and alerting (request rate, error rate, latency). |
  
 ---
  
@@ -156,6 +161,8 @@ Things worth knowing *before* writing code, so you don't accidentally rebuild so
 - **CSV import is per-bank, explicit mapping — not a generic parser.** Adding support for a new bank means adding a new mapping config entry, not building a smarter auto-detection system (see ADR-004).
 - **No PDF statement parsing in v1.** CSV only. PDF parsing was deliberately deferred — bank PDF export formats vary too much to support reliably in early scope.
 - **No cash flow forecasting in v1.** This is a reconciliation tool, not a projection tool — forecasting is a Phase-2-or-later idea, not current scope.
+- **All API endpoints are versioned under `/api/v1/`.** Future breaking changes will introduce `/api/v2/` without removing v1 immediately. Clients must use the versioned prefix.
+- **JWT secrets are required in all environments.** The application refuses to start if `JWT_SECRET` or `JWT_REFRESH_SECRET` are missing from the environment — no hardcoded fallbacks (see ADR-015).
 ---
  
 ## 10. Contributing & Workflow

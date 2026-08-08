@@ -38,6 +38,7 @@ describe('Reconciliation User Journey (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
+    app.setGlobalPrefix('api/v1');
     app.use(cookieParser());
     app.useGlobalPipes(new ValidationPipe({ transform: true }));
     app.useGlobalFilters(new PostgresTriggerExceptionFilter());
@@ -66,7 +67,7 @@ describe('Reconciliation User Journey (e2e)', () => {
     const regRes = await request(
       app.getHttpServer() as unknown as Parameters<typeof request>[0],
     )
-      .post('/auth/register')
+      .post('/api/v1/auth/register')
       .send({
         email: `recon-user-${Date.now()}@example.com`,
         password: 'password123',
@@ -107,7 +108,7 @@ describe('Reconciliation User Journey (e2e)', () => {
       typeof request
     >[0];
     const importRes = await request(server)
-      .post('/import/csv')
+      .post('/api/v1/import/csv')
       .set('Cookie', [authCookie])
       .field('accountId', accountId)
       .field('bankFormat', 'BCA')
@@ -165,7 +166,7 @@ describe('Reconciliation User Journey (e2e)', () => {
     let dashRes = await request(
       app.getHttpServer() as unknown as Parameters<typeof request>[0],
     )
-      .get(`/reconciliation/dashboard?accountId=${accountId}`)
+      .get(`/api/v1/reconciliation/dashboard?accountId=${accountId}`)
       .set('Cookie', [authCookie])
       .expect(200);
 
@@ -178,7 +179,7 @@ describe('Reconciliation User Journey (e2e)', () => {
     const proposeRes = await request(
       app.getHttpServer() as unknown as Parameters<typeof request>[0],
     )
-      .post('/matching/propose')
+      .post('/api/v1/matching/propose')
       .set('Cookie', [authCookie])
       .send({ accountId })
       .expect(200);
@@ -196,7 +197,7 @@ describe('Reconciliation User Journey (e2e)', () => {
     await request(
       app.getHttpServer() as unknown as Parameters<typeof request>[0],
     )
-      .post('/allocations')
+      .post('/api/v1/allocations')
       .set('Cookie', [authCookie])
       .send({
         bankTransactionId: tx150.id,
@@ -215,7 +216,7 @@ describe('Reconciliation User Journey (e2e)', () => {
     await request(
       app.getHttpServer() as unknown as Parameters<typeof request>[0],
     )
-      .post('/allocations')
+      .post('/api/v1/allocations')
       .set('Cookie', [authCookie])
       .send({
         allocations: [
@@ -243,7 +244,7 @@ describe('Reconciliation User Journey (e2e)', () => {
     dashRes = await request(
       app.getHttpServer() as unknown as Parameters<typeof request>[0],
     )
-      .get(`/reconciliation/dashboard?accountId=${accountId}`)
+      .get(`/api/v1/reconciliation/dashboard?accountId=${accountId}`)
       .set('Cookie', [authCookie])
       .expect(200);
 

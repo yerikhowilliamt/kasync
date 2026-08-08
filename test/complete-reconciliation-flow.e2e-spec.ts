@@ -38,6 +38,7 @@ describe('Complete Reconciliation Flow (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
+    app.setGlobalPrefix('api/v1');
     app.use(cookieParser());
     app.useGlobalPipes(new ValidationPipe({ transform: true }));
     app.useGlobalFilters(new PostgresTriggerExceptionFilter());
@@ -66,7 +67,7 @@ describe('Complete Reconciliation Flow (e2e)', () => {
     const regRes = await request(
       app.getHttpServer() as unknown as Parameters<typeof request>[0],
     )
-      .post('/auth/register')
+      .post('/api/v1/auth/register')
       .send({
         email: `complete-flow-user-${Date.now()}@example.com`,
         password: 'password123',
@@ -110,7 +111,7 @@ describe('Complete Reconciliation Flow (e2e)', () => {
     // 2. OUTFLOW 500.00 (Split into 300.00 + 200.00)
 
     const leInflowRes = await request(server)
-      .post('/ledger-entries')
+      .post('/api/v1/ledger-entries')
       .set('Cookie', [authCookie])
       .send({
         categoryId,
@@ -124,7 +125,7 @@ describe('Complete Reconciliation Flow (e2e)', () => {
     const leInflowId = (leInflowRes.body as { id: string }).id;
 
     const leOutflow1Res = await request(server)
-      .post('/ledger-entries')
+      .post('/api/v1/ledger-entries')
       .set('Cookie', [authCookie])
       .send({
         categoryId,
@@ -138,7 +139,7 @@ describe('Complete Reconciliation Flow (e2e)', () => {
     const leOutflow1Id = (leOutflow1Res.body as { id: string }).id;
 
     const leOutflow2Res = await request(server)
-      .post('/ledger-entries')
+      .post('/api/v1/ledger-entries')
       .set('Cookie', [authCookie])
       .send({
         categoryId,
@@ -155,7 +156,7 @@ describe('Complete Reconciliation Flow (e2e)', () => {
     const csvPath = path.resolve(__dirname, 'fixtures/mandiri-valid.csv');
 
     const importRes = await request(server)
-      .post('/import/csv')
+      .post('/api/v1/import/csv')
       .set('Cookie', [authCookie])
       .field('accountId', accountId)
       .field('bankFormat', 'MANDIRI')
@@ -177,7 +178,7 @@ describe('Complete Reconciliation Flow (e2e)', () => {
     // Note: accountId scopes bank transactions correctly; ledger balance
     // is global per category/branch so we only assert counts and bank balance
     let dashRes = await request(server)
-      .get(`/reconciliation/dashboard?accountId=${accountId}`)
+      .get(`/api/v1/reconciliation/dashboard?accountId=${accountId}`)
       .set('Cookie', [authCookie])
       .expect(200);
 
@@ -187,7 +188,7 @@ describe('Complete Reconciliation Flow (e2e)', () => {
 
     // Step 4: Run Matching Engine Propose via POST /matching/propose
     await request(server)
-      .post('/matching/propose')
+      .post('/api/v1/matching/propose')
       .set('Cookie', [authCookie])
       .send({ accountId })
       .expect(200);
@@ -199,7 +200,7 @@ describe('Complete Reconciliation Flow (e2e)', () => {
 
     // Step 5: Allocate Single Match for txInflow (1000.00)
     await request(server)
-      .post('/allocations')
+      .post('/api/v1/allocations')
       .set('Cookie', [authCookie])
       .send({
         bankTransactionId: txInflow.id,
@@ -215,7 +216,7 @@ describe('Complete Reconciliation Flow (e2e)', () => {
 
     // Step 6: Allocate Split Match for txOutflow (500.00 -> 300.00 + 200.00)
     await request(server)
-      .post('/allocations')
+      .post('/api/v1/allocations')
       .set('Cookie', [authCookie])
       .send({
         allocations: [
@@ -240,7 +241,7 @@ describe('Complete Reconciliation Flow (e2e)', () => {
 
     // Step 7: Verify final dashboard metrics
     dashRes = await request(server)
-      .get(`/reconciliation/dashboard?accountId=${accountId}`)
+      .get(`/api/v1/reconciliation/dashboard?accountId=${accountId}`)
       .set('Cookie', [authCookie])
       .expect(200);
 

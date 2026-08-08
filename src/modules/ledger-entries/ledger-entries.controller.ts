@@ -22,6 +22,7 @@ export class LedgerEntriesController {
   @Post()
   @ApiOperation({ summary: 'Create a ledger entry' })
   @ApiResponse({ status: 201, description: 'Created' })
+  @ApiResponse({ status: 400, description: 'Bad Request' })
   create(@Body() createLedgerEntryDto: CreateLedgerEntryDto) {
     return this.ledgerEntriesService.create(createLedgerEntryDto);
   }
@@ -34,12 +35,14 @@ export class LedgerEntriesController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get a ledger entry by ID' })
+  @ApiResponse({ status: 404, description: 'Ledger entry not found' })
   findOne(@Param('id') id: string) {
     return this.ledgerEntriesService.findOne(id);
   }
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update a ledger entry' })
+  @ApiResponse({ status: 404, description: 'Ledger entry not found' })
   update(
     @Param('id') id: string,
     @Body() updateLedgerEntryDto: UpdateLedgerEntryDto,
@@ -49,6 +52,7 @@ export class LedgerEntriesController {
 
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a ledger entry' })
+  @ApiResponse({ status: 404, description: 'Ledger entry not found' })
   remove(@Param('id') id: string) {
     return this.ledgerEntriesService.remove(id);
   }

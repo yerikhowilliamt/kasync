@@ -18,6 +18,7 @@ describe('AuthModule (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
+    app.setGlobalPrefix('api/v1');
     app.use(cookieParser());
     app.useGlobalPipes(
       new ValidationPipe({ whitelist: true, transform: true }),
@@ -33,7 +34,7 @@ describe('AuthModule (e2e)', () => {
     const response = await request(
       app.getHttpServer() as unknown as Parameters<typeof request>[0],
     )
-      .post('/auth/register')
+      .post('/api/v1/auth/register')
       .send(testUser)
       .expect(201);
 
@@ -50,7 +51,7 @@ describe('AuthModule (e2e)', () => {
     const response = await request(
       app.getHttpServer() as unknown as Parameters<typeof request>[0],
     )
-      .post('/auth/login')
+      .post('/api/v1/auth/login')
       .send({
         email: testUser.email,
         password: testUser.password,
@@ -65,7 +66,7 @@ describe('AuthModule (e2e)', () => {
     const loginRes = await request(
       app.getHttpServer() as unknown as Parameters<typeof request>[0],
     )
-      .post('/auth/login')
+      .post('/api/v1/auth/login')
       .send({
         email: testUser.email,
         password: testUser.password,
@@ -77,7 +78,7 @@ describe('AuthModule (e2e)', () => {
     const refreshRes = await request(
       app.getHttpServer() as unknown as Parameters<typeof request>[0],
     )
-      .post('/auth/refresh')
+      .post('/api/v1/auth/refresh')
       .set('Cookie', [refreshCookie!])
       .expect(200);
 
@@ -89,7 +90,7 @@ describe('AuthModule (e2e)', () => {
     await request(
       app.getHttpServer() as unknown as Parameters<typeof request>[0],
     )
-      .get('/accounts')
+      .get('/api/v1/accounts')
       .expect(401);
   });
 
@@ -97,7 +98,7 @@ describe('AuthModule (e2e)', () => {
     const loginRes = await request(
       app.getHttpServer() as unknown as Parameters<typeof request>[0],
     )
-      .post('/auth/login')
+      .post('/api/v1/auth/login')
       .send({
         email: testUser.email,
         password: testUser.password,
@@ -109,7 +110,7 @@ describe('AuthModule (e2e)', () => {
     await request(
       app.getHttpServer() as unknown as Parameters<typeof request>[0],
     )
-      .get('/accounts')
+      .get('/api/v1/accounts')
       .set('Cookie', [accessCookie!])
       .expect(200);
   });

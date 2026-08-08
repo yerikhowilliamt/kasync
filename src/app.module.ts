@@ -1,4 +1,6 @@
-import { Module } from '@nestjs/common';
+import { Module, MiddlewareConsumer } from '@nestjs/common';
+import { randomUUID } from 'crypto';
+import { CorrelationIdMiddleware } from './common/middleware/correlation-id.middleware';
 import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { LoggerModule } from 'nestjs-pino';
@@ -26,6 +28,8 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
     }),
     LoggerModule.forRoot({
       pinoHttp: {
+        genReqId: (req) =>
+          (req.headers['x-correlation-id'] as string) || randomUUID(),
         transport:
           process.env.NODE_ENV !== 'production'
             ? { target: 'pino-pretty' }
@@ -62,4 +66,8 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
     },
   ],
 })
-export class AppModule {}
+export class AppModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(CorrelationIdMiddleware).forRoutes('*');
+  }
+}

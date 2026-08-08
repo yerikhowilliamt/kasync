@@ -49,12 +49,9 @@ export class PostgresTriggerExceptionFilter implements ExceptionFilter {
           dbErrorMessage.includes('Allocation total') ||
           dbErrorMessage.includes('exceed')
         ) {
-          const error = new AllocationExceededError(
-            undefined,
-            undefined,
-            undefined,
-            dbErrorMessage,
-          );
+          const error = new AllocationExceededError({
+            message: dbErrorMessage,
+          });
           return response.status(HttpStatus.BAD_REQUEST).json({
             statusCode: HttpStatus.BAD_REQUEST,
             error: error.name,
