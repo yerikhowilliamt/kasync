@@ -5,11 +5,9 @@ import { BranchesService } from './branches.service';
 describe('BranchesController', () => {
   let controller: BranchesController;
   let service: BranchesService;
+  const testUserId = 'user-123';
 
-  const mockBranch = {
-    id: 'test-id',
-    name: 'test-branch',
-  };
+  const mockBranch = { id: 'test-id', name: 'test-branch', userId: testUserId };
 
   const mockBranchesService = {
     create: jest.fn(),
@@ -29,60 +27,52 @@ describe('BranchesController', () => {
     service = module.get<BranchesService>(BranchesService);
   });
 
-  afterEach(() => {
-    jest.clearAllMocks();
-  });
+  afterEach(() => jest.clearAllMocks());
 
-  it('should be defined', () => {
-    expect(controller).toBeDefined();
-  });
+  it('should be defined', () => expect(controller).toBeDefined());
 
   describe('create', () => {
     it('should create a branch', async () => {
       mockBranchesService.create.mockResolvedValue(mockBranch);
-      const result = await controller.create({ name: 'test-branch' });
+      const result = await controller.create(testUserId, { name: 'test-branch' });
       expect(result).toEqual(mockBranch);
-      expect(jest.spyOn(service, 'create')).toHaveBeenCalledWith({
-        name: 'test-branch',
-      });
+      expect(service.create).toHaveBeenCalledWith({ name: 'test-branch' }, testUserId);
     });
   });
 
   describe('findAll', () => {
-    it('should get all branches', async () => {
+    it('should get all branches for a user', async () => {
       mockBranchesService.findAll.mockResolvedValue([mockBranch]);
-      const result = await controller.findAll();
+      const result = await controller.findAll(testUserId);
       expect(result).toEqual([mockBranch]);
-      expect(jest.spyOn(service, 'findAll')).toHaveBeenCalled();
+      expect(service.findAll).toHaveBeenCalledWith(testUserId);
     });
   });
 
   describe('findOne', () => {
     it('should get a branch by ID', async () => {
       mockBranchesService.findOne.mockResolvedValue(mockBranch);
-      const result = await controller.findOne('test-id');
+      const result = await controller.findOne(testUserId, 'test-id');
       expect(result).toEqual(mockBranch);
-      expect(jest.spyOn(service, 'findOne')).toHaveBeenCalledWith('test-id');
+      expect(service.findOne).toHaveBeenCalledWith('test-id', testUserId);
     });
   });
 
   describe('update', () => {
     it('should update a branch', async () => {
       mockBranchesService.update.mockResolvedValue(mockBranch);
-      const result = await controller.update('test-id', { name: 'updated' });
+      const result = await controller.update(testUserId, 'test-id', { name: 'updated' });
       expect(result).toEqual(mockBranch);
-      expect(jest.spyOn(service, 'update')).toHaveBeenCalledWith('test-id', {
-        name: 'updated',
-      });
+      expect(service.update).toHaveBeenCalledWith('test-id', { name: 'updated' }, testUserId);
     });
   });
 
   describe('remove', () => {
     it('should remove a branch', async () => {
       mockBranchesService.remove.mockResolvedValue(mockBranch);
-      const result = await controller.remove('test-id');
+      const result = await controller.remove(testUserId, 'test-id');
       expect(result).toEqual(mockBranch);
-      expect(jest.spyOn(service, 'remove')).toHaveBeenCalledWith('test-id');
+      expect(service.remove).toHaveBeenCalledWith('test-id', testUserId);
     });
   });
 });

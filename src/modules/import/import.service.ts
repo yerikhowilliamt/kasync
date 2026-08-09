@@ -9,10 +9,9 @@ export class ImportService {
     private bankParserFactory: BankParserFactory,
   ) {}
 
-  async importCsv(accountId: string, format: string, fileBuffer: Buffer) {
-    // Validate account
-    const account = await this.prisma.account.findUnique({
-      where: { id: accountId },
+  async importCsv(accountId: string, format: string, fileBuffer: Buffer, userId: string) {
+    const account = await this.prisma.account.findFirst({
+      where: { id: accountId, userId },
     });
 
     if (!account) {
@@ -20,7 +19,6 @@ export class ImportService {
     }
 
     const parser = this.bankParserFactory.getParser(format);
-
     const parsedData = await parser.parse(fileBuffer);
 
     if (parsedData.length === 0) {

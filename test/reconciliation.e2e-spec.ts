@@ -31,6 +31,7 @@ describe('Reconciliation User Journey (e2e)', () => {
   let categoryId: string;
   let branchId: string;
   let authCookie: string;
+  let userId: string;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -44,26 +45,6 @@ describe('Reconciliation User Journey (e2e)', () => {
     app.useGlobalFilters(new PostgresTriggerExceptionFilter());
     await app.init();
 
-    // 1. Setup account, category, branch
-    const account = await prisma.account.create({
-      data: {
-        name: `E2E Journey Account ${Date.now()}`,
-        type: 'BANK',
-      },
-    });
-    accountId = account.id;
-
-    const category = await prisma.category.create({
-      data: { name: `E2E Category ${Date.now()}` },
-    });
-    categoryId = category.id;
-
-    const branch = await prisma.branch.create({
-      data: { name: `E2E Branch ${Date.now()}` },
-    });
-    branchId = branch.id;
-
-    // Register user for test authentication
     const regRes = await request(
       app.getHttpServer() as unknown as Parameters<typeof request>[0],
     )
@@ -73,8 +54,29 @@ describe('Reconciliation User Journey (e2e)', () => {
         password: 'password123',
         name: 'Recon User',
       });
+    userId = regRes.body.id;
     const cookies = regRes.headers['set-cookie'] as unknown as string[];
     authCookie = cookies.find((c) => c.startsWith('access_token='))!;
+
+    // 1. Setup account, category, branch
+    const account = await prisma.account.create({
+      data: {
+        name: `E2E Journey Account ${Date.now()}`,
+        type: 'BANK',
+        userId,
+      },
+    });
+    accountId = account.id;
+
+    const category = await prisma.category.create({
+      data: { name: `E2E Category ${Date.now()}`, userId },
+    });
+    categoryId = category.id;
+
+    const branch = await prisma.branch.create({
+      data: { name: `E2E Branch ${Date.now()}`, userId },
+    });
+    branchId = branch.id;
   });
 
   afterAll(async () => {
@@ -136,6 +138,7 @@ describe('Reconciliation User Journey (e2e)', () => {
         amount: 1000.0,
         type: 'INFLOW',
         note: 'Transfer Masuk 1000',
+        userId,
       },
     });
 
@@ -147,6 +150,7 @@ describe('Reconciliation User Journey (e2e)', () => {
         amount: 300.0,
         type: 'OUTFLOW',
         note: 'Beli ATK 300',
+        userId,
       },
     });
 
@@ -158,6 +162,7 @@ describe('Reconciliation User Journey (e2e)', () => {
         amount: 200.5,
         type: 'OUTFLOW',
         note: 'Beli Snack 200.5',
+        userId,
       },
     });
 

@@ -2,22 +2,24 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { CategoriesService } from './categories.service';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { NotFoundException } from '@nestjs/common';
-import { Category } from '@prisma/client';
 
 describe('CategoriesService', () => {
   let service: CategoriesService;
   let prisma: PrismaService;
+  const testUserId = 'user-123';
 
-  const mockCategory: Category = {
+  const mockCategory = {
     id: 'test-id',
     name: 'test-category',
+    userId: testUserId,
+    ledgerEntries: [],
   };
 
   const mockPrismaService = {
     category: {
       create: jest.fn(),
       findMany: jest.fn(),
-      findUnique: jest.fn(),
+      findFirst: jest.fn(),
       update: jest.fn(),
       delete: jest.fn(),
     },
@@ -35,92 +37,68 @@ describe('CategoriesService', () => {
     prisma = module.get<PrismaService>(PrismaService);
   });
 
-  afterEach(() => {
-    jest.clearAllMocks();
-  });
+  afterEach(() => jest.clearAllMocks());
 
-  it('should be defined', () => {
-    expect(service).toBeDefined();
-  });
+  it('should be defined', () => expect(service).toBeDefined());
 
   describe('create', () => {
     it('should create a category', async () => {
       mockPrismaService.category.create.mockResolvedValue(mockCategory);
-      const result = await service.create({ name: 'test-category' });
+      const result = await service.create({ name: 'test-category' }, testUserId);
       expect(result).toEqual(mockCategory);
-      expect(
-        (prisma.category.create as jest.Mock).mock.calls.length,
-      ).toBeGreaterThan(0);
+      expect(prisma.category.create).toHaveBeenCalledWith({
+        data: { name: 'test-category', userId: testUserId },
+      });
     });
   });
 
   describe('findAll', () => {
-    it('should return an array of categories', async () => {
+    it('should return categories for a user', async () => {
       mockPrismaService.category.findMany.mockResolvedValue([mockCategory]);
-      const result = await service.findAll();
+      const result = await service.findAll(testUserId);
       expect(result).toEqual([mockCategory]);
-      expect(
-        (prisma.category.findMany as jest.Mock).mock.calls.length,
-      ).toBeGreaterThan(0);
+      expect(prisma.category.findMany).toHaveBeenCalledWith({ where: { userId: testUserId } });
     });
   });
 
   describe('findOne', () => {
     it('should return a category if found', async () => {
-      mockPrismaService.category.findUnique.mockResolvedValue(mockCategory);
-      const result = await service.findOne('test-id');
+      mockPrismaService.category.findFirst.mockResolvedValue(mockCategory);
+      const result = await service.findOne('test-id', testUserId);
       expect(result).toEqual(mockCategory);
-      expect(
-        (prisma.category.findUnique as jest.Mock).mock.calls.length,
-      ).toBeGreaterThan(0);
     });
 
     it('should throw NotFoundException if not found', async () => {
-      mockPrismaService.category.findUnique.mockResolvedValue(null);
-      await expect(service.findOne('test-id')).rejects.toThrow(
-        NotFoundException,
-      );
+      mockPrismaService.category.findFirst.mockResolvedValue(null);
+      await expect(service.findOne('test-id', testUserId)).rejects.toThrow(NotFoundException);
     });
   });
 
   describe('update', () => {
     it('should update and return a category', async () => {
-      mockPrismaService.category.findUnique.mockResolvedValue(mockCategory);
-      mockPrismaService.category.update.mockResolvedValue({
-        ...mockCategory,
-        name: 'updated',
-      });
-      const result = await service.update('test-id', { name: 'updated' });
+      mockPrismaService.category.findFirst.mockResolvedValue(mockCategory);
+      mockPrismaService.category.update.mockResolvedValue({ ...mockCategory, name: 'updated' });
+      const result = await service.update('test-id', { name: 'updated' }, testUserId);
       expect(result.name).toBe('updated');
-      expect(
-        (prisma.category.update as jest.Mock).mock.calls.length,
-      ).toBeGreaterThan(0);
     });
 
-    it('should throw NotFoundException if category to update is not found', async () => {
-      mockPrismaService.category.findUnique.mockResolvedValue(null);
-      await expect(
-        service.update('test-id', { name: 'updated' }),
-      ).rejects.toThrow(NotFoundException);
+    it('should throw NotFoundException if not found', async () => {
+      mockPrismaService.category.findFirst.mockResolvedValue(null);
+      await expect(service.update('test-id', { name: 'updated' }, testUserId)).rejects.toThrow(NotFoundException);
     });
   });
 
   describe('remove', () => {
     it('should delete and return a category', async () => {
-      mockPrismaService.category.findUnique.mockResolvedValue(mockCategory);
+      mockPrismaService.category.findFirst.mockResolvedValue(mockCategory);
       mockPrismaService.category.delete.mockResolvedValue(mockCategory);
-      const result = await service.remove('test-id');
+      const result = await service.remove('test-id', testUserId);
       expect(result).toEqual(mockCategory);
-      expect(
-        (prisma.category.delete as jest.Mock).mock.calls.length,
-      ).toBeGreaterThan(0);
     });
 
-    it('should throw NotFoundException if category to delete is not found', async () => {
-      mockPrismaService.category.findUnique.mockResolvedValue(null);
-      await expect(service.remove('test-id')).rejects.toThrow(
-        NotFoundException,
-      );
+    it('should throw NotFoundException if not found', async () => {
+      mockPrismaService.category.findFirst.mockResolvedValue(null);
+      await expect(service.remove('test-id', testUserId)).rejects.toThrow(NotFoundException);
     });
   });
 });

@@ -1,7 +1,5 @@
 import {
-  Injectable,
-  NotFoundException,
-  BadRequestException,
+  Injectable, NotFoundException, BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { CreateBranchDto } from './dto/create-branch.dto';
@@ -12,48 +10,36 @@ import { Branch, Prisma } from '@prisma/client';
 export class BranchesService {
   constructor(private prisma: PrismaService) {}
 
-  async create(createBranchDto: CreateBranchDto): Promise<Branch> {
+  async create(dto: CreateBranchDto, userId: string): Promise<Branch> {
     return await this.prisma.branch.create({
-      data: createBranchDto,
+      data: { ...dto, userId },
     });
   }
 
-  async findAll(): Promise<Branch[]> {
-    return await this.prisma.branch.findMany();
+  async findAll(userId: string): Promise<Branch[]> {
+    return await this.prisma.branch.findMany({ where: { userId } });
   }
 
-  async findOne(id: string): Promise<Branch> {
-    const branch = await this.prisma.branch.findUnique({
-      where: { id },
-    });
+  async findOne(id: string, userId: string): Promise<Branch> {
+    const branch = await this.prisma.branch.findFirst({ where: { id, userId } });
     if (!branch) {
       throw new NotFoundException(`Branch with ID ${id} not found`);
     }
     return branch;
   }
 
-  async update(id: string, updateBranchDto: UpdateBranchDto): Promise<Branch> {
-    await this.findOne(id); // Check existence
-    return await this.prisma.branch.update({
-      where: { id },
-      data: updateBranchDto,
-    });
+  async update(id: string, dto: UpdateBranchDto, userId: string): Promise<Branch> {
+    await this.findOne(id, userId);
+    return await this.prisma.branch.update({ where: { id }, data: dto });
   }
 
-  async remove(id: string): Promise<Branch> {
-    await this.findOne(id); // Check existence
+  async remove(id: string, userId: string): Promise<Branch> {
+    await this.findOne(id, userId);
     try {
-      return await this.prisma.branch.delete({
-        where: { id },
-      });
+      return await this.prisma.branch.delete({ where: { id } });
     } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2003'
-      ) {
-        throw new BadRequestException(
-          'Cannot delete branch referenced by existing ledger entries',
-        );
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2003') {
+        throw new BadRequestException('Cannot delete branch referenced by existing ledger entries');
       }
       throw error;
     }

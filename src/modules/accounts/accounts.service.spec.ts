@@ -7,6 +7,7 @@ import { NotFoundException } from '@nestjs/common';
 describe('AccountsService', () => {
   let service: AccountsService;
   let prisma: PrismaService;
+  const testUserId = 'user-123';
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -18,7 +19,7 @@ describe('AccountsService', () => {
             account: {
               create: jest.fn(),
               findMany: jest.fn(),
-              findUnique: jest.fn(),
+              findFirst: jest.fn(),
               update: jest.fn(),
               delete: jest.fn(),
             },
@@ -41,6 +42,7 @@ describe('AccountsService', () => {
       const expected = {
         id: '1',
         ...createDto,
+        userId: testUserId,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -49,33 +51,39 @@ describe('AccountsService', () => {
         .spyOn(prisma.account, 'create')
         .mockResolvedValue(expected);
 
-      const result = await service.create(createDto);
+      const result = await service.create(createDto, testUserId);
       expect(result).toEqual(expected);
-      expect(createSpy).toHaveBeenCalledWith({ data: createDto });
+      expect(createSpy).toHaveBeenCalledWith({ data: { ...createDto, userId: testUserId } });
+    });
+  });
+
+  describe('findAll', () => {
+    it('should return accounts for user', async () => {
+      const expected = [{ id: '1', name: 'Test', type: AccountType.CASH, userId: testUserId, createdAt: new Date(), updatedAt: new Date() }];
+      jest.spyOn(prisma.account, 'findMany').mockResolvedValue(expected);
+      const result = await service.findAll(testUserId);
+      expect(result).toEqual(expected);
+      expect(prisma.account.findMany).toHaveBeenCalledWith({ where: { userId: testUserId } });
     });
   });
 
   describe('findOne', () => {
     it('should return account if found', async () => {
       const expected = {
-        id: '1',
-        name: 'Test',
-        type: AccountType.CASH,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        id: '1', name: 'Test', type: AccountType.CASH, userId: testUserId, createdAt: new Date(), updatedAt: new Date(),
       };
-      jest.spyOn(prisma.account, 'findUnique').mockResolvedValue(expected);
+      jest.spyOn(prisma.account, 'findFirst').mockResolvedValue(expected);
 
-      const result = await service.findOne('1');
+      const result = await service.findOne('1', testUserId);
       expect(result).toEqual(expected);
     });
 
     it('should throw NotFoundException if not found', async () => {
-      jest.spyOn(prisma.account, 'findUnique').mockResolvedValue(null);
+      jest.spyOn(prisma.account, 'findFirst').mockResolvedValue(null);
 
       let error;
       try {
-        await service.findOne('1');
+        await service.findOne('1', testUserId);
       } catch (e) {
         error = e;
       }

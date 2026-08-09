@@ -8,41 +8,31 @@ import { Account } from '@prisma/client';
 export class AccountsService {
   constructor(private prisma: PrismaService) {}
 
-  async create(createAccountDto: CreateAccountDto): Promise<Account> {
+  async create(createAccountDto: CreateAccountDto, userId: string): Promise<Account> {
     return this.prisma.account.create({
-      data: createAccountDto,
+      data: { ...createAccountDto, userId },
     });
   }
 
-  async findAll(): Promise<Account[]> {
-    return this.prisma.account.findMany();
+  async findAll(userId: string): Promise<Account[]> {
+    return this.prisma.account.findMany({ where: { userId } });
   }
 
-  async findOne(id: string): Promise<Account> {
-    const account = await this.prisma.account.findUnique({
-      where: { id },
-    });
+  async findOne(id: string, userId: string): Promise<Account> {
+    const account = await this.prisma.account.findFirst({ where: { id, userId } });
     if (!account) {
       throw new NotFoundException(`Account with ID ${id} not found`);
     }
     return account;
   }
 
-  async update(
-    id: string,
-    updateAccountDto: UpdateAccountDto,
-  ): Promise<Account> {
-    await this.findOne(id); // Ensure exists
-    return this.prisma.account.update({
-      where: { id },
-      data: updateAccountDto,
-    });
+  async update(id: string, updateAccountDto: UpdateAccountDto, userId: string): Promise<Account> {
+    await this.findOne(id, userId);
+    return this.prisma.account.update({ where: { id }, data: updateAccountDto });
   }
 
-  async remove(id: string): Promise<Account> {
-    await this.findOne(id); // Ensure exists
-    return this.prisma.account.delete({
-      where: { id },
-    });
+  async remove(id: string, userId: string): Promise<Account> {
+    await this.findOne(id, userId);
+    return this.prisma.account.delete({ where: { id } });
   }
 }

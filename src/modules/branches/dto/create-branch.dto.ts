@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsNotEmpty, IsString, IsOptional } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateBranchDto {
@@ -6,4 +6,8 @@ export class CreateBranchDto {
   @IsString()
   @IsNotEmpty()
   name!: string;
+
+  @IsString()
+  @IsOptional()
+  userId?: string;
 }

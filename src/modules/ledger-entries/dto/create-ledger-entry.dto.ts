@@ -1,3 +1,4 @@
+
 import {
   IsEnum,
   IsNotEmpty,
@@ -42,4 +43,9 @@ export class CreateLedgerEntryDto {
   @IsString()
   @IsOptional()
   note?: string;
+
+  @IsString()
+  @IsOptional()
+  userId?: string;
 }
+

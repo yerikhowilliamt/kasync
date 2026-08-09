@@ -1,18 +1,11 @@
 import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-  HttpCode,
-  HttpStatus,
+  Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, HttpStatus,
 } from '@nestjs/common';
 import { CategoriesService } from './categories.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ReqUser } from '../../common/decorators/req-user.decorator';
 
 @ApiTags('categories')
 @Controller('categories')
@@ -22,44 +15,32 @@ export class CategoriesController {
   @Post()
   @ApiOperation({ summary: 'Create category' })
   @ApiResponse({ status: 201, description: 'Created' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 400, description: 'Bad Request' })
-  create(@Body() createCategoryDto: CreateCategoryDto) {
-    return this.categoriesService.create(createCategoryDto);
+  create(@ReqUser('sub') userId: string, @Body() dto: CreateCategoryDto) {
+    return this.categoriesService.create(dto, userId);
   }
 
   @Get()
   @ApiOperation({ summary: 'List all categories' })
-  @ApiResponse({ status: 200, description: 'Success' })
-  findAll() {
-    return this.categoriesService.findAll();
+  findAll(@ReqUser('sub') userId: string) {
+    return this.categoriesService.findAll(userId);
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get category by id' })
-  @ApiResponse({ status: 200, description: 'Success' })
-  @ApiResponse({ status: 404, description: 'Category not found' })
-  findOne(@Param('id') id: string) {
-    return this.categoriesService.findOne(id);
+  findOne(@ReqUser('sub') userId: string, @Param('id') id: string) {
+    return this.categoriesService.findOne(id, userId);
   }
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update category' })
-  @ApiResponse({ status: 200, description: 'Success' })
-  @ApiResponse({ status: 404, description: 'Category not found' })
-  update(
-    @Param('id') id: string,
-    @Body() updateCategoryDto: UpdateCategoryDto,
-  ) {
-    return this.categoriesService.update(id, updateCategoryDto);
+  update(@ReqUser('sub') userId: string, @Param('id') id: string, @Body() dto: UpdateCategoryDto) {
+    return this.categoriesService.update(id, dto, userId);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete category' })
-  @ApiResponse({ status: 204, description: 'Deleted' })
-  @ApiResponse({ status: 404, description: 'Category not found' })
-  remove(@Param('id') id: string) {
-    return this.categoriesService.remove(id);
+  remove(@ReqUser('sub') userId: string, @Param('id') id: string) {
+    return this.categoriesService.remove(id, userId);
   }
 }

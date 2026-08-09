@@ -5,6 +5,18 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('Seeding synthetic demo dataset...');
 
+  // Create a default user first
+  let user = await prisma.user.findFirst();
+  if (!user) {
+    user = await prisma.user.create({
+      data: {
+        name: 'Admin Demo',
+        email: 'admin@demo.com',
+        passwordHash: 'hashed_pass_placeholder',
+      }
+    });
+  }
+
   // 1. Clean existing database
   await prisma.allocation.deleteMany();
   await prisma.ledgerEntry.deleteMany();
@@ -16,6 +28,7 @@ async function main() {
   // 2. Create Accounts
   const bcaAccount = await prisma.account.create({
     data: {
+      userId: user.id,
       name: 'BCA Utama (Synthetic)',
       type: AccountType.BANK,
     },
@@ -23,6 +36,7 @@ async function main() {
 
   const mandiriAccount = await prisma.account.create({
     data: {
+      userId: user.id,
       name: 'Mandiri Operasional (Synthetic)',
       type: AccountType.BANK,
     },
@@ -30,25 +44,27 @@ async function main() {
 
   const cashAccount = await prisma.account.create({
     data: {
+      userId: user.id,
       name: 'Petty Cash Jakarta (Synthetic)',
       type: AccountType.CASH,
     },
   });
 
   // 3. Create Categories
-  const rawMaterialsCat = await prisma.category.create({ data: { name: 'Bahan Baku & Inventory' } });
-  const fuelCat = await prisma.category.create({ data: { name: 'Bahan Bakar & Transport' } });
-  const utilitiesCat = await prisma.category.create({ data: { name: 'Listrik & Utilitas' } });
-  const salesCat = await prisma.category.create({ data: { name: 'Penjualan Omset' } });
+  const rawMaterialsCat = await prisma.category.create({ data: { userId: user.id, name: 'Bahan Baku & Inventory' } });
+  const fuelCat = await prisma.category.create({ data: { userId: user.id, name: 'Bahan Bakar & Transport' } });
+  const utilitiesCat = await prisma.category.create({ data: { userId: user.id, name: 'Listrik & Utilitas' } });
+  const salesCat = await prisma.category.create({ data: { userId: user.id, name: 'Penjualan Omset' } });
 
   // 4. Create Branches
-  const branchJakarta = await prisma.branch.create({ data: { name: 'Cabang Jakarta Selatan' } });
-  const branchBandung = await prisma.branch.create({ data: { name: 'Cabang Bandung Central' } });
-  const branchSurabaya = await prisma.branch.create({ data: { name: 'Cabang Surabaya Barat' } });
+  const branchJakarta = await prisma.branch.create({ data: { userId: user.id, name: 'Cabang Jakarta Selatan' } });
+  const branchBandung = await prisma.branch.create({ data: { userId: user.id, name: 'Cabang Bandung Central' } });
+  const branchSurabaya = await prisma.branch.create({ data: { userId: user.id, name: 'Cabang Surabaya Barat' } });
 
   // 5. Create Ledger Entries (Manual Business Records)
   const ledger1 = await prisma.ledgerEntry.create({
     data: {
+      userId: user.id,
       categoryId: rawMaterialsCat.id,
       branchId: branchJakarta.id,
       entryDate: new Date('2026-08-01T08:00:00Z'),
@@ -60,6 +76,7 @@ async function main() {
 
   const ledger2 = await prisma.ledgerEntry.create({
     data: {
+      userId: user.id,
       categoryId: fuelCat.id,
       branchId: branchBandung.id,
       entryDate: new Date('2026-08-01T09:30:00Z'),
@@ -71,6 +88,7 @@ async function main() {
 
   const ledger3 = await prisma.ledgerEntry.create({
     data: {
+      userId: user.id,
       categoryId: salesCat.id,
       branchId: branchJakarta.id,
       entryDate: new Date('2026-08-02T16:00:00Z'),
@@ -82,6 +100,7 @@ async function main() {
 
   const ledger4 = await prisma.ledgerEntry.create({
     data: {
+      userId: user.id,
       categoryId: utilitiesCat.id,
       branchId: branchSurabaya.id,
       entryDate: new Date('2026-08-03T10:00:00Z'),

@@ -10,24 +10,36 @@ describe('Allocation Triggers (e2e)', () => {
   let bankTransactionId: string;
   let ledgerEntryId1: string;
   let ledgerEntryId2: string;
+  let userId: string;
 
   beforeAll(async () => {
+    // create user
+    const user = await prisma.user.create({
+      data: {
+        name: 'Test Trigger User',
+        email: `trigger-user-${Date.now()}@example.com`,
+        passwordHash: 'test',
+      },
+    });
+    userId = user.id;
+
     // Setup test data
     const account = await prisma.account.create({
       data: {
         name: 'Test Trigger Account',
         type: 'BANK',
+        userId,
       },
     });
     accountId = account.id;
 
     const category = await prisma.category.create({
-      data: { name: `Test Trigger Category ${Date.now()}` },
+      data: { name: `Test Trigger Category ${Date.now()}`, userId },
     });
     categoryId = category.id;
 
     const branch = await prisma.branch.create({
-      data: { name: `Test Trigger Branch ${Date.now()}` },
+      data: { name: `Test Trigger Branch ${Date.now()}`, userId },
     });
     branchId = branch.id;
   });
@@ -54,6 +66,7 @@ describe('Allocation Triggers (e2e)', () => {
         amount: 600.0,
         type: 'INFLOW',
         note: 'Entry 1',
+        userId,
       },
     });
     ledgerEntryId1 = le1.id;
@@ -66,6 +79,7 @@ describe('Allocation Triggers (e2e)', () => {
         amount: 600.0,
         type: 'INFLOW',
         note: 'Entry 2',
+        userId,
       },
     });
     ledgerEntryId2 = le2.id;
