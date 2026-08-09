@@ -1,3 +1,17 @@
+## Task: Docs Sync — QA Remediation Notes (Mon Aug 10 2026)
+
+- **Completed**: Yes
+- **Modules**: Docs (`01 - System_Design.md`, `02 - ADR.md`)
+- **Description**: Documented the QA remediation changes in architecture and design docs to match implemented source:
+  1. **ADR-003 / System Design Allocation section**: Added `SELECT ... FOR UPDATE` row lock inside `prisma.$transaction` reinforcing the app-layer cap check; noted TOCTOU prevention and the three-layer defense (app-layer check → row lock → trigger `check_allocation_sum`).
+  2. **ADR-009 / System Design Auth row**: Updated token revocation tolerance to `iat * 1000 + 2000 < tokenValidFrom.getTime()` — 2s clock-skew tolerance, no post-logout acceptance window (old math `iat * 1000 < tokenValidFrom - 2000` accepted stale tokens).
+  3. **ADR-012**: Documented user-scoped idempotency lookup `findFirst({ idempotencyKey, bankTransaction: { account: { userId } } })` preventing cross-user key collision.
+  4. **ADR-010 / System Design Cloudinary row**: Documented lazy-initialized Cloudinary config (env vars validated on first `uploadFile()` call) — app boots in test/CI without Cloudinary env vars.
+  5. **System Design 9.3**: Noted generic 500 message instead of raw exception details.
+  6. **System Design 9.4 (new)**: DTO validation notes — `@IsIn(['BCA', 'MANDIRI'])` on `ImportCsvDto.bankFormat`, `@MaxLength(128)` on `LoginDto.password`.
+- **Verification**: `npx tsc --noEmit` (0 errors), `npm run lint` (0 errors), `npm run test` (133/133 passing, 25 suites)
+- **Git Branch**: `fix/qa-remediation`
+
 ## Task: QA Remediation — Critical + High Defect Fixes (Mon Aug 10 2026)
 
 - **Completed**: Yes

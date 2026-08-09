@@ -30,12 +30,12 @@ This document translates the PRD's product requirements into concrete technical 
 
 | Module | Responsibility |
 |---|---|
-| **Auth** | Manages user registration, login, token refresh, and logout. Generates JWT Access Tokens (1d) and Refresh Tokens (30d). Validates Refresh Tokens against hashed entries in PostgreSQL. |
+| **Auth** | Manages user registration, login, token refresh, and logout. Generates JWT Access Tokens (1d) and Refresh Tokens (30d). Validates Refresh Tokens against hashed entries in PostgreSQL. Logout sets `tokenValidFrom`; `JwtAuthGuard` rejects tokens with `iat * 1000 + 2000 < tokenValidFrom.getTime()` (2-second clock-skew tolerance, no post-logout acceptance window). |
 | **Users** | Handles fetching current profile (`GET /users/me`), password changes (`PATCH /users/me/password`), profile photo uploads streaming to Cloudinary (`POST /users/me/photo`), and account deletion (`DELETE /users/me`). |
-| **Cloudinary / Media** | Centralized media & file upload service (`CloudinaryService`) handling image and raw media stream uploads to Cloudinary for all application modules. |
+| **Cloudinary / Media** | Centralized media & file upload service (`CloudinaryService`) handling image and raw media stream uploads to Cloudinary for all application modules. Cloudinary config is lazy-initialized — env vars validated on first `uploadFile()` call, not at construction, so the app boots fine in environments without Cloudinary configured (test, CI). |
 | **Import** | Parses uploaded CSV bank statements into normalized `bank_transaction` records via a unified `BankParser` interface (Strategy pattern per bank format). |
 | **Matching engine** | Runs exact, fuzzy (date-tolerant, $\pm 3$ days max), and aggregation matching (bounded to $N \le 4$ subset size, max 20 candidates, identical INFLOW/OUTFLOW type) between `bank_transaction` and `ledger_entry`. Pure business logic, no HTTP/DB dependency in its core so it can be unit tested in isolation. |
-| **Allocation** | Manages the `allocation` junction records — creating splits inside a single database transaction (`prisma.$transaction`), validating that allocated portions sum to the transaction amount, tracking unresolved balances. |
+| **Allocation** | Manages the `allocation` junction records — creating splits inside a single database transaction (`prisma.$transaction`), validating that allocated portions sum to the transaction amount, tracking unresolved balances. Concurrency-safe: the parent `bank_transactions` row is locked with `SELECT ... FOR UPDATE` inside the transaction before the running total is read (three-layer defense: app-layer cap check → `FOR UPDATE` row lock → DB trigger `check_allocation_sum`). |
 | **Account** | Manages multiple bank/cash accounts per business, source-account tagging for every transaction. |
 | **Reconciliation API / Dashboard** | Read-side: aggregates status (matched / pending review / needs allocation / unresolved), computes recorded vs. actual balance, serves the dashboard views. Proposed matches from matching engine are computed on-the-fly (stateless) or flagged as `PENDING_REVIEW` when user initiates allocation review. |
 | **Health / Metrics** | System health checks (`GET /health`), Prometheus metrics endpoint (`GET /metrics`), request correlation ID middleware for end-to-end tracing. |
@@ -133,3 +133,10 @@ Split allocation operations write or update multiple `allocation` rows simultane
 
 ### 9.3 Database Trigger Exception Handling
 The Postgres database relies on triggers (like `check_allocation_sum`) that throw PL/pgSQL exceptions. These surface as Prisma error codes (`P2010` for raw query failures or `P2034` for transaction constraint violations). A `PostgresTriggerExceptionFilter` (`src/common/filters/postgres-trigger-exception.filter.ts`) intercepts these specific codes globally, maps them to domain exceptions (like `AllocationExceededError`), and returns an HTTP 400 Bad Request to prevent unhandled 500 errors from raw SQL constraints.
+
+Unhandled exceptions fall through to a generic `500 Internal Server Error` response with a fixed message ("An unexpected error occurred. Please try again later.") — raw exception details, stack traces, and internal state are never returned to clients.
+
+### 9.4 DTO Validation
+Incoming request payloads are validated with class-validator via a global `ValidationPipe` (`whitelist: true, transform: true`). Key bounds:
+- `ImportCsvDto.bankFormat` is restricted with `@IsIn(['BCA', 'MANDIRI'])` — rejects unknown bank formats at the boundary instead of surfacing parser errors later.
+- `LoginDto.password` (and password fields across auth/users DTOs) is capped with `@MaxLength(128)` — bounds input size and rejects oversized payloads early.

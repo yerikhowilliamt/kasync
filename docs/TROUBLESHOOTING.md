@@ -291,3 +291,27 @@ This document records errors encountered during development, their root causes, 
 - **Root Cause:** The `@fixer` specialist received the full multi-tenancy task but had difficulty maintaining all concurrent file changes across 15+ files. It reverted some earlier correct changes (e.g., import service/controller userId params, spec mock signatures) while applying others, and reported success prematurely without running `tsc --noEmit` verification.
 - **Resolution:** Manually rewrote all 8 source service/controller pairs and 7 spec files directly, ensuring consistent `userId` parameter signatures across the entire codebase. Verified with `npx tsc --noEmit` (0 errors) and `npm test` (123 passing).
 - **Prevention / Note:** For large cross-cutting changes affecting 15+ files with interdependent signatures, prefer direct orchestrator execution over delegating to fixer. If delegating, provide exact per-file instructions and verify with `tsc --noEmit` before accepting completion.
+
+## Error: AllocationExceededError when retrying allocation with idempotencyKey
+- **Symptom**: `AllocationExceededError` thrown when re-submitting an allocation request that includes an already-processed idempotent item alongside new items.
+- **Root Cause (pre-fix)**: Cap check counted ALL items including idempotent ones that would be skipped, inflating `newItemsSum`.
+- **Resolution**: Fixed in `allocation.service.ts` — idempotent items are pre-resolved before cap calculation and excluded from `newItemsSum`. The `existingSum` from DB already includes the idempotent allocation.
+- **Status**: Resolved (DEF-005)
+
+## Error: Idempotency key returns wrong user's allocation
+- **Symptom**: User B receives User A's allocation when using the same `idempotencyKey`.
+- **Root Cause (pre-fix)**: `allocation.findUnique({ idempotencyKey })` returned any allocation matching the key regardless of owner.
+- **Resolution**: Fixed in `allocation.service.ts` — idempotency lookup now uses `findFirst` with `bankTransaction: { account: { userId } }` relation filter, scoped to requesting user.
+- **Status**: Resolved (DEF-004)
+
+## Error: Cloudinary configuration is incomplete
+- **Symptom**: `BadRequestException: Cloudinary is not configured` when uploading profile photos in environment without Cloudinary env vars.
+- **Note**: This error only occurs when `uploadFile()` or `uploadImage()` is actually called. App startup is NOT affected — Cloudinary uses lazy configuration. Previously (pre-fix) this error was thrown at module initialization, breaking app startup in test/CI environments.
+- **Resolution**: Cloudinary config is now validated lazily on first upload attempt (DEF-015).
+- **Environment variables required**: `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`
+
+## Issue: Access token usable for ~2 seconds after logout
+- **Symptom**: An access token captured just before logout remains valid for up to 2 seconds after the logout request completes.
+- **Root Cause**: Clock-skew tolerance between Node.js and PostgreSQL — `tokenValidFrom` stored via `new Date()` in the app may differ slightly from DB clock. The 2-second window prevents legitimate tokens from being rejected due to drift.
+- **Resolution**: Tolerance is now correctly scoped — tokens issued more than 2s before `tokenValidFrom` are rejected. Tokens issued within 2s before logout are accepted (DEF-003).
+- **Mitigation**: Cookies are cleared client-side immediately on logout. The window only matters if an attacker has already captured the raw token.

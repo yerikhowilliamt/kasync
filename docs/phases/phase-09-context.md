@@ -19,7 +19,7 @@ Professional QA review identified 18 defects (2 Critical, 6 High, 5 Medium, 5 Lo
 
 ### Medium
 - **DEF-014 — Seed Raw Numbers**: Changed money fields in `prisma/seed.ts` from raw JS numbers to string literals per Decimal invariant.
-- **DEF-015 — Cloudinary No Fail-Fast**: Added env var validation in `CloudinaryService` constructor. Throws explicit error if `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, or `CLOUDINARY_API_SECRET` missing.
+- **DEF-015 — Cloudinary No Fail-Fast**: Added lazy env var validation in `CloudinaryService` — `ensureConfigured()` called on first `uploadFile()`, not at construction. Prevents app startup failure in test/CI environments without Cloudinary. Throws `BadRequestException` (not raw `Error`) when upload is attempted without config.
 - **DEF-016 — LoginDto No MaxLength**: Added `@MaxLength(128)` to `LoginDto.password` matching `RegisterDto`.
 - **DEF-017 — 500 Leaks Internal Error**: Changed `PostgresTriggerExceptionFilter` 500 fallback from raw `exception.message` to generic `'An unexpected error occurred. Please try again later.'`.
 
@@ -35,7 +35,7 @@ Professional QA review identified 18 defects (2 Critical, 6 High, 5 Medium, 5 Lo
 - `src/modules/matching/matching.controller.spec.ts` — reset endpoint test
 - `src/modules/import/dto/import-csv.dto.ts` — @IsIn validation
 - `src/modules/auth/dto/login.dto.ts` — @MaxLength(128)
-- `src/common/cloudinary/cloudinary.service.ts` — fail-fast env check
+- `src/common/cloudinary/cloudinary.service.ts` — lazy env check via `ensureConfigured()` on first upload
 - `src/common/filters/postgres-trigger-exception.filter.ts` — masked 500 message
 - `src/common/filters/postgres-trigger-exception.filter.spec.ts` — updated assertion
 - `prisma/seed.ts` — string amounts
@@ -48,4 +48,4 @@ Professional QA review identified 18 defects (2 Critical, 6 High, 5 Medium, 5 Lo
 - `npm run test` — 133/133 passing (25 suites)
 
 ## Branch
-`fix/qa-remediation` (commit `61294f6`)
+`fix/qa-remediation` (commit `17b07b2`)

@@ -75,7 +75,7 @@ export class AllocationExceededError extends Error {
   }
 }
 ```
-Map domain exceptions to HTTP responses in NestJS global Exception Filters. Specifically, the `PostgresTriggerExceptionFilter` (`src/common/filters/postgres-trigger-exception.filter.ts`) must catch Prisma errors `P2010` and `P2034` thrown by database triggers (e.g. `check_allocation_sum`) and convert them to `AllocationExceededError` yielding HTTP 400 Bad Request.
+Map domain exceptions to HTTP responses in NestJS global Exception Filters. Specifically, the `PostgresTriggerExceptionFilter` (`src/common/filters/postgres-trigger-exception.filter.ts`) must catch Prisma errors `P2010` and `P2034` thrown by database triggers (e.g. `check_allocation_sum`) and convert them to `AllocationExceededError` yielding HTTP 400 Bad Request. For unexpected internal errors (HTTP 500), the filter returns a generic message (`'An unexpected error occurred. Please try again later.'`) — raw exception messages are never exposed to clients, keeping trigger/Prisma internals out of API responses.
 
 ---
 
@@ -93,7 +93,7 @@ Map domain exceptions to HTTP responses in NestJS global Exception Filters. Spec
 |---|---|---|---|
 | **Unit Tests** | `MatchingEngine`, `BankParser` implementations, `Allocation` math | Jest | **Min 90% Coverage**, 0 DB dependency, fast execution (<1s). Required scenarios: exact match, fuzzy date tolerance, aggregate match, exact/under/over-allocation. |
 | **Integration Tests** | `AllocationService` + Postgres triggers, Prisma queries | Jest + Testcontainers / Local Postgres | Verifies `prisma.$transaction` & DB trigger `check_allocation_sum` |
-| **E2E Tests** | CSV Upload → Match → Split Allocation Flow & Complete Lifecycle | Supertest | Verifies full happy path & complete reconciliation user journey via API controllers (`test/complete-reconciliation-flow.e2e-spec.ts`) |
+| **E2E Tests** | CSV Upload → Match → Split Allocation Flow & Complete Lifecycle | Supertest | Verifies full happy path & complete reconciliation user journey via API controllers (`test/complete-reconciliation-flow.e2e-spec.ts`, `test/import.e2e-spec.ts` for the import flows) |
 
 ---
 
