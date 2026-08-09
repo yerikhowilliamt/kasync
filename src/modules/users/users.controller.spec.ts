@@ -6,6 +6,7 @@ describe('UsersController', () => {
   let controller: UsersController;
 
   const mockUsersService = {
+    getProfile: jest.fn(),
     updatePassword: jest.fn(),
     updatePhotoProfile: jest.fn(),
     deleteAccount: jest.fn(),
@@ -19,6 +20,20 @@ describe('UsersController', () => {
 
     controller = module.get<UsersController>(UsersController);
     jest.clearAllMocks();
+  });
+
+  it('should call getProfile service method', async () => {
+    const profile = {
+      id: 'usr-1',
+      email: 'test@example.com',
+      name: 'Test User',
+      photoUrl: null,
+    };
+    mockUsersService.getProfile.mockResolvedValue(profile);
+
+    const res = await controller.getProfile('usr-1');
+    expect(mockUsersService.getProfile).toHaveBeenCalledWith('usr-1');
+    expect(res).toEqual(profile);
   });
 
   it('should call updatePassword service method', async () => {

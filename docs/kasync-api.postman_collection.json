@@ -159,6 +159,25 @@
 			"name": "Users",
 			"item": [
 				{
+					"name": "Get Profile",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/users/me",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"users",
+								"me"
+							]
+						},
+						"description": "Get current authenticated user profile."
+					},
+					"response": []
+				},
+				{
 					"name": "Update Password",
 					"request": {
 						"method": "PATCH",

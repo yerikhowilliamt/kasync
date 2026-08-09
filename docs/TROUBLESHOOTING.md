@@ -22,6 +22,18 @@ This document records errors encountered during development, their root causes, 
 
 ## Log Entries
 
+### [2026-08-09] Docker Multi-Stage Build Fails Due to `.dockerignore` Excluding `docs/`
+- **Module / Area:** `Dockerfile`, `.dockerignore`, `docker`, `devops`
+- **Error Message / Symptom:**
+  ```text
+  ERROR: failed to build: failed to solve: failed to compute cache key:
+  "/app/docs": not found
+  Dockerfile:29 COPY --from=builder /app/docs ./docs
+  ```
+- **Root Cause:** `.dockerignore` listed `docs/` as an excluded path. During the builder stage `COPY . .`, the `docs/` folder was omitted from the build context. Consequently, the runner stage `COPY --from=builder /app/docs ./docs` failed because `/app/docs` did not exist in the builder image.
+- **Resolution:** Removed `docs/` from `.dockerignore` so that `docs/` (specifically required for raw SQL trigger migrations in `docs/database/migration.sql`) is copied into the build context and available for the runner stage.
+- **Prevention / Note:** Before excluding directories in `.dockerignore`, check whether any build or runner stages in the `Dockerfile` reference those paths.
+
 ### [2026-08-09] CI Pipeline Fails After Removing JWT Fallback Secrets + Missing Prisma Migration
 - **Module / Area:** `.github/workflows/ci.yml`, `prisma/migrations`, `auth`, `ci`
 - **Error Message / Symptom:**

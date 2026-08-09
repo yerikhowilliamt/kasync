@@ -109,6 +109,7 @@ This single data model is designed to resolve all three root causes identified i
 - Revocation / Logout (`POST /api/v1/auth/logout`): Clears `refreshTokenHash` in DB and deletes authentication cookies.
 
 ### 5.7 User Profile Management
+- Get Current Profile (`GET /api/v1/users/me`): Returns authenticated user's `id`, `email`, `name`, and `photoUrl`.
 - Update Password (`PATCH /api/v1/users/me/password`): Verifies `oldPassword` via bcrypt and updates hashed password.
 - Update Profile Photo (`POST /api/v1/users/me/photo`): Accepts image file via multipart upload, streams to Cloudinary, and updates `users.photo_url`.
 - Account Deletion (`DELETE /api/v1/users/me`): Deletes user account and clears active auth cookies.

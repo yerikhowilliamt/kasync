@@ -80,6 +80,7 @@
 - **Completed**: Yes
 - **Modules**: `UsersModule`, `CloudinaryModule`, `AppModule`, Database & Docs
 - **Description**: Implemented user profile management features:
+  4. **Get Profile**: `GET /users/me` returning current user profile (`id`, `email`, `name`, `photoUrl`).
   1. **Password Update**: `PATCH /users/me/password` verifying current password via bcrypt and hashing new password.
   2. **Profile Photo Upload**: `POST /users/me/photo` streaming uploaded images directly to Cloudinary via `CloudinaryService` and updating `User.photoUrl`.
   3. **Account Deletion**: `DELETE /users/me` deleting user account record from database and clearing authentication cookies (`access_token`, `refresh_token`).

@@ -175,11 +175,13 @@ export class MatchingEngine {
     maxSize: number,
   ): BankTransactionInput[][] {
     const results: BankTransactionInput[][] = [];
-    const n = arr.length;
+    // Guard against combinatorial explosion by truncating candidate pool to max 20 items
+    const boundedArr = arr.length > 20 ? arr.slice(0, 20) : arr;
+    const n = boundedArr.length;
     const limit = Math.min(maxSize, n);
 
     for (let size = 2; size <= limit; size++) {
-      this.combine(arr, size, 0, [], results);
+      this.combine(boundedArr, size, 0, [], results);
     }
     return results;
   }

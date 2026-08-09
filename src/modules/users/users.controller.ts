@@ -1,5 +1,6 @@
 import {
   Controller,
+  Get,
   Patch,
   Post,
   Delete,
@@ -36,6 +37,14 @@ const COOKIE_OPTIONS = {
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
+
+  @Get('me')
+  @ApiOperation({ summary: 'Get current user profile' })
+  @ApiResponse({ status: 200, description: 'Profile retrieved successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async getProfile(@ReqUser('sub') userId: string) {
+    return this.usersService.getProfile(userId);
+  }
 
   @Patch('me/password')
   @HttpCode(HttpStatus.OK)
