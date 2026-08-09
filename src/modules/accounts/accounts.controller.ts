@@ -13,6 +13,7 @@ import { AccountsService } from './accounts.service';
 import { CreateAccountDto } from './dto/create-account.dto';
 import { UpdateAccountDto } from './dto/update-account.dto';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
+import { ReqUser } from '../../common/decorators/req-user.decorator';
 
 @ApiTags('accounts')
 @Controller('accounts')
@@ -27,16 +28,15 @@ export class AccountsController {
   })
   @ApiResponse({ status: 400, description: 'Bad Request' })
   @HttpCode(HttpStatus.CREATED)
-  create(@Body() createAccountDto: CreateAccountDto) {
-    return this.accountsService.create(createAccountDto);
+  create(@ReqUser('sub') userId: string, @Body() dto: CreateAccountDto) {
+    return this.accountsService.create(dto, userId);
   }
 
   @Get()
   @ApiOperation({ summary: 'Get all accounts' })
   @ApiResponse({ status: 200, description: 'Return all accounts.' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  findAll() {
-    return this.accountsService.findAll();
+  findAll(@ReqUser('sub') userId: string) {
+    return this.accountsService.findAll(userId);
   }
 
   @Get(':id')
@@ -44,8 +44,8 @@ export class AccountsController {
   @ApiParam({ name: 'id', type: 'string', description: 'Account ID' })
   @ApiResponse({ status: 200, description: 'Return the account.' })
   @ApiResponse({ status: 404, description: 'Account not found.' })
-  findOne(@Param('id') id: string) {
-    return this.accountsService.findOne(id);
+  findOne(@ReqUser('sub') userId: string, @Param('id') id: string) {
+    return this.accountsService.findOne(id, userId);
   }
 
   @Patch(':id')
@@ -56,8 +56,12 @@ export class AccountsController {
     description: 'The account has been successfully updated.',
   })
   @ApiResponse({ status: 404, description: 'Account not found.' })
-  update(@Param('id') id: string, @Body() updateAccountDto: UpdateAccountDto) {
-    return this.accountsService.update(id, updateAccountDto);
+  update(
+    @ReqUser('sub') userId: string,
+    @Param('id') id: string,
+    @Body() dto: UpdateAccountDto,
+  ) {
+    return this.accountsService.update(id, dto, userId);
   }
 
   @Delete(':id')
@@ -68,7 +72,7 @@ export class AccountsController {
     description: 'The account has been successfully deleted.',
   })
   @ApiResponse({ status: 404, description: 'Account not found.' })
-  remove(@Param('id') id: string) {
-    return this.accountsService.remove(id);
+  remove(@ReqUser('sub') userId: string, @Param('id') id: string) {
+    return this.accountsService.remove(id, userId);
   }
 }

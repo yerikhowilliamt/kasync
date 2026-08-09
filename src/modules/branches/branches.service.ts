@@ -12,19 +12,19 @@ import { Branch, Prisma } from '@prisma/client';
 export class BranchesService {
   constructor(private prisma: PrismaService) {}
 
-  async create(createBranchDto: CreateBranchDto): Promise<Branch> {
+  async create(dto: CreateBranchDto, userId: string): Promise<Branch> {
     return await this.prisma.branch.create({
-      data: createBranchDto,
+      data: { ...dto, user: { connect: { id: userId } } },
     });
   }
 
-  async findAll(): Promise<Branch[]> {
-    return await this.prisma.branch.findMany();
+  async findAll(userId: string): Promise<Branch[]> {
+    return await this.prisma.branch.findMany({ where: { userId } });
   }
 
-  async findOne(id: string): Promise<Branch> {
-    const branch = await this.prisma.branch.findUnique({
-      where: { id },
+  async findOne(id: string, userId: string): Promise<Branch> {
+    const branch = await this.prisma.branch.findFirst({
+      where: { id, userId },
     });
     if (!branch) {
       throw new NotFoundException(`Branch with ID ${id} not found`);
@@ -32,20 +32,19 @@ export class BranchesService {
     return branch;
   }
 
-  async update(id: string, updateBranchDto: UpdateBranchDto): Promise<Branch> {
-    await this.findOne(id); // Check existence
-    return await this.prisma.branch.update({
-      where: { id },
-      data: updateBranchDto,
-    });
+  async update(
+    id: string,
+    dto: UpdateBranchDto,
+    userId: string,
+  ): Promise<Branch> {
+    await this.findOne(id, userId);
+    return await this.prisma.branch.update({ where: { id }, data: dto });
   }
 
-  async remove(id: string): Promise<Branch> {
-    await this.findOne(id); // Check existence
+  async remove(id: string, userId: string): Promise<Branch> {
+    await this.findOne(id, userId);
     try {
-      return await this.prisma.branch.delete({
-        where: { id },
-      });
+      return await this.prisma.branch.delete({ where: { id } });
     } catch (error) {
       if (
         error instanceof Prisma.PrismaClientKnownRequestError &&

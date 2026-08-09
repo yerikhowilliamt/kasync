@@ -31,6 +31,7 @@ describe('Reconciliation User Journey (e2e)', () => {
   let categoryId: string;
   let branchId: string;
   let authCookie: string;
+  let userId: string;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -44,26 +45,6 @@ describe('Reconciliation User Journey (e2e)', () => {
     app.useGlobalFilters(new PostgresTriggerExceptionFilter());
     await app.init();
 
-    // 1. Setup account, category, branch
-    const account = await prisma.account.create({
-      data: {
-        name: `E2E Journey Account ${Date.now()}`,
-        type: 'BANK',
-      },
-    });
-    accountId = account.id;
-
-    const category = await prisma.category.create({
-      data: { name: `E2E Category ${Date.now()}` },
-    });
-    categoryId = category.id;
-
-    const branch = await prisma.branch.create({
-      data: { name: `E2E Branch ${Date.now()}` },
-    });
-    branchId = branch.id;
-
-    // Register user for test authentication
     const regRes = await request(
       app.getHttpServer() as unknown as Parameters<typeof request>[0],
     )
@@ -73,8 +54,35 @@ describe('Reconciliation User Journey (e2e)', () => {
         password: 'password123',
         name: 'Recon User',
       });
+    userId = (regRes.body as { id: string }).id;
     const cookies = regRes.headers['set-cookie'] as unknown as string[];
     authCookie = cookies.find((c) => c.startsWith('access_token='))!;
+
+    // 1. Setup account, category, branch
+    const account = await prisma.account.create({
+      data: {
+        name: `E2E Journey Account ${Date.now()}`,
+        type: 'BANK',
+        user: { connect: { id: userId } },
+      },
+    });
+    accountId = account.id;
+
+    const category = await prisma.category.create({
+      data: {
+        name: `E2E Category ${Date.now()}`,
+        user: { connect: { id: userId } },
+      },
+    });
+    categoryId = category.id;
+
+    const branch = await prisma.branch.create({
+      data: {
+        name: `E2E Branch ${Date.now()}`,
+        user: { connect: { id: userId } },
+      },
+    });
+    branchId = branch.id;
   });
 
   afterAll(async () => {
@@ -130,34 +138,37 @@ describe('Reconciliation User Journey (e2e)', () => {
     // Step 2: Create manual ledger entries matching total bank statement
     const le1 = await prisma.ledgerEntry.create({
       data: {
-        categoryId,
-        branchId,
+        category: { connect: { id: categoryId } },
+        branch: { connect: { id: branchId } },
         entryDate: tx150.txnDate,
         amount: 1000.0,
         type: 'INFLOW',
         note: 'Transfer Masuk 1000',
+        user: { connect: { id: userId } },
       },
     });
 
     const le2a = await prisma.ledgerEntry.create({
       data: {
-        categoryId,
-        branchId,
+        category: { connect: { id: categoryId } },
+        branch: { connect: { id: branchId } },
         entryDate: tx50.txnDate,
         amount: 300.0,
         type: 'OUTFLOW',
         note: 'Beli ATK 300',
+        user: { connect: { id: userId } },
       },
     });
 
     const le2b = await prisma.ledgerEntry.create({
       data: {
-        categoryId,
-        branchId,
+        category: { connect: { id: categoryId } },
+        branch: { connect: { id: branchId } },
         entryDate: tx50.txnDate,
         amount: 200.5,
         type: 'OUTFLOW',
         note: 'Beli Snack 200.5',
+        user: { connect: { id: userId } },
       },
     });
 

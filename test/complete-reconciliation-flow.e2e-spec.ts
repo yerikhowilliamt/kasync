@@ -31,6 +31,7 @@ describe('Complete Reconciliation Flow (e2e)', () => {
   let categoryId: string;
   let branchId: string;
   let authCookie: string;
+  let userId: string;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -44,26 +45,6 @@ describe('Complete Reconciliation Flow (e2e)', () => {
     app.useGlobalFilters(new PostgresTriggerExceptionFilter());
     await app.init();
 
-    // 1. Setup account, category, branch
-    const account = await prisma.account.create({
-      data: {
-        name: `Complete Flow Account ${Date.now()}`,
-        type: 'BANK',
-      },
-    });
-    accountId = account.id;
-
-    const category = await prisma.category.create({
-      data: { name: `Complete Category ${Date.now()}` },
-    });
-    categoryId = category.id;
-
-    const branch = await prisma.branch.create({
-      data: { name: `Complete Branch ${Date.now()}` },
-    });
-    branchId = branch.id;
-
-    // Register user for test authentication
     const regRes = await request(
       app.getHttpServer() as unknown as Parameters<typeof request>[0],
     )
@@ -73,8 +54,35 @@ describe('Complete Reconciliation Flow (e2e)', () => {
         password: 'password123',
         name: 'Complete Flow User',
       });
+    userId = (regRes.body as { id: string }).id;
     const cookies = regRes.headers['set-cookie'] as unknown as string[];
     authCookie = cookies.find((c) => c.startsWith('access_token='))!;
+
+    // 1. Setup account, category, branch
+    const account = await prisma.account.create({
+      data: {
+        name: `Complete Flow Account ${Date.now()}`,
+        type: 'BANK',
+        user: { connect: { id: userId } },
+      },
+    });
+    accountId = account.id;
+
+    const category = await prisma.category.create({
+      data: {
+        name: `Complete Category ${Date.now()}`,
+        user: { connect: { id: userId } },
+      },
+    });
+    categoryId = category.id;
+
+    const branch = await prisma.branch.create({
+      data: {
+        name: `Complete Branch ${Date.now()}`,
+        user: { connect: { id: userId } },
+      },
+    });
+    branchId = branch.id;
   });
 
   afterAll(async () => {

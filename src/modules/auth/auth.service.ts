@@ -54,11 +54,13 @@ export class AuthService {
     }
 
     const passwordHash = await bcrypt.hash(dto.password, 10);
+    const now = new Date();
     const user = await this.prisma.user.create({
       data: {
         email: dto.email,
         name: dto.name,
         passwordHash,
+        tokenValidFrom: now,
       },
     });
 
@@ -90,6 +92,14 @@ export class AuthService {
 
     if (!user || !isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');
+    }
+
+    // Ensure tokenValidFrom is set from application clock (not DB default) to avoid clock skew
+    if (!user.tokenValidFrom) {
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: { tokenValidFrom: new Date() },
+      });
     }
 
     const tokens = await this.generateTokens(user.id, user.email);
@@ -141,7 +151,7 @@ export class AuthService {
     try {
       await this.prisma.user.update({
         where: { id: userId },
-        data: { refreshTokenHash: null },
+        data: { refreshTokenHash: null, tokenValidFrom: new Date() },
       });
     } catch {
       // User might already be deleted; logout proceeds silently

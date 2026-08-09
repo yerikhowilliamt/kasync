@@ -12,19 +12,19 @@ import { Category, Prisma } from '@prisma/client';
 export class CategoriesService {
   constructor(private prisma: PrismaService) {}
 
-  async create(createCategoryDto: CreateCategoryDto): Promise<Category> {
+  async create(dto: CreateCategoryDto, userId: string): Promise<Category> {
     return await this.prisma.category.create({
-      data: createCategoryDto,
+      data: { ...dto, user: { connect: { id: userId } } },
     });
   }
 
-  async findAll(): Promise<Category[]> {
-    return await this.prisma.category.findMany();
+  async findAll(userId: string): Promise<Category[]> {
+    return await this.prisma.category.findMany({ where: { userId } });
   }
 
-  async findOne(id: string): Promise<Category> {
-    const category = await this.prisma.category.findUnique({
-      where: { id },
+  async findOne(id: string, userId: string): Promise<Category> {
+    const category = await this.prisma.category.findFirst({
+      where: { id, userId },
     });
     if (!category) {
       throw new NotFoundException(`Category with ID ${id} not found`);
@@ -34,21 +34,17 @@ export class CategoriesService {
 
   async update(
     id: string,
-    updateCategoryDto: UpdateCategoryDto,
+    dto: UpdateCategoryDto,
+    userId: string,
   ): Promise<Category> {
-    await this.findOne(id); // Check existence
-    return await this.prisma.category.update({
-      where: { id },
-      data: updateCategoryDto,
-    });
+    await this.findOne(id, userId);
+    return await this.prisma.category.update({ where: { id }, data: dto });
   }
 
-  async remove(id: string): Promise<Category> {
-    await this.findOne(id); // Check existence
+  async remove(id: string, userId: string): Promise<Category> {
+    await this.findOne(id, userId);
     try {
-      return await this.prisma.category.delete({
-        where: { id },
-      });
+      return await this.prisma.category.delete({ where: { id } });
     } catch (error) {
       if (
         error instanceof Prisma.PrismaClientKnownRequestError &&

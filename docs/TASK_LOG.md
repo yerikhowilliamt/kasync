@@ -1,3 +1,26 @@
+## Task: ESLint Error Resolution — Full Lint Clean (Sun Aug 09 2026)
+
+- **Completed**: Yes
+- **Modules**: System-wide / 13 files refactored
+- **Description**: Resolved all ESLint errors across 13 files. Clean build: `npx tsc --noEmit` (0 errors), `npm run lint` (0 errors), `npm run test` (129/129 passing). Changes committed and pushed.
+- **Git Branch**: `dev` (or current feature branch)
+
+## Task: Phase 8 Multi-Tenancy & Automated Database Triggers (Sun Aug 09 2026)
+
+- **Completed**: Yes
+- **Modules**: `SchemaPrisma`, `AuthService`, `JwtAuthGuard`, `ImageMimeTypeValidator`, `AccountsModule`, `CategoriesModule`, `BranchesModule`, `LedgerEntriesModule`, `ImportModule`, `AllocationModule`, `MatchingModule`, `ReconciliationModule`, CI/CD
+- **Description**: Implemented direct `userId` multi-tenancy isolation, automated trigger migrations, immediate token revocation, and matching engine fixes:
+  1. **Schema & Migration**: Added `userId` + relation + `@@index` to `Account`, `Category`, `Branch`, `LedgerEntry`. Added `tokenValidFrom` to `User`. Created native Prisma migration `20260809180000_multi_tenancy_and_triggers` embedding `check_allocation_sum` and `sync_transaction_status` PostgreSQL triggers — no manual SQL step required.
+  2. **Token Revocation**: `AuthService.logout()` sets `tokenValidFrom = now()`. `JwtAuthGuard` rejects tokens with `iat * 1000 < tokenValidFrom.getTime()`.
+  3. **Magic Bytes Security**: `ImageMimeTypeValidator` inspects buffer headers (JPEG, PNG, GIF, WEBP) to prevent MIME spoofing.
+  4. **Multi-Tenant Scoping**: All services/controllers accept `userId` via `@ReqUser('sub')`. All CRUD queries scoped with `where: { userId }`.
+  5. **Matching Engine**: Fuzzy match includes 0-day diff (`diffDays >= 0`). `getSubsets()` sorts by amount-proximity before truncation. New `POST /matching/reset` endpoint.
+  6. **CSV Parsers**: Mandiri parser handles Indonesian/English decimal formats. BCA parser supports `DD/MM/YY` short dates and logs parse failures.
+  7. **Reconciliation**: Dashboard variance queries scoped by `userId`. `recordedLedgerBalance` filtered by allocation-linked transactions when `accountId` is specified.
+  8. **CI/CD**: Simplified `ci.yml` — triggers auto-deploy via Prisma migration.
+- **Verification**: `npx tsc --noEmit` (0 errors), `npm run test` (123 passing)
+- **Git Branch**: `feat/phase-08-multi-tenancy-triggers`
+
 ## Task: Fix QA Reported Server & Route Exception Issues & Cloudinary Target Folder (Sun Aug 09 2026)
 
 - **Completed**: Yes

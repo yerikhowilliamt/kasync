@@ -13,6 +13,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { ImportService } from './import.service';
 import { ApiTags, ApiOperation, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { ImportCsvDto } from './dto/import-csv.dto';
+import { ReqUser } from '../../common/decorators/req-user.decorator';
 
 @ApiTags('import')
 @Controller('import')
@@ -39,6 +40,7 @@ export class ImportController {
   @UseInterceptors(FileInterceptor('file'))
   @HttpCode(HttpStatus.OK)
   async importCsv(
+    @ReqUser('sub') userId: string,
     @UploadedFile(
       new ParseFilePipe({
         validators: [new MaxFileSizeValidator({ maxSize: 5 * 1024 * 1024 })],
@@ -51,6 +53,7 @@ export class ImportController {
       dto.accountId,
       dto.bankFormat,
       file.buffer,
+      userId,
     );
   }
 }
