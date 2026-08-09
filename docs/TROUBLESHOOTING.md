@@ -194,3 +194,57 @@ This document records errors encountered during development, their root causes, 
 - **Root Cause:** `AllocationService` threw generic `Error` on empty payloads and relied solely on PostgreSQL foreign key constraints for `ledgerEntryId`, producing raw DB errors mapped to 500 status.
 - **Resolution:** Changed empty payload error to `BadRequestException` (400) and added explicit `tx.ledgerEntry.findUnique` check throwing `NotFoundException` (404) inside `prisma.$transaction`.
 - **Prevention / Note:** Validate all foreign key entity existences and throw domain HTTP exceptions (`BadRequestException`, `NotFoundException`) before database mutation.
+
+### [2026-08-09] Prisma Migration Conflicts After Adding userId Columns Without Nullable Default
+- **Module / Area:** `prisma`, `migration.sql`, `schema.prisma`
+- **Error Message / Symptom:**
+  ```text
+  error: ALTER TABLE "accounts" ALTER COLUMN "user_id" SET NOT NULL - column "user_id" contains null values
+  ```
+- **Root Cause:** Adding `userId` as a required `NOT NULL` field to existing tables with populated rows caused the migration to fail — existing rows had no `user_id` value.
+- **Resolution:** Created a two-phase migration: (1) Add `userId` as nullable with a default, (2) run `UPDATE` to assign existing rows to a default system user, (3) then `ALTER COLUMN ... SET NOT NULL`. This is embedded in `prisma/migrations/20260809180000_multi_tenancy_and_triggers/migration.sql` using a PL/pgSQL `DO $$ ... $$` block.
+- **Prevention / Note:** When adding required foreign key columns to tables with existing data, always use a nullable intermediate step + backfill + then enforce NOT NULL in a single migration file.
+
+### [2026-08-09] TypeScript Type Incompatibility Between DTO Optional userId and Prisma Required userId
+- **Module / Area:** `accounts`, `categories`, `branches`, `ledger-entries`, `create-account.dto.ts`, `create-category.dto.ts`
+- **Error Message / Symptom:**
+  ```text
+  Type 'CreateAccountDto' is not assignable to type 'AccountCreateInput'.
+    Types of property 'userId' are incompatible.
+      Type 'string | undefined' is not assignable to type 'undefined'.
+  ```
+- **Root Cause:** DTOs declared `userId` as `@IsOptional() string | undefined`, but Prisma schema required `userId: string` (non-optional). Passing the DTO directly as `data` in `prisma.create()` caused type incompatibility because Prisma inferred the DTO type as including an optional property.
+- **Resolution:** Services accept `userId` as a separate required parameter (not from the DTO) and spread it into the Prisma `data` object: `data: { ...dto, userId }`. This keeps DTOs clean for validation while guaranteeing `userId` is always present.
+- **Prevention / Note:** Never put `userId` in user-facing DTOs. Controllers extract it from `@ReqUser('sub')` and pass it as a separate argument to service methods.
+
+### [2026-08-09] JwtAuthGuard Database Query on Every Request After Adding tokenValidFrom Check
+- **Module / Area:** `auth`, `jwt-auth.guard.ts`
+- **Error Message / Symptom:**
+  ```text
+  Performance concern: JwtAuthGuard now queries DB on every authenticated request
+  ```
+- **Root Cause:** After adding `tokenValidFrom` revocation check, `JwtAuthGuard` performs `prisma.user.findUnique({ where: { id: payload.sub } })` on every non-public request to compare `iat` against `tokenValidFrom`.
+- **Resolution:** Accepted as necessary trade-off for immediate token revocation. The query is lightweight (single PK lookup with `select: { tokenValidFrom: true }`). For high-traffic scenarios, `tokenValidFrom` could be cached in Redis with TTL matching access token lifetime.
+- **Prevention / Note:** If revocation latency becomes a bottleneck, consider embedding `tokenValidFrom` timestamp directly into the JWT payload and checking it without a DB call (though this means revocation only takes effect at token expiry, not immediately).
+
+### [2026-08-09] CI Workflow Trigger Migration Step Redundant After Embedding Triggers in Prisma Migration
+- **Module / Area:** `.github/workflows/ci.yml`, `prisma/migrations`
+- **Error Message / Symptom:**
+  ```text
+  npx prisma db execute --file ./docs/database/migration.sql
+  Error: file not found or SQL syntax error
+  ```
+- **Root Cause:** After embedding `check_allocation_sum` and `sync_transaction_status` triggers into the native Prisma migration file (`prisma/migrations/20260809180000_multi_tenancy_and_triggers/migration.sql`), the separate `prisma db execute` step in CI still referenced `docs/database/migration.sql`. This was now redundant and could fail if the file was moved or refactored.
+- **Resolution:** Removed the `npx prisma db execute --file ./docs/database/migration.sql` step from `.github/workflows/ci.yml`. Triggers are now automatically applied by `npx prisma migrate deploy`.
+- **Prevention / Note:** After consolidating raw SQL into Prisma migrations, clean up all external references to the original standalone SQL files to avoid dual-execution or missing-file errors in CI.
+
+### [2026-08-09] Fixer Sessions Reverting Multi-Tenancy Source Changes
+- **Module / Area:** System-wide, `@fixer` agent, `git`
+- **Error Message / Symptom:**
+  ```text
+  Fixer completed with "all files fixed" but tsc --noEmit still showed 7+ errors
+  after first fixer run; second fixer run also reported success while errors persisted
+  ```
+- **Root Cause:** The `@fixer` specialist received the full multi-tenancy task but had difficulty maintaining all concurrent file changes across 15+ files. It reverted some earlier correct changes (e.g., import service/controller userId params, spec mock signatures) while applying others, and reported success prematurely without running `tsc --noEmit` verification.
+- **Resolution:** Manually rewrote all 8 source service/controller pairs and 7 spec files directly, ensuring consistent `userId` parameter signatures across the entire codebase. Verified with `npx tsc --noEmit` (0 errors) and `npm test` (123 passing).
+- **Prevention / Note:** For large cross-cutting changes affecting 15+ files with interdependent signatures, prefer direct orchestrator execution over delegating to fixer. If delegating, provide exact per-file instructions and verify with `tsc --noEmit` before accepting completion.
