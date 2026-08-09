@@ -54,7 +54,7 @@ describe('Reconciliation User Journey (e2e)', () => {
         password: 'password123',
         name: 'Recon User',
       });
-    userId = regRes.body.id;
+    userId = (regRes.body as { id: string }).id;
     const cookies = regRes.headers['set-cookie'] as unknown as string[];
     authCookie = cookies.find((c) => c.startsWith('access_token='))!;
 
@@ -69,12 +69,18 @@ describe('Reconciliation User Journey (e2e)', () => {
     accountId = account.id;
 
     const category = await prisma.category.create({
-      data: { name: `E2E Category ${Date.now()}`, user: { connect: { id: userId } } },
+      data: {
+        name: `E2E Category ${Date.now()}`,
+        user: { connect: { id: userId } },
+      },
     });
     categoryId = category.id;
 
     const branch = await prisma.branch.create({
-      data: { name: `E2E Branch ${Date.now()}`, user: { connect: { id: userId } } },
+      data: {
+        name: `E2E Branch ${Date.now()}`,
+        user: { connect: { id: userId } },
+      },
     });
     branchId = branch.id;
   });

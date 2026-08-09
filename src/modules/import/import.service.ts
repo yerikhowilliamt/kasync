@@ -9,7 +9,12 @@ export class ImportService {
     private bankParserFactory: BankParserFactory,
   ) {}
 
-  async importCsv(accountId: string, format: string, fileBuffer: Buffer, userId: string) {
+  async importCsv(
+    accountId: string,
+    format: string,
+    fileBuffer: Buffer,
+    userId: string,
+  ) {
     const account = await this.prisma.account.findFirst({
       where: { id: accountId, userId },
     });

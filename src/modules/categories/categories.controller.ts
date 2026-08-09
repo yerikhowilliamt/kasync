@@ -1,5 +1,13 @@
 import {
-  Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, HttpStatus,
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { CategoriesService } from './categories.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
@@ -33,7 +41,11 @@ export class CategoriesController {
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update category' })
-  update(@ReqUser('sub') userId: string, @Param('id') id: string, @Body() dto: UpdateCategoryDto) {
+  update(
+    @ReqUser('sub') userId: string,
+    @Param('id') id: string,
+    @Body() dto: UpdateCategoryDto,
+  ) {
     return this.categoriesService.update(id, dto, userId);
   }
 

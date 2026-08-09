@@ -46,6 +46,7 @@ describe('BranchesService', () => {
       mockPrismaService.branch.create.mockResolvedValue(mockBranch);
       const result = await service.create({ name: 'test-branch' }, testUserId);
       expect(result).toEqual(mockBranch);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(prisma.branch.create).toHaveBeenCalledWith({
         data: { name: 'test-branch', user: { connect: { id: testUserId } } },
       });
@@ -57,7 +58,10 @@ describe('BranchesService', () => {
       mockPrismaService.branch.findMany.mockResolvedValue([mockBranch]);
       const result = await service.findAll(testUserId);
       expect(result).toEqual([mockBranch]);
-      expect(prisma.branch.findMany).toHaveBeenCalledWith({ where: { userId: testUserId } });
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(prisma.branch.findMany).toHaveBeenCalledWith({
+        where: { userId: testUserId },
+      });
     });
   });
 
@@ -70,21 +74,32 @@ describe('BranchesService', () => {
 
     it('should throw NotFoundException if not found', async () => {
       mockPrismaService.branch.findFirst.mockResolvedValue(null);
-      await expect(service.findOne('test-id', testUserId)).rejects.toThrow(NotFoundException);
+      await expect(service.findOne('test-id', testUserId)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
   describe('update', () => {
     it('should update and return a branch', async () => {
       mockPrismaService.branch.findFirst.mockResolvedValue(mockBranch);
-      mockPrismaService.branch.update.mockResolvedValue({ ...mockBranch, name: 'updated' });
-      const result = await service.update('test-id', { name: 'updated' }, testUserId);
+      mockPrismaService.branch.update.mockResolvedValue({
+        ...mockBranch,
+        name: 'updated',
+      });
+      const result = await service.update(
+        'test-id',
+        { name: 'updated' },
+        testUserId,
+      );
       expect(result.name).toBe('updated');
     });
 
     it('should throw NotFoundException if not found', async () => {
       mockPrismaService.branch.findFirst.mockResolvedValue(null);
-      await expect(service.update('test-id', { name: 'updated' }, testUserId)).rejects.toThrow(NotFoundException);
+      await expect(
+        service.update('test-id', { name: 'updated' }, testUserId),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -98,7 +113,9 @@ describe('BranchesService', () => {
 
     it('should throw NotFoundException if not found', async () => {
       mockPrismaService.branch.findFirst.mockResolvedValue(null);
-      await expect(service.remove('test-id', testUserId)).rejects.toThrow(NotFoundException);
+      await expect(service.remove('test-id', testUserId)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 });

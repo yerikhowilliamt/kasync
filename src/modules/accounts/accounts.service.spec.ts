@@ -53,24 +53,43 @@ describe('AccountsService', () => {
 
       const result = await service.create(createDto, testUserId);
       expect(result).toEqual(expected);
-      expect(createSpy).toHaveBeenCalledWith({ data: { ...createDto, user: { connect: { id: testUserId } } } });
+      expect(createSpy).toHaveBeenCalledWith({
+        data: { ...createDto, user: { connect: { id: testUserId } } },
+      });
     });
   });
 
   describe('findAll', () => {
     it('should return accounts for user', async () => {
-      const expected = [{ id: '1', name: 'Test', type: AccountType.CASH, userId: testUserId, createdAt: new Date(), updatedAt: new Date() }];
+      const expected = [
+        {
+          id: '1',
+          name: 'Test',
+          type: AccountType.CASH,
+          userId: testUserId,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ];
       jest.spyOn(prisma.account, 'findMany').mockResolvedValue(expected);
       const result = await service.findAll(testUserId);
       expect(result).toEqual(expected);
-      expect(prisma.account.findMany).toHaveBeenCalledWith({ where: { userId: testUserId } });
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(prisma.account.findMany).toHaveBeenCalledWith({
+        where: { userId: testUserId },
+      });
     });
   });
 
   describe('findOne', () => {
     it('should return account if found', async () => {
       const expected = {
-        id: '1', name: 'Test', type: AccountType.CASH, userId: testUserId, createdAt: new Date(), updatedAt: new Date(),
+        id: '1',
+        name: 'Test',
+        type: AccountType.CASH,
+        userId: testUserId,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       };
       jest.spyOn(prisma.account, 'findFirst').mockResolvedValue(expected);
 

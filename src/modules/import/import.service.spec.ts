@@ -40,14 +40,29 @@ describe('ImportService', () => {
   });
 
   it('should parse and import successfully', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     jest.spyOn(prisma.account, 'findFirst').mockResolvedValue({
-      id: '1', name: 'Test', type: 'BANK', createdAt: new Date(), updatedAt: new Date(), userId: testUserId,
+      id: '1',
+      name: 'Test',
+      type: 'BANK',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      userId: testUserId,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any);
-    const createManySpy = jest.spyOn(prisma.bankTransaction, 'createMany').mockResolvedValue({ count: 1 });
+    const createManySpy = jest
+      .spyOn(prisma.bankTransaction, 'createMany')
+      .mockResolvedValue({ count: 1 });
 
     const csvContent = Buffer.from('15/01/2024,TRF IN,0000,150000.00,CR');
     const result = await service.importCsv('1', 'BCA', csvContent, testUserId);
-    expect(result).toEqual({ totalParsed: 1, importedCount: 1, duplicateCount: 0 });
-    expect(createManySpy).toHaveBeenCalledWith(expect.objectContaining({ skipDuplicates: true }));
+    expect(result).toEqual({
+      totalParsed: 1,
+      importedCount: 1,
+      duplicateCount: 0,
+    });
+    expect(createManySpy).toHaveBeenCalledWith(
+      expect.objectContaining({ skipDuplicates: true }),
+    );
   });
 });

@@ -34,12 +34,18 @@ describe('Allocation Triggers (e2e)', () => {
     accountId = account.id;
 
     const category = await prisma.category.create({
-      data: { name: `Test Trigger Category ${Date.now()}`, user: { connect: { id: userId } } },
+      data: {
+        name: `Test Trigger Category ${Date.now()}`,
+        user: { connect: { id: userId } },
+      },
     });
     categoryId = category.id;
 
     const branch = await prisma.branch.create({
-      data: { name: `Test Trigger Branch ${Date.now()}`, user: { connect: { id: userId } } },
+      data: {
+        name: `Test Trigger Branch ${Date.now()}`,
+        user: { connect: { id: userId } },
+      },
     });
     branchId = branch.id;
   });

@@ -1,5 +1,13 @@
 import {
-  Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, HttpStatus,
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { BranchesService } from './branches.service';
 import { CreateBranchDto } from './dto/create-branch.dto';
@@ -33,7 +41,11 @@ export class BranchesController {
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update branch' })
-  update(@ReqUser('sub') userId: string, @Param('id') id: string, @Body() dto: UpdateBranchDto) {
+  update(
+    @ReqUser('sub') userId: string,
+    @Param('id') id: string,
+    @Body() dto: UpdateBranchDto,
+  ) {
     return this.branchesService.update(id, dto, userId);
   }
 

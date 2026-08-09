@@ -98,9 +98,7 @@ export class ImageMimeTypeValidator extends FileValidator<ImageMimeTypeValidator
       return false;
     }
 
-    return expectedSig.bytes.every(
-      (byte, index) => buffer[index] === byte,
-    );
+    return expectedSig.bytes.every((byte, index) => buffer[index] === byte);
   }
 
   public buildErrorMessage(): string {

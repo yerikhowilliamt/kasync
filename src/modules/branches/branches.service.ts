@@ -1,5 +1,7 @@
 import {
-  Injectable, NotFoundException, BadRequestException,
+  Injectable,
+  NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { CreateBranchDto } from './dto/create-branch.dto';
@@ -12,7 +14,7 @@ export class BranchesService {
 
   async create(dto: CreateBranchDto, userId: string): Promise<Branch> {
     return await this.prisma.branch.create({
-       data: { ...dto, user: { connect: { id: userId } } },
+      data: { ...dto, user: { connect: { id: userId } } },
     });
   }
 
@@ -21,14 +23,20 @@ export class BranchesService {
   }
 
   async findOne(id: string, userId: string): Promise<Branch> {
-    const branch = await this.prisma.branch.findFirst({ where: { id, userId } });
+    const branch = await this.prisma.branch.findFirst({
+      where: { id, userId },
+    });
     if (!branch) {
       throw new NotFoundException(`Branch with ID ${id} not found`);
     }
     return branch;
   }
 
-  async update(id: string, dto: UpdateBranchDto, userId: string): Promise<Branch> {
+  async update(
+    id: string,
+    dto: UpdateBranchDto,
+    userId: string,
+  ): Promise<Branch> {
     await this.findOne(id, userId);
     return await this.prisma.branch.update({ where: { id }, data: dto });
   }
@@ -38,8 +46,13 @@ export class BranchesService {
     try {
       return await this.prisma.branch.delete({ where: { id } });
     } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2003') {
-        throw new BadRequestException('Cannot delete branch referenced by existing ledger entries');
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2003'
+      ) {
+        throw new BadRequestException(
+          'Cannot delete branch referenced by existing ledger entries',
+        );
       }
       throw error;
     }

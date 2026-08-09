@@ -39,24 +39,37 @@ describe('LedgerEntriesService', () => {
 
   describe('create', () => {
     it('should create a ledger entry', async () => {
-      mockPrisma.category.findFirst.mockResolvedValue({ id: 'cat1', name: 'Cat' });
-      mockPrisma.branch.findFirst.mockResolvedValue({ id: 'branch1', name: 'Br' });
+      mockPrisma.category.findFirst.mockResolvedValue({
+        id: 'cat1',
+        name: 'Cat',
+      });
+      mockPrisma.branch.findFirst.mockResolvedValue({
+        id: 'branch1',
+        name: 'Br',
+      });
       mockPrisma.ledgerEntry.create.mockResolvedValue({ id: '1' });
 
       const dto = {
-        categoryId: 'cat1', branchId: 'branch1', entryDate: '2023-10-10T00:00:00Z',
-        amount: 100, type: TransactionType.OUTFLOW, note: 'test',
+        categoryId: 'cat1',
+        branchId: 'branch1',
+        entryDate: '2023-10-10T00:00:00Z',
+        amount: 100,
+        type: TransactionType.OUTFLOW,
+        note: 'test',
       } as unknown as CreateLedgerEntryDto;
 
       const result = await service.create(dto, testUserId);
-      expect((result as any).id).toEqual('1');
+      expect(result.id).toEqual('1');
       expect(mockPrisma.ledgerEntry.create).toHaveBeenCalledWith({
         data: {
           user: { connect: { id: testUserId } },
           category: { connect: { id: 'cat1' } },
           branch: { connect: { id: 'branch1' } },
           entryDate: new Date('2023-10-10T00:00:00Z'),
-          amount: expect.anything(), type: TransactionType.OUTFLOW, note: 'test',
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          amount: expect.anything(),
+          type: TransactionType.OUTFLOW,
+          note: 'test',
         },
         include: { category: true, branch: true },
       });
@@ -65,10 +78,15 @@ describe('LedgerEntriesService', () => {
     it('should throw NotFoundException if category not found', async () => {
       mockPrisma.category.findFirst.mockResolvedValue(null);
       const dto = {
-        categoryId: 'cat1', branchId: 'branch1', entryDate: '2023-10-10T00:00:00Z',
-        amount: 100, type: TransactionType.OUTFLOW,
+        categoryId: 'cat1',
+        branchId: 'branch1',
+        entryDate: '2023-10-10T00:00:00Z',
+        amount: 100,
+        type: TransactionType.OUTFLOW,
       } as unknown as CreateLedgerEntryDto;
-      await expect(service.create(dto, testUserId)).rejects.toThrow(NotFoundException);
+      await expect(service.create(dto, testUserId)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -97,17 +115,22 @@ describe('LedgerEntriesService', () => {
 
     it('should throw NotFoundException if not found', async () => {
       mockPrisma.ledgerEntry.findFirst.mockResolvedValue(null);
-      await expect(service.findOne('1', testUserId)).rejects.toThrow(NotFoundException);
+      await expect(service.findOne('1', testUserId)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
   describe('update', () => {
     it('should update a ledger entry', async () => {
       mockPrisma.ledgerEntry.findFirst.mockResolvedValue({ id: '1' });
-      mockPrisma.ledgerEntry.update.mockResolvedValue({ id: '1', amount: new Prisma.Decimal(200) });
+      mockPrisma.ledgerEntry.update.mockResolvedValue({
+        id: '1',
+        amount: new Prisma.Decimal(200),
+      });
       const updateDto = { amount: 200 } as unknown as UpdateLedgerEntryDto;
       const result = await service.update('1', updateDto, testUserId);
-      expect((result as any).amount.toString()).toBe('200');
+      expect(result.amount.toString()).toBe('200');
       expect(mockPrisma.ledgerEntry.update).toHaveBeenCalled();
     });
   });
@@ -117,7 +140,9 @@ describe('LedgerEntriesService', () => {
       mockPrisma.ledgerEntry.findFirst.mockResolvedValue({ id: '1' });
       mockPrisma.ledgerEntry.delete.mockResolvedValue({ id: '1' });
       await service.remove('1', testUserId);
-      expect(mockPrisma.ledgerEntry.delete).toHaveBeenCalledWith({ where: { id: '1' } });
+      expect(mockPrisma.ledgerEntry.delete).toHaveBeenCalledWith({
+        where: { id: '1' },
+      });
     });
   });
 });

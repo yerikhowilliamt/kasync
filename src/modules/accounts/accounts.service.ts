@@ -8,9 +8,12 @@ import { Account } from '@prisma/client';
 export class AccountsService {
   constructor(private prisma: PrismaService) {}
 
-  async create(createAccountDto: CreateAccountDto, userId: string): Promise<Account> {
+  async create(
+    createAccountDto: CreateAccountDto,
+    userId: string,
+  ): Promise<Account> {
     return this.prisma.account.create({
-       data: { ...createAccountDto, user: { connect: { id: userId } } },
+      data: { ...createAccountDto, user: { connect: { id: userId } } },
     });
   }
 
@@ -19,16 +22,25 @@ export class AccountsService {
   }
 
   async findOne(id: string, userId: string): Promise<Account> {
-    const account = await this.prisma.account.findFirst({ where: { id, userId } });
+    const account = await this.prisma.account.findFirst({
+      where: { id, userId },
+    });
     if (!account) {
       throw new NotFoundException(`Account with ID ${id} not found`);
     }
     return account;
   }
 
-  async update(id: string, updateAccountDto: UpdateAccountDto, userId: string): Promise<Account> {
+  async update(
+    id: string,
+    updateAccountDto: UpdateAccountDto,
+    userId: string,
+  ): Promise<Account> {
     await this.findOne(id, userId);
-    return this.prisma.account.update({ where: { id }, data: updateAccountDto });
+    return this.prisma.account.update({
+      where: { id },
+      data: updateAccountDto,
+    });
   }
 
   async remove(id: string, userId: string): Promise<Account> {

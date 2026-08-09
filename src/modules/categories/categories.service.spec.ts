@@ -44,8 +44,12 @@ describe('CategoriesService', () => {
   describe('create', () => {
     it('should create a category', async () => {
       mockPrismaService.category.create.mockResolvedValue(mockCategory);
-      const result = await service.create({ name: 'test-category' }, testUserId);
+      const result = await service.create(
+        { name: 'test-category' },
+        testUserId,
+      );
       expect(result).toEqual(mockCategory);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(prisma.category.create).toHaveBeenCalledWith({
         data: { name: 'test-category', user: { connect: { id: testUserId } } },
       });
@@ -57,7 +61,10 @@ describe('CategoriesService', () => {
       mockPrismaService.category.findMany.mockResolvedValue([mockCategory]);
       const result = await service.findAll(testUserId);
       expect(result).toEqual([mockCategory]);
-      expect(prisma.category.findMany).toHaveBeenCalledWith({ where: { userId: testUserId } });
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(prisma.category.findMany).toHaveBeenCalledWith({
+        where: { userId: testUserId },
+      });
     });
   });
 
@@ -70,21 +77,32 @@ describe('CategoriesService', () => {
 
     it('should throw NotFoundException if not found', async () => {
       mockPrismaService.category.findFirst.mockResolvedValue(null);
-      await expect(service.findOne('test-id', testUserId)).rejects.toThrow(NotFoundException);
+      await expect(service.findOne('test-id', testUserId)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
   describe('update', () => {
     it('should update and return a category', async () => {
       mockPrismaService.category.findFirst.mockResolvedValue(mockCategory);
-      mockPrismaService.category.update.mockResolvedValue({ ...mockCategory, name: 'updated' });
-      const result = await service.update('test-id', { name: 'updated' }, testUserId);
+      mockPrismaService.category.update.mockResolvedValue({
+        ...mockCategory,
+        name: 'updated',
+      });
+      const result = await service.update(
+        'test-id',
+        { name: 'updated' },
+        testUserId,
+      );
       expect(result.name).toBe('updated');
     });
 
     it('should throw NotFoundException if not found', async () => {
       mockPrismaService.category.findFirst.mockResolvedValue(null);
-      await expect(service.update('test-id', { name: 'updated' }, testUserId)).rejects.toThrow(NotFoundException);
+      await expect(
+        service.update('test-id', { name: 'updated' }, testUserId),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -98,7 +116,9 @@ describe('CategoriesService', () => {
 
     it('should throw NotFoundException if not found', async () => {
       mockPrismaService.category.findFirst.mockResolvedValue(null);
-      await expect(service.remove('test-id', testUserId)).rejects.toThrow(NotFoundException);
+      await expect(service.remove('test-id', testUserId)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 });

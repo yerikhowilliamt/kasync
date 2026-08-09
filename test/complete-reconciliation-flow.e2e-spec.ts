@@ -54,7 +54,7 @@ describe('Complete Reconciliation Flow (e2e)', () => {
         password: 'password123',
         name: 'Complete Flow User',
       });
-    userId = regRes.body.id;
+    userId = (regRes.body as { id: string }).id;
     const cookies = regRes.headers['set-cookie'] as unknown as string[];
     authCookie = cookies.find((c) => c.startsWith('access_token='))!;
 
@@ -69,12 +69,18 @@ describe('Complete Reconciliation Flow (e2e)', () => {
     accountId = account.id;
 
     const category = await prisma.category.create({
-      data: { name: `Complete Category ${Date.now()}`, user: { connect: { id: userId } } },
+      data: {
+        name: `Complete Category ${Date.now()}`,
+        user: { connect: { id: userId } },
+      },
     });
     categoryId = category.id;
 
     const branch = await prisma.branch.create({
-      data: { name: `Complete Branch ${Date.now()}`, user: { connect: { id: userId } } },
+      data: {
+        name: `Complete Branch ${Date.now()}`,
+        user: { connect: { id: userId } },
+      },
     });
     branchId = branch.id;
   });

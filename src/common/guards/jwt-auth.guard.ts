@@ -17,10 +17,10 @@ interface JwtPayload {
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
   constructor(
-  private readonly reflector: Reflector,
-  private readonly jwtService: JwtService,
-  private readonly prisma: PrismaService,
-) {}
+    private readonly reflector: Reflector,
+    private readonly jwtService: JwtService,
+    private readonly prisma: PrismaService,
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
@@ -76,7 +76,11 @@ export class JwtAuthGuard implements CanActivate {
         where: { id: payload.sub },
         select: { tokenValidFrom: true },
       });
-      if (user && payload.iat && payload.iat * 1000 < user.tokenValidFrom.getTime()) {
+      if (
+        user &&
+        payload.iat &&
+        payload.iat * 1000 < user.tokenValidFrom.getTime()
+      ) {
         throw new UnauthorizedException('Token has been revoked');
       }
     } catch (err) {

@@ -179,6 +179,7 @@ describe('AuthService', () => {
         where: { id: mockUser.id },
         data: {
           refreshTokenHash: null,
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           tokenValidFrom: expect.any(Date),
         },
       });

@@ -34,9 +34,15 @@ describe('BranchesController', () => {
   describe('create', () => {
     it('should create a branch', async () => {
       mockBranchesService.create.mockResolvedValue(mockBranch);
-      const result = await controller.create(testUserId, { name: 'test-branch' });
+      const result = await controller.create(testUserId, {
+        name: 'test-branch',
+      });
       expect(result).toEqual(mockBranch);
-      expect(service.create).toHaveBeenCalledWith({ name: 'test-branch' }, testUserId);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(service.create).toHaveBeenCalledWith(
+        { name: 'test-branch' },
+        testUserId,
+      );
     });
   });
 
@@ -45,6 +51,7 @@ describe('BranchesController', () => {
       mockBranchesService.findAll.mockResolvedValue([mockBranch]);
       const result = await controller.findAll(testUserId);
       expect(result).toEqual([mockBranch]);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(service.findAll).toHaveBeenCalledWith(testUserId);
     });
   });
@@ -54,6 +61,7 @@ describe('BranchesController', () => {
       mockBranchesService.findOne.mockResolvedValue(mockBranch);
       const result = await controller.findOne(testUserId, 'test-id');
       expect(result).toEqual(mockBranch);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(service.findOne).toHaveBeenCalledWith('test-id', testUserId);
     });
   });
@@ -61,9 +69,16 @@ describe('BranchesController', () => {
   describe('update', () => {
     it('should update a branch', async () => {
       mockBranchesService.update.mockResolvedValue(mockBranch);
-      const result = await controller.update(testUserId, 'test-id', { name: 'updated' });
+      const result = await controller.update(testUserId, 'test-id', {
+        name: 'updated',
+      });
       expect(result).toEqual(mockBranch);
-      expect(service.update).toHaveBeenCalledWith('test-id', { name: 'updated' }, testUserId);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(service.update).toHaveBeenCalledWith(
+        'test-id',
+        { name: 'updated' },
+        testUserId,
+      );
     });
   });
 
@@ -72,6 +87,7 @@ describe('BranchesController', () => {
       mockBranchesService.remove.mockResolvedValue(mockBranch);
       const result = await controller.remove(testUserId, 'test-id');
       expect(result).toEqual(mockBranch);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(service.remove).toHaveBeenCalledWith('test-id', testUserId);
     });
   });

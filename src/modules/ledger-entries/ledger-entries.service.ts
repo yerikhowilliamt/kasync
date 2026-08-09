@@ -25,27 +25,35 @@ export class LedgerEntriesService {
     try {
       return await this.prisma.ledgerEntry.create({
         data: {
-user: { connect: { id: userId } },
+          user: { connect: { id: userId } },
           category: { connect: { id: dto.categoryId } },
           branch: { connect: { id: dto.branchId } },
-           entryDate: new Date(dto.entryDate),
-           amount: new Prisma.Decimal(dto.amount),
-           type: dto.type,
-           note: dto.note,
+          entryDate: new Date(dto.entryDate),
+          amount: new Prisma.Decimal(dto.amount),
+          type: dto.type,
+          note: dto.note,
         },
         include: { category: true, branch: true },
       });
     } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2003') {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2003'
+      ) {
         throw new NotFoundException('Category or Branch not found');
       }
       throw error;
     }
   }
 
-  async findAll(userId: string, paginationQuery?: PaginationQueryDto): Promise<
+  async findAll(
+    userId: string,
+    paginationQuery?: PaginationQueryDto,
+  ): Promise<
     PaginatedResult<
-      Prisma.LedgerEntryGetPayload<{ include: { category: true; branch: true } }>
+      Prisma.LedgerEntryGetPayload<{
+        include: { category: true; branch: true };
+      }>
     >
   > {
     const page = Math.max(1, paginationQuery?.page ?? 1);
@@ -85,11 +93,15 @@ user: { connect: { id: userId } },
     await this.findOne(id, userId);
 
     if (dto.categoryId) {
-      const cat = await this.prisma.category.findFirst({ where: { id: dto.categoryId, userId } });
+      const cat = await this.prisma.category.findFirst({
+        where: { id: dto.categoryId, userId },
+      });
       if (!cat) throw new NotFoundException('Category not found');
     }
     if (dto.branchId) {
-      const br = await this.prisma.branch.findFirst({ where: { id: dto.branchId, userId } });
+      const br = await this.prisma.branch.findFirst({
+        where: { id: dto.branchId, userId },
+      });
       if (!br) throw new NotFoundException('Branch not found');
     }
 
@@ -108,7 +120,10 @@ user: { connect: { id: userId } },
         include: { category: true, branch: true },
       });
     } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2003') {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2003'
+      ) {
         throw new NotFoundException('Category or Branch not found');
       }
       throw error;
