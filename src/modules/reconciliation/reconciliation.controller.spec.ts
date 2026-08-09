@@ -4,6 +4,8 @@ import { ReconciliationService } from './reconciliation.service';
 import { TransactionStatus } from '@prisma/client';
 
 describe('ReconciliationController', () => {
+  const TEST_USER_ID = 'test-user-id';
+
   let controller: ReconciliationController;
 
   const mockReconciliationService = {
@@ -47,12 +49,12 @@ describe('ReconciliationController', () => {
       );
 
       const query = { accountId: 'acc-1' };
-      const result = await controller.getDashboardSummary(query);
+      const result = await controller.getDashboardSummary(TEST_USER_ID, query);
 
       expect(result).toEqual(summaryMock);
       expect(
         mockReconciliationService.getDashboardSummary,
-      ).toHaveBeenCalledWith(query);
+      ).toHaveBeenCalledWith(TEST_USER_ID, query);
     });
   });
 });

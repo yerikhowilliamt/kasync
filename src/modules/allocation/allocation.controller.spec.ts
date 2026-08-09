@@ -4,6 +4,8 @@ import { AllocationService } from './allocation.service';
 import { CreateAllocationDto } from './dto/create-allocation.dto';
 
 describe('AllocationController', () => {
+  const TEST_USER_ID = 'test-user-id';
+
   let controller: AllocationController;
   let service: AllocationService;
 
@@ -47,9 +49,9 @@ describe('AllocationController', () => {
       const result = [{ id: 'alloc-1' }];
       mockAllocationService.create.mockResolvedValue(result);
 
-      expect(await controller.create(dto)).toBe(result);
+      expect(await controller.create(TEST_USER_ID, dto)).toBe(result);
       // eslint-disable-next-line @typescript-eslint/unbound-method
-      expect(service.create).toHaveBeenCalledWith(dto);
+      expect(service.create).toHaveBeenCalledWith(dto, TEST_USER_ID);
     });
   });
 
@@ -58,9 +60,9 @@ describe('AllocationController', () => {
       const result = { id: 'alloc-1', status: 'REVOKED' };
       mockAllocationService.revoke.mockResolvedValue(result);
 
-      expect(await controller.revoke('alloc-1')).toBe(result);
+      expect(await controller.revoke(TEST_USER_ID, 'alloc-1')).toBe(result);
       // eslint-disable-next-line @typescript-eslint/unbound-method
-      expect(service.revoke).toHaveBeenCalledWith('alloc-1');
+      expect(service.revoke).toHaveBeenCalledWith('alloc-1', TEST_USER_ID);
     });
   });
 
@@ -69,9 +71,14 @@ describe('AllocationController', () => {
       const result = [{ id: 'alloc-1' }];
       mockAllocationService.findByTransaction.mockResolvedValue(result);
 
-      expect(await controller.findByTransaction('txn-1')).toBe(result);
+      expect(await controller.findByTransaction(TEST_USER_ID, 'txn-1')).toBe(
+        result,
+      );
       // eslint-disable-next-line @typescript-eslint/unbound-method
-      expect(service.findByTransaction).toHaveBeenCalledWith('txn-1');
+      expect(service.findByTransaction).toHaveBeenCalledWith(
+        'txn-1',
+        TEST_USER_ID,
+      );
     });
   });
 
@@ -80,9 +87,14 @@ describe('AllocationController', () => {
       const result = [{ id: 'alloc-1' }];
       mockAllocationService.findByLedgerEntry.mockResolvedValue(result);
 
-      expect(await controller.findByLedgerEntry('entry-1')).toBe(result);
+      expect(await controller.findByLedgerEntry(TEST_USER_ID, 'entry-1')).toBe(
+        result,
+      );
       // eslint-disable-next-line @typescript-eslint/unbound-method
-      expect(service.findByLedgerEntry).toHaveBeenCalledWith('entry-1');
+      expect(service.findByLedgerEntry).toHaveBeenCalledWith(
+        'entry-1',
+        TEST_USER_ID,
+      );
     });
   });
 });

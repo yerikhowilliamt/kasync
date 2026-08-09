@@ -238,6 +238,49 @@ This document records errors encountered during development, their root causes, 
 - **Resolution:** Removed the `npx prisma db execute --file ./docs/database/migration.sql` step from `.github/workflows/ci.yml`. Triggers are now automatically applied by `npx prisma migrate deploy`.
 - **Prevention / Note:** After consolidating raw SQL into Prisma migrations, clean up all external references to the original standalone SQL files to avoid dual-execution or missing-file errors in CI.
 
+### [2026-08-09] ESLint @typescript-eslint/no-misused-promises in Graceful Shutdown Handlers
+- **Module / Area:** `main.ts`, graceful shutdown
+- **Error Message / Symptom:**
+  ```text
+  54:25  error  Promise returned in function argument where a void return was expected  @typescript-eslint/no-misused-promises
+  55:24  error  Promise returned in function argument where a void return was expected  @typescript-eslint/no-misused-promises
+  ```
+- **Root Cause:** Adding `async` callbacks directly inside `process.on('SIGTERM', async () => { ... })` caused ESLint's `@typescript-eslint/no-misused-promises` to flag the returned Promise where `process.on()` expects a `void` callback.
+- **Resolution:** Changed from async arrow functions to synchronous callbacks that fire-and-forget the async work: `process.on('SIGTERM', () => { void app.close().then(() => process.exit(0)); })`.
+- **Prevention / Note:** When registering event handlers with Node.js APIs that expect `void` callbacks, use synchronous wrappers around async operations instead of async arrow functions.
+
+### [2026-08-09] AllocationService Mock findUnique → findFirst After Multi-Tenancy Refactor
+- **Module / Area:** `allocation`, `allocation.service.spec.ts`
+- **Error Message / Symptom:**
+  ```text
+  Expected 2 arguments, but got 1. (24 errors across 6 spec files)
+  ```
+- **Root Cause:** After adding `userId` parameter to `AllocationService.create()`, `revoke()`, `findByTransaction()`, and `findByLedgerEntry()`, all spec files still called these methods with the old single-argument signatures. Additionally, the service changed from `findUnique` to `findFirst` (with userId scoping) for bank transaction and ledger entry lookups, but spec mocks still used `findUnique`.
+- **Resolution:** Updated all 6 spec files to pass `TEST_USER_ID` as the appropriate argument. Changed mock setup from `bankTransaction.findUnique` / `ledgerEntry.findUnique` to `findFirst`. Updated where-clause assertions to include `account: { userId }` scoping. Added `resetMatches` tests for the new matching service method.
+- **Prevention / Note:** When changing a service method's signature (adding parameters), immediately run `npx tsc --noEmit` to find all call sites that need updating. For cross-cutting changes affecting 6+ files, batch-update all spec files in one pass rather than piecemeal.
+
+### [2026-08-09] MatchingService Leaked All Users' Ledger Entries Without userId Scoping
+- **Module / Area:** `matching`, `matching.service.ts`
+- **Error Message / Symptom:**
+  ```text
+  No error at runtime — silent security vulnerability.
+  MatchingService.proposeMatches() called findMany({}) on ledgerEntry with no where clause.
+  ```
+- **Root Cause:** `MatchingService.proposeMatches()` fetched all ledger entries across all users (`findMany({})` with empty where clause) because the `userId` parameter was never added during Phase 8 implementation. This meant the matching engine computed candidates against other users' private ledger entries.
+- **Resolution:** Added `userId` as the first parameter to `proposeMatches()`. Changed `ledgerEntry.findMany({})` to `ledgerEntry.findMany({ where: { userId } })`. Also scoped `bankTransaction.findMany` via `account: { userId }` relation and `updateMany` via `account: { userId }`.
+- **Prevention / Note:** When implementing multi-tenancy, verify that EVERY query in a service includes a userId scope. The `findMany({})` pattern with an empty where clause is a red flag — it should always include at least a userId filter for tenant-scoped services.
+
+### [2026-08-09] Category/Branch Global @unique Prevents Cross-Tenant Name Creation
+- **Module / Area:** `prisma`, `schema.prisma`
+- **Error Message / Symptom:**
+  ```text
+  Unique constraint failed on the fields: (`name`)
+  User A creates category "Fuel" → User B cannot create category "Fuel" even though they are different tenants.
+  ```
+- **Root Cause:** `Category.name` and `Branch.name` used global `@unique` constraint, meaning the uniqueness was enforced across all users. In a multi-tenant system, this allows one user to lock category/branch names system-wide.
+- **Resolution:** Changed from `@unique` (global) to `@@unique([userId, name])` (per-user composite unique) on both `Category` and `Branch` models. This scoped uniqueness to individual users while still preventing duplicates within a single user's scope.
+- **Prevention / Note:** When adding `userId` to existing tables with global unique constraints, evaluate whether the constraint should remain global or be scoped to the user. Name fields almost always need per-user scoping in multi-tenant systems.
+
 ### [2026-08-09] Fixer Sessions Reverting Multi-Tenancy Source Changes
 - **Module / Area:** System-wide, `@fixer` agent, `git`
 - **Error Message / Symptom:**

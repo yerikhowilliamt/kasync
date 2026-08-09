@@ -96,11 +96,12 @@ model BankTransaction {
 model Category {
   id     String @id @default(uuid())
   userId String @map("user_id")
-  name   String @unique
+  name   String
 
   user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   ledgerEntries LedgerEntry[]
 
+  @@unique([userId, name])
   @@index([userId])
   @@map("categories")
 }
@@ -108,11 +109,12 @@ model Category {
 model Branch {
   id     String @id @default(uuid())
   userId String @map("user_id")
-  name   String @unique
+  name   String
 
   user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   ledgerEntries LedgerEntry[]
 
+  @@unique([userId, name])
   @@index([userId])
   @@map("branches")
 }

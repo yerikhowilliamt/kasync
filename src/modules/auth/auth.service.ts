@@ -8,11 +8,7 @@ import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
-
-export interface JwtPayload {
-  sub: string;
-  email: string;
-}
+import { JwtPayload } from '../../common/types/jwt-payload.interface';
 
 export interface AuthTokens {
   accessToken: string;

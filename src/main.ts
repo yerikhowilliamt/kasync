@@ -43,5 +43,14 @@ async function bootstrap() {
 
   const port = process.env.PORT || 3000;
   await app.listen(port);
+
+  // Graceful shutdown for container orchestration (SIGTERM)
+  const logger = app.get(Logger);
+  const shutdown = (signal: string) => {
+    logger.log(`Received ${signal}, shutting down gracefully...`);
+    void app.close().then(() => process.exit(0));
+  };
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  process.on('SIGINT', () => shutdown('SIGINT'));
 }
 void bootstrap();

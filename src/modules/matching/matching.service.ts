@@ -14,17 +14,23 @@ import { TransactionStatus } from '@prisma/client';
 export class MatchingService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async proposeMatches(dto?: ProposeMatchesDto) {
-    const bankTxnWhere = dto?.accountId
-      ? { status: TransactionStatus.UNRESOLVED, accountId: dto.accountId }
-      : { status: TransactionStatus.UNRESOLVED };
+  async proposeMatches(userId: string, dto?: ProposeMatchesDto) {
+    const bankTxnWhere: Record<string, unknown> = {
+      status: TransactionStatus.UNRESOLVED,
+      account: { userId },
+    };
+
+    if (dto?.accountId) {
+      bankTxnWhere.accountId = dto.accountId;
+    }
 
     const bankTxns = await this.prisma.bankTransaction.findMany({
       where: bankTxnWhere,
     });
 
-    // Suboptimal query but matches requirements. Ideally we exclude ledger entries fully allocated
-    const ledgerEntries = await this.prisma.ledgerEntry.findMany({});
+    const ledgerEntries = await this.prisma.ledgerEntry.findMany({
+      where: { userId },
+    });
 
     const bankInputs: BankTransactionInput[] = bankTxns.map((tx) => ({
       id: tx.id,
@@ -56,11 +62,31 @@ export class MatchingService {
 
     if (bankTxnIdsToUpdate.size > 0) {
       await this.prisma.bankTransaction.updateMany({
-        where: { id: { in: Array.from(bankTxnIdsToUpdate) } },
+        where: {
+          id: { in: Array.from(bankTxnIdsToUpdate) },
+          account: { userId },
+        },
         data: { status: TransactionStatus.PENDING_REVIEW },
       });
     }
 
     return candidates;
+  }
+
+  async resetMatches(userId: string, accountId?: string) {
+    const where: Record<string, unknown> = {
+      status: TransactionStatus.PENDING_REVIEW,
+      account: { userId },
+    };
+    if (accountId) {
+      where.accountId = accountId;
+    }
+
+    const result = await this.prisma.bankTransaction.updateMany({
+      where,
+      data: { status: TransactionStatus.UNRESOLVED },
+    });
+
+    return { resetCount: result.count };
   }
 }
