@@ -56,6 +56,9 @@ export class AllocationService {
       const createdAllocations = [];
 
       for (const [txnId, txnItems] of Object.entries(groupedItems)) {
+        // Lock the bank_transaction row for this transaction to prevent concurrent overallocation
+        await tx.$queryRaw`SELECT id FROM bank_transactions WHERE id = ${txnId} FOR UPDATE`;
+
         const bankTransaction = await tx.bankTransaction.findFirst({
           where: { id: txnId, account: { userId } },
           include: {
@@ -77,10 +80,35 @@ export class AllocationService {
           new Decimal(0),
         );
 
-        const newItemsSum = txnItems.reduce(
-          (sum, item) => sum.plus(new Decimal(item.amountPortion.toString())),
-          new Decimal(0),
-        );
+        // Pre-resolve idempotent items so they are excluded from cap calculation
+        type AllocationRecord = NonNullable<
+          Awaited<ReturnType<typeof tx.allocation.findFirst>>
+        >;
+        const resolvedIdempotent = new Map<string, AllocationRecord>();
+        for (const item of txnItems) {
+          if (item.idempotencyKey) {
+            const existing = await tx.allocation.findFirst({
+              where: {
+                idempotencyKey: item.idempotencyKey,
+                bankTransaction: { account: { userId } },
+              },
+            });
+            if (existing) {
+              resolvedIdempotent.set(item.idempotencyKey, existing);
+            }
+          }
+        }
+
+        // Only count items that are truly new (not idempotency-resolved) toward the cap
+        const newItemsSum = txnItems.reduce((sum, item) => {
+          if (
+            item.idempotencyKey &&
+            resolvedIdempotent.has(item.idempotencyKey)
+          ) {
+            return sum; // already allocated — skip from cap calculation
+          }
+          return sum.plus(new Decimal(item.amountPortion.toString()));
+        }, new Decimal(0));
 
         const totalSum = existingSum.plus(newItemsSum);
         const txnAmount = new Decimal(bankTransaction.amount.toString());
@@ -105,11 +133,9 @@ export class AllocationService {
             );
           }
 
-          // Idempotency check
+          // Idempotency check (already resolved above — use cached result)
           if (item.idempotencyKey) {
-            const existing = await tx.allocation.findUnique({
-              where: { idempotencyKey: item.idempotencyKey },
-            });
+            const existing = resolvedIdempotent.get(item.idempotencyKey);
             if (existing) {
               createdAllocations.push(existing);
               continue;

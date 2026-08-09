@@ -87,7 +87,7 @@ describe('PostgresTriggerExceptionFilter', () => {
     expect(mockResponse.json).toHaveBeenCalledWith({
       statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
       error: 'Internal Server Error',
-      message: 'Unique constraint failed',
+      message: 'An unexpected error occurred. Please try again later.',
     });
   });
 });

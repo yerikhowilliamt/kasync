@@ -13,6 +13,7 @@ describe('MatchingController', () => {
 
   const mockMatchingService = {
     proposeMatches: jest.fn(),
+    resetMatches: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -59,6 +60,21 @@ describe('MatchingController', () => {
         jest.spyOn(matchingService, 'proposeMatches'),
       ).toHaveBeenCalledWith(TEST_USER_ID, dto);
       expect(result).toEqual(expectedResult);
+    });
+  });
+
+  describe('reset', () => {
+    it('should call matchingService.resetMatches with userId and accountId', async () => {
+      mockMatchingService.resetMatches = jest
+        .fn()
+        .mockResolvedValue({ resetCount: 2 });
+      const dto = { accountId: 'acc-1' };
+      const result = await controller.reset(TEST_USER_ID, dto);
+      expect(result).toEqual({ resetCount: 2 });
+      expect(mockMatchingService.resetMatches).toHaveBeenCalledWith(
+        TEST_USER_ID,
+        'acc-1',
+      );
     });
   });
 });

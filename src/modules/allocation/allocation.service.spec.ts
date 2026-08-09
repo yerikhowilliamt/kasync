@@ -14,6 +14,7 @@ describe('AllocationService', () => {
 
   type MockPrismaService = {
     $transaction: jest.Mock;
+    $queryRaw: jest.Mock;
     bankTransaction: {
       findFirst: jest.Mock;
     };
@@ -34,6 +35,7 @@ describe('AllocationService', () => {
       $transaction: jest.fn((callback: (arg: MockPrismaService) => unknown) =>
         callback(mock),
       ) as jest.Mock,
+      $queryRaw: jest.fn().mockResolvedValue([]),
       bankTransaction: {
         findFirst: jest.fn(),
       },
@@ -229,7 +231,7 @@ describe('AllocationService', () => {
         status: 'ACTIVE',
         idempotencyKey: 'key-1',
       };
-      mockPrismaService.allocation.findUnique.mockResolvedValue(
+      mockPrismaService.allocation.findFirst.mockResolvedValue(
         existingAllocation,
       );
 
@@ -245,10 +247,64 @@ describe('AllocationService', () => {
 
       expect(result).toHaveLength(1);
       expect(result[0].id).toBe('existing-alloc-1');
-      expect(mockPrismaService.allocation.findUnique).toHaveBeenCalledWith({
-        where: { idempotencyKey: 'key-1' },
-      });
+      expect(mockPrismaService.allocation.findFirst).toHaveBeenCalled();
       expect(mockPrismaService.allocation.create).not.toHaveBeenCalled();
+    });
+
+    it('should not throw AllocationExceededError when idempotent item + new item fit within cap', async () => {
+      mockPrismaService.bankTransaction.findFirst.mockResolvedValue({
+        id: 'txn-1',
+        amount: new Decimal(600),
+        allocations: [],
+      });
+      const existingAllocation = {
+        id: 'existing-alloc-k1',
+        bankTransactionId: 'txn-1',
+        ledgerEntryId: 'entry-1',
+        amountPortion: new Decimal(300),
+        status: 'ACTIVE',
+        idempotencyKey: 'K1',
+      };
+      const newAllocation = {
+        id: 'alloc-new-le2',
+        bankTransactionId: 'txn-1',
+        ledgerEntryId: 'entry-2',
+        amountPortion: new Decimal(200),
+        status: 'ACTIVE',
+      };
+      // First findFirst call: idempotency pre-resolve for K1 → existing
+      // Second findFirst call: ledgerEntry ownership (no idempotency key for LE2 item)
+      mockPrismaService.allocation.findFirst
+        .mockResolvedValueOnce(existingAllocation) // K1 idempotency resolve
+        .mockResolvedValueOnce(null); // LE2 — no existing idempotent alloc
+      mockPrismaService.ledgerEntry.findFirst.mockResolvedValue({
+        id: 'entry-2',
+      });
+      mockPrismaService.allocation.create.mockResolvedValue(newAllocation);
+
+      const result = await service.create(
+        {
+          allocations: [
+            {
+              bankTransactionId: 'txn-1',
+              ledgerEntryId: 'entry-1',
+              amountPortion: 300,
+              idempotencyKey: 'K1',
+            },
+            {
+              bankTransactionId: 'txn-1',
+              ledgerEntryId: 'entry-2',
+              amountPortion: 200,
+            },
+          ],
+        },
+        TEST_USER_ID,
+      );
+
+      expect(result).toHaveLength(2);
+      expect(result[0].id).toBe('existing-alloc-k1');
+      expect(result[1].id).toBe('alloc-new-le2');
+      expect(mockPrismaService.allocation.create).toHaveBeenCalledTimes(1);
     });
 
     it('should create allocation normally when no idempotencyKey provided', async () => {
@@ -277,7 +333,6 @@ describe('AllocationService', () => {
 
       expect(result).toHaveLength(1);
       expect(result[0].id).toBe('alloc-new-1');
-      expect(mockPrismaService.allocation.findUnique).not.toHaveBeenCalled();
       expect(mockPrismaService.allocation.create).toHaveBeenCalled();
     });
 
@@ -290,6 +345,8 @@ describe('AllocationService', () => {
       mockPrismaService.ledgerEntry.findFirst.mockResolvedValue({
         id: 'entry-1',
       });
+      // idempotency pre-resolve: key not yet in DB → proceed to create
+      mockPrismaService.allocation.findFirst.mockResolvedValue(null);
       mockPrismaService.allocation.create.mockResolvedValue({
         id: 'alloc-1',
         amountPortion: new Decimal(100),

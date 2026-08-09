@@ -65,16 +65,15 @@ export class JwtAuthGuard implements CanActivate {
       });
       request.user = payload;
 
-      // Token revocation check: reject tokens issued before tokenValidFrom
-      // 2-second tolerance accounts for clock skew between Node.js and PostgreSQL
+      // Reject tokens issued before tokenValidFrom (2s clock-skew tolerance for Node.js/PostgreSQL drift)
       const user = await this.prisma.user.findUnique({
         where: { id: payload.sub },
         select: { tokenValidFrom: true },
       });
       if (
         user &&
-        payload.iat &&
-        payload.iat * 1000 < user.tokenValidFrom.getTime() - 2000
+        payload.iat !== undefined &&
+        payload.iat * 1000 + 2000 < user.tokenValidFrom.getTime()
       ) {
         throw new UnauthorizedException('Token has been revoked');
       }

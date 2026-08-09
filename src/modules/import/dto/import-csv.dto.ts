@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString, IsUUID } from 'class-validator';
+import { IsIn, IsNotEmpty, IsUUID } from 'class-validator';
 
 export class ImportCsvDto {
   @ApiProperty({ description: 'Account UUID' })
@@ -8,7 +8,7 @@ export class ImportCsvDto {
   accountId!: string;
 
   @ApiProperty({ description: 'Bank format', enum: ['BCA', 'MANDIRI'] })
-  @IsString()
+  @IsIn(['BCA', 'MANDIRI'])
   @IsNotEmpty()
   bankFormat!: string;
 }
