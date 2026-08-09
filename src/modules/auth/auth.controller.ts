@@ -14,12 +14,7 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { Public } from '../../common/decorators/public.decorator';
 import { ReqUser } from '../../common/decorators/req-user.decorator';
-
-const COOKIE_OPTIONS = {
-  httpOnly: true,
-  secure: process.env.NODE_ENV === 'production',
-  sameSite: 'strict' as const,
-};
+import { COOKIE_OPTIONS } from '../../common/constants/cookie.constants';
 
 @ApiTags('Auth')
 @Controller('auth')

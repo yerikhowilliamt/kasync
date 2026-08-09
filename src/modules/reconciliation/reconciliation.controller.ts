@@ -5,6 +5,7 @@ import {
   DashboardSummaryResponse,
 } from './reconciliation.service';
 import { DashboardQueryDto } from './dto/dashboard-query.dto';
+import { ReqUser } from '../../common/decorators/req-user.decorator';
 
 @ApiTags('reconciliation')
 @Controller('reconciliation')
@@ -20,8 +21,9 @@ export class ReconciliationController {
   })
   @ApiResponse({ status: 400, description: 'Bad Request' })
   async getDashboardSummary(
+    @ReqUser('sub') userId: string,
     @Query() query: DashboardQueryDto,
   ): Promise<DashboardSummaryResponse> {
-    return this.reconciliationService.getDashboardSummary(query);
+    return this.reconciliationService.getDashboardSummary(userId, query);
   }
 }

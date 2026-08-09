@@ -7,20 +7,23 @@ import { AllocationStatus } from '@prisma/client';
 import Decimal from 'decimal.js';
 
 describe('AllocationService', () => {
+  const TEST_USER_ID = 'test-user-id';
+
   let service: AllocationService;
   let prismaService: PrismaService; // eslint-disable-line @typescript-eslint/no-unused-vars
 
   type MockPrismaService = {
     $transaction: jest.Mock;
     bankTransaction: {
-      findUnique: jest.Mock;
+      findFirst: jest.Mock;
     };
     ledgerEntry: {
-      findUnique: jest.Mock;
+      findFirst: jest.Mock;
     };
     allocation: {
       create: jest.Mock;
       findUnique: jest.Mock;
+      findFirst: jest.Mock;
       update: jest.Mock;
       findMany: jest.Mock;
     };
@@ -32,14 +35,15 @@ describe('AllocationService', () => {
         callback(mock),
       ) as jest.Mock,
       bankTransaction: {
-        findUnique: jest.fn(),
+        findFirst: jest.fn(),
       },
       ledgerEntry: {
-        findUnique: jest.fn(),
+        findFirst: jest.fn(),
       },
       allocation: {
         create: jest.fn(),
         findUnique: jest.fn(),
+        findFirst: jest.fn(),
         update: jest.fn(),
         findMany: jest.fn(),
       },
@@ -71,61 +75,72 @@ describe('AllocationService', () => {
 
   describe('create', () => {
     it('should throw BadRequestException if no allocations provided', async () => {
-      await expect(service.create({})).rejects.toThrow(BadRequestException);
+      await expect(service.create({}, TEST_USER_ID)).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should throw NotFoundException if BankTransaction not found', async () => {
-      mockPrismaService.bankTransaction.findUnique.mockResolvedValue(null);
+      mockPrismaService.bankTransaction.findFirst.mockResolvedValue(null);
 
       await expect(
-        service.create({
-          bankTransactionId: 'txn-1',
-          ledgerEntryId: 'entry-1',
-          amountPortion: 100,
-        }),
+        service.create(
+          {
+            bankTransactionId: 'txn-1',
+            ledgerEntryId: 'entry-1',
+            amountPortion: 100,
+          },
+          TEST_USER_ID,
+        ),
       ).rejects.toThrow(NotFoundException);
     });
 
     it('should throw NotFoundException if ledgerEntryId not found', async () => {
-      mockPrismaService.bankTransaction.findUnique.mockResolvedValue({
+      mockPrismaService.bankTransaction.findFirst.mockResolvedValue({
         id: 'txn-1',
         amount: new Decimal(200),
         allocations: [],
       });
-      mockPrismaService.ledgerEntry.findUnique.mockResolvedValue(null);
+      mockPrismaService.ledgerEntry.findFirst.mockResolvedValue(null);
 
       await expect(
-        service.create({
-          bankTransactionId: 'txn-1',
-          ledgerEntryId: 'entry-1',
-          amountPortion: 100,
-        }),
+        service.create(
+          {
+            bankTransactionId: 'txn-1',
+            ledgerEntryId: 'entry-1',
+            amountPortion: 100,
+          },
+          TEST_USER_ID,
+        ),
       ).rejects.toThrow(NotFoundException);
     });
 
     it('should throw AllocationExceededError if sum exceeds transaction amount', async () => {
-      mockPrismaService.bankTransaction.findUnique.mockResolvedValue({
+      mockPrismaService.bankTransaction.findFirst.mockResolvedValue({
         id: 'txn-1',
         amount: new Decimal(150),
         allocations: [{ amountPortion: new Decimal(100), status: 'ACTIVE' }],
       });
 
       await expect(
-        service.create({
-          bankTransactionId: 'txn-1',
-          ledgerEntryId: 'entry-1',
-          amountPortion: 100,
-        }),
+        service.create(
+          {
+            bankTransactionId: 'txn-1',
+            ledgerEntryId: 'entry-1',
+            amountPortion: 100,
+          },
+          TEST_USER_ID,
+        ),
       ).rejects.toThrow(AllocationExceededError);
     });
 
     it('should create single allocation successfully', async () => {
-      mockPrismaService.bankTransaction.findUnique.mockResolvedValue({
+      mockPrismaService.bankTransaction.findFirst.mockResolvedValue({
         id: 'txn-1',
         amount: new Decimal(200),
         allocations: [],
       });
-      mockPrismaService.ledgerEntry.findUnique.mockResolvedValue({
+      mockPrismaService.ledgerEntry.findFirst.mockResolvedValue({
         id: 'entry-1',
       });
       mockPrismaService.allocation.create.mockResolvedValue({
@@ -134,11 +149,14 @@ describe('AllocationService', () => {
         status: 'ACTIVE',
       });
 
-      const result = await service.create({
-        bankTransactionId: 'txn-1',
-        ledgerEntryId: 'entry-1',
-        amountPortion: 100,
-      });
+      const result = await service.create(
+        {
+          bankTransactionId: 'txn-1',
+          ledgerEntryId: 'entry-1',
+          amountPortion: 100,
+        },
+        TEST_USER_ID,
+      );
 
       expect(result).toHaveLength(1);
       expect(mockPrismaService.allocation.create).toHaveBeenCalledWith({
@@ -152,12 +170,12 @@ describe('AllocationService', () => {
     });
 
     it('should create split allocation successfully', async () => {
-      mockPrismaService.bankTransaction.findUnique.mockResolvedValue({
+      mockPrismaService.bankTransaction.findFirst.mockResolvedValue({
         id: 'txn-1',
         amount: new Decimal(200),
         allocations: [],
       });
-      mockPrismaService.ledgerEntry.findUnique.mockResolvedValue({
+      mockPrismaService.ledgerEntry.findFirst.mockResolvedValue({
         id: 'entry-1',
       });
       mockPrismaService.allocation.create
@@ -172,32 +190,35 @@ describe('AllocationService', () => {
           status: 'ACTIVE',
         });
 
-      const result = await service.create({
-        allocations: [
-          {
-            bankTransactionId: 'txn-1',
-            ledgerEntryId: 'entry-1',
-            amountPortion: 100,
-          },
-          {
-            bankTransactionId: 'txn-1',
-            ledgerEntryId: 'entry-2',
-            amountPortion: 50,
-          },
-        ],
-      });
+      const result = await service.create(
+        {
+          allocations: [
+            {
+              bankTransactionId: 'txn-1',
+              ledgerEntryId: 'entry-1',
+              amountPortion: 100,
+            },
+            {
+              bankTransactionId: 'txn-1',
+              ledgerEntryId: 'entry-2',
+              amountPortion: 50,
+            },
+          ],
+        },
+        TEST_USER_ID,
+      );
 
       expect(result).toHaveLength(2);
       expect(mockPrismaService.allocation.create).toHaveBeenCalledTimes(2);
     });
 
     it('should return existing allocation when idempotencyKey matches', async () => {
-      mockPrismaService.bankTransaction.findUnique.mockResolvedValue({
+      mockPrismaService.bankTransaction.findFirst.mockResolvedValue({
         id: 'txn-1',
         amount: new Decimal(500),
         allocations: [],
       });
-      mockPrismaService.ledgerEntry.findUnique.mockResolvedValue({
+      mockPrismaService.ledgerEntry.findFirst.mockResolvedValue({
         id: 'entry-1',
       });
       const existingAllocation = {
@@ -212,12 +233,15 @@ describe('AllocationService', () => {
         existingAllocation,
       );
 
-      const result = await service.create({
-        bankTransactionId: 'txn-1',
-        ledgerEntryId: 'entry-1',
-        amountPortion: 100,
-        idempotencyKey: 'key-1',
-      });
+      const result = await service.create(
+        {
+          bankTransactionId: 'txn-1',
+          ledgerEntryId: 'entry-1',
+          amountPortion: 100,
+          idempotencyKey: 'key-1',
+        },
+        TEST_USER_ID,
+      );
 
       expect(result).toHaveLength(1);
       expect(result[0].id).toBe('existing-alloc-1');
@@ -228,12 +252,12 @@ describe('AllocationService', () => {
     });
 
     it('should create allocation normally when no idempotencyKey provided', async () => {
-      mockPrismaService.bankTransaction.findUnique.mockResolvedValue({
+      mockPrismaService.bankTransaction.findFirst.mockResolvedValue({
         id: 'txn-1',
         amount: new Decimal(500),
         allocations: [],
       });
-      mockPrismaService.ledgerEntry.findUnique.mockResolvedValue({
+      mockPrismaService.ledgerEntry.findFirst.mockResolvedValue({
         id: 'entry-1',
       });
       mockPrismaService.allocation.create.mockResolvedValue({
@@ -242,11 +266,14 @@ describe('AllocationService', () => {
         status: 'ACTIVE',
       });
 
-      const result = await service.create({
-        bankTransactionId: 'txn-1',
-        ledgerEntryId: 'entry-1',
-        amountPortion: 100,
-      });
+      const result = await service.create(
+        {
+          bankTransactionId: 'txn-1',
+          ledgerEntryId: 'entry-1',
+          amountPortion: 100,
+        },
+        TEST_USER_ID,
+      );
 
       expect(result).toHaveLength(1);
       expect(result[0].id).toBe('alloc-new-1');
@@ -255,12 +282,12 @@ describe('AllocationService', () => {
     });
 
     it('should forward top-level idempotencyKey to single allocation create', async () => {
-      mockPrismaService.bankTransaction.findUnique.mockResolvedValue({
+      mockPrismaService.bankTransaction.findFirst.mockResolvedValue({
         id: 'txn-1',
         amount: new Decimal(500),
         allocations: [],
       });
-      mockPrismaService.ledgerEntry.findUnique.mockResolvedValue({
+      mockPrismaService.ledgerEntry.findFirst.mockResolvedValue({
         id: 'entry-1',
       });
       mockPrismaService.allocation.create.mockResolvedValue({
@@ -270,12 +297,15 @@ describe('AllocationService', () => {
         idempotencyKey: 'top-level-key',
       });
 
-      const result = await service.create({
-        bankTransactionId: 'txn-1',
-        ledgerEntryId: 'entry-1',
-        amountPortion: 100,
-        idempotencyKey: 'top-level-key',
-      });
+      const result = await service.create(
+        {
+          bankTransactionId: 'txn-1',
+          ledgerEntryId: 'entry-1',
+          amountPortion: 100,
+          idempotencyKey: 'top-level-key',
+        },
+        TEST_USER_ID,
+      );
 
       expect(result).toHaveLength(1);
       expect(mockPrismaService.allocation.create).toHaveBeenCalledWith({
@@ -292,15 +322,15 @@ describe('AllocationService', () => {
 
   describe('revoke', () => {
     it('should throw NotFoundException if allocation not found', async () => {
-      mockPrismaService.allocation.findUnique.mockResolvedValue(null);
+      mockPrismaService.allocation.findFirst.mockResolvedValue(null);
 
-      await expect(service.revoke('non-existent')).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        service.revoke('non-existent', TEST_USER_ID),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('should revoke allocation successfully', async () => {
-      mockPrismaService.allocation.findUnique.mockResolvedValue({
+      mockPrismaService.allocation.findFirst.mockResolvedValue({
         id: 'alloc-1',
       });
       mockPrismaService.allocation.update.mockResolvedValue({
@@ -308,7 +338,7 @@ describe('AllocationService', () => {
         status: AllocationStatus.REVOKED,
       });
 
-      const result = await service.revoke('alloc-1');
+      const result = await service.revoke('alloc-1', TEST_USER_ID);
 
       expect(result.status).toBe(AllocationStatus.REVOKED);
       expect(mockPrismaService.allocation.update).toHaveBeenCalledWith({
@@ -326,11 +356,14 @@ describe('AllocationService', () => {
       const expected = [{ id: 'alloc-1' }];
       mockPrismaService.allocation.findMany.mockResolvedValue(expected);
 
-      const result = await service.findByTransaction('txn-1');
+      const result = await service.findByTransaction('txn-1', TEST_USER_ID);
 
       expect(result).toBe(expected);
       expect(mockPrismaService.allocation.findMany).toHaveBeenCalledWith({
-        where: { bankTransactionId: 'txn-1' },
+        where: {
+          bankTransactionId: 'txn-1',
+          bankTransaction: { account: { userId: TEST_USER_ID } },
+        },
         include: { ledgerEntry: true },
       });
     });
@@ -341,11 +374,14 @@ describe('AllocationService', () => {
       const expected = [{ id: 'alloc-1' }];
       mockPrismaService.allocation.findMany.mockResolvedValue(expected);
 
-      const result = await service.findByLedgerEntry('entry-1');
+      const result = await service.findByLedgerEntry('entry-1', TEST_USER_ID);
 
       expect(result).toBe(expected);
       expect(mockPrismaService.allocation.findMany).toHaveBeenCalledWith({
-        where: { ledgerEntryId: 'entry-1' },
+        where: {
+          ledgerEntryId: 'entry-1',
+          ledgerEntry: { userId: TEST_USER_ID },
+        },
         include: { bankTransaction: true },
       });
     });

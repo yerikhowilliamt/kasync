@@ -70,9 +70,8 @@ docker compose up -d
 ### 4. Run Migrations & Apply Database Triggers
 ```bash
 npx prisma migrate dev
-npx prisma db execute --file ./docs/database/migration.sql
 ```
-*Note: The raw SQL triggers (`check_allocation_sum` with `FOR UPDATE` lock and `sync_transaction_status`) are located in `docs/database/migration.sql`.*
+*Note: Database triggers (`check_allocation_sum` with `FOR UPDATE` lock and `sync_transaction_status`) are embedded in the Prisma migration `20260809180000_multi_tenancy_and_triggers` and applied automatically.*
 
 ### 5. Seed Synthetic Demo Data
 ```bash
@@ -99,6 +98,7 @@ Swagger UI is exposed at **`/docs`**. Key modules include:
 | **Accounts** | `GET /api/v1/accounts`, `POST /api/v1/accounts` | Manage bank, cash, and e-wallet accounts |
 | **Ledger** | `GET /api/v1/ledger-entries`, `POST /api/v1/ledger-entries` | CRUD categorized internal business records |
 | **Matching** | `POST /api/v1/matching/propose` | Run exact, fuzzy, & aggregate matching engine |
+| | `POST /matching/reset` | Reset PENDING_REVIEW transactions back to UNRESOLVED | Protected |
 | **Allocation** | `POST /api/v1/allocations`, `POST /api/v1/allocations/:id/revoke` | Create split allocations or revoke allocations |
 | **Reconciliation** | `GET /api/v1/reconciliation/dashboard` | 4-way transaction status breakdown & balance variance |
 | **Health** | `GET /api/v1/health` | System and database health status checks |
@@ -138,6 +138,8 @@ To prevent race conditions and guarantee financial data integrity, two SQL trigg
 
 2. **`trg_sync_transaction_status` (`AFTER INSERT OR UPDATE OR DELETE ON allocations`)**:
    - Auto-syncs `bank_transactions.status` between `UNRESOLVED`, `PARTIALLY_ALLOCATED`, and `MATCHED`.
+
+*Note: Both triggers are embedded in the native Prisma migration and applied automatically via `npx prisma migrate dev`. No manual SQL step required.*
 
 ---
 

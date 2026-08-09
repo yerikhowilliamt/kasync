@@ -26,12 +26,7 @@ import { UsersService } from './users.service';
 import { UpdatePasswordDto } from './dto/update-password.dto';
 import { ReqUser } from '../../common/decorators/req-user.decorator';
 import { ImageMimeTypeValidator } from '../../common/validators/image-mimetype.validator';
-
-const COOKIE_OPTIONS = {
-  httpOnly: true,
-  secure: process.env.NODE_ENV === 'production',
-  sameSite: 'strict' as const,
-};
+import { COOKIE_OPTIONS } from '../../common/constants/cookie.constants';
 
 @ApiTags('Users')
 @Controller('users')

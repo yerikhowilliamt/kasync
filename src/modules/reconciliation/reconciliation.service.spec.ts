@@ -5,6 +5,8 @@ import { TransactionStatus, TransactionType } from '@prisma/client';
 import Decimal from 'decimal.js';
 
 describe('ReconciliationService', () => {
+  const TEST_USER_ID = 'test-user-id';
+
   let service: ReconciliationService;
 
   const mockPrismaService = {
@@ -52,7 +54,7 @@ describe('ReconciliationService', () => {
         .mockResolvedValueOnce({ _sum: { amount: new Decimal('100.00') } }) // INFLOW
         .mockResolvedValueOnce({ _sum: { amount: new Decimal('20.00') } }); // OUTFLOW
 
-      const result = await service.getDashboardSummary({});
+      const result = await service.getDashboardSummary(TEST_USER_ID, {});
 
       expect(result.counts).toEqual({
         [TransactionStatus.UNRESOLVED]: 2,
@@ -88,7 +90,7 @@ describe('ReconciliationService', () => {
         status: TransactionStatus.MATCHED,
       };
 
-      await service.getDashboardSummary(query);
+      await service.getDashboardSummary(TEST_USER_ID, query);
 
       const expectedWhere: Record<string, unknown> = {
         accountId: 'acc-1',

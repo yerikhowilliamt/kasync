@@ -16,10 +16,13 @@ export class ReconciliationService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getDashboardSummary(
+    userId: string,
     query: DashboardQueryDto,
   ): Promise<DashboardSummaryResponse> {
-    const bankTxnWhere: Prisma.BankTransactionWhereInput = {};
-    const ledgerWhere: Prisma.LedgerEntryWhereInput = {};
+    const bankTxnWhere: Prisma.BankTransactionWhereInput = {
+      account: { userId },
+    };
+    const ledgerWhere: Prisma.LedgerEntryWhereInput = { userId };
 
     if (query.accountId) {
       bankTxnWhere.accountId = query.accountId;

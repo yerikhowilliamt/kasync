@@ -108,10 +108,20 @@ describe('Users (e2e)', () => {
       )
         .post('/api/v1/users/me/photo')
         .set('Cookie', [authCookie])
-        .attach('file', Buffer.from([0xff, 0xd8, 0xff, 0xe0, ...Buffer.from('fake-image-data')]), {
-          filename: 'avatar.jpg',
-          contentType: 'image/jpeg',
-        })
+        .attach(
+          'file',
+          Buffer.from([
+            0xff,
+            0xd8,
+            0xff,
+            0xe0,
+            ...Buffer.from('fake-image-data'),
+          ]),
+          {
+            filename: 'avatar.jpg',
+            contentType: 'image/jpeg',
+          },
+        )
         .expect(200);
 
       expect(res.body).toEqual(

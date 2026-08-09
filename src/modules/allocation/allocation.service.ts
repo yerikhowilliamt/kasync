@@ -16,7 +16,7 @@ import Decimal from 'decimal.js';
 export class AllocationService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(dto: CreateAllocationDto) {
+  async create(dto: CreateAllocationDto, userId: string) {
     let items: CreateSingleAllocationDto[] = [];
     if (dto.allocations && dto.allocations.length > 0) {
       items = dto.allocations;
@@ -56,8 +56,8 @@ export class AllocationService {
       const createdAllocations = [];
 
       for (const [txnId, txnItems] of Object.entries(groupedItems)) {
-        const bankTransaction = await tx.bankTransaction.findUnique({
-          where: { id: txnId },
+        const bankTransaction = await tx.bankTransaction.findFirst({
+          where: { id: txnId, account: { userId } },
           include: {
             allocations: true,
           },
@@ -95,8 +95,8 @@ export class AllocationService {
         }
 
         for (const item of txnItems) {
-          const ledgerEntry = await tx.ledgerEntry.findUnique({
-            where: { id: item.ledgerEntryId },
+          const ledgerEntry = await tx.ledgerEntry.findFirst({
+            where: { id: item.ledgerEntryId, userId },
           });
 
           if (!ledgerEntry) {
@@ -133,9 +133,9 @@ export class AllocationService {
     });
   }
 
-  async revoke(id: string) {
-    const allocation = await this.prisma.allocation.findUnique({
-      where: { id },
+  async revoke(id: string, userId: string) {
+    const allocation = await this.prisma.allocation.findFirst({
+      where: { id, bankTransaction: { account: { userId } } },
     });
 
     if (!allocation) {
@@ -151,16 +151,19 @@ export class AllocationService {
     });
   }
 
-  async findByTransaction(txnId: string) {
+  async findByTransaction(txnId: string, userId: string) {
     return this.prisma.allocation.findMany({
-      where: { bankTransactionId: txnId },
+      where: {
+        bankTransactionId: txnId,
+        bankTransaction: { account: { userId } },
+      },
       include: { ledgerEntry: true },
     });
   }
 
-  async findByLedgerEntry(ledgerEntryId: string) {
+  async findByLedgerEntry(ledgerEntryId: string, userId: string) {
     return this.prisma.allocation.findMany({
-      where: { ledgerEntryId },
+      where: { ledgerEntryId, ledgerEntry: { userId } },
       include: { bankTransaction: true },
     });
   }

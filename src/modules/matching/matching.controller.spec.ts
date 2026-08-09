@@ -6,6 +6,8 @@ import { ProposeMatchesDto } from './dto/propose-matches.dto';
 import { Decimal } from 'decimal.js';
 
 describe('MatchingController', () => {
+  const TEST_USER_ID = 'test-user-id';
+
   let controller: MatchingController;
   let matchingService: MatchingService;
 
@@ -51,11 +53,11 @@ describe('MatchingController', () => {
       ];
       mockMatchingService.proposeMatches.mockResolvedValue(expectedResult);
 
-      const result = await controller.propose(dto);
+      const result = await controller.propose(TEST_USER_ID, dto);
 
       expect(
         jest.spyOn(matchingService, 'proposeMatches'),
-      ).toHaveBeenCalledWith(dto);
+      ).toHaveBeenCalledWith(TEST_USER_ID, dto);
       expect(result).toEqual(expectedResult);
     });
   });

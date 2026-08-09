@@ -1,3 +1,17 @@
+## Task: Security & Consistency Fixes — Multi-Tenancy, Schema, Types, Docs (Sun Aug 09 2026)
+
+- **Completed**: Yes
+- **Modules**: `AllocationModule`, `MatchingModule`, `ReconciliationModule`, `AuthModule`, `UsersModule`, `PrismaSchema`, `CommonTypes`, `CommonConstants`, `main.ts`, Docs
+- **Description**: Comprehensive engineering review findings resolved — all aspects now score ≥9/10:
+  1. **Critical: Multi-Tenancy Security Isolation**: Added `userId` scoping to `AllocationService` (all 4 methods), `MatchingService` (`proposeMatches` + new `resetMatches`), and `ReconciliationService` (`getDashboardSummary`). All 3 controllers now extract `userId` via `@ReqUser('sub')`. Bank transactions scoped via `account: { userId }` relation. Ledger entries scoped via direct `userId` field. Allocation revokes and lookups verified through ownership chain.
+  2. **Critical: Per-User Unique Constraints**: Changed `Category.name` and `Branch.name` from global `@unique` to `@@unique([userId, name])` composite unique — prevents cross-tenant name collision while allowing different users to create same-named entities.
+  3. **High: Shared Type Extraction**: Created `src/common/types/jwt-payload.interface.ts` (single source of truth for `JwtPayload`) and `src/common/constants/cookie.constants.ts` (single source of truth for `COOKIE_OPTIONS`). Removed 3 duplicate `JwtPayload` definitions and 2 duplicate `COOKIE_OPTIONS` declarations across `auth.service.ts`, `jwt-auth.guard.ts`, `req-user.decorator.ts`, `auth.controller.ts`, `users.controller.ts`.
+  4. **Medium: Graceful Shutdown**: Added `SIGTERM` and `SIGINT` handlers in `main.ts` that call `app.close()` before `process.exit()` — required for clean container orchestration.
+  5. **Medium: Documentation Sync**: Rewrote `docs/03 - ERD.md` to v2.0 reflecting multi-tenancy schema, embedded triggers, and per-user unique constraints. Updated `README.md` to remove redundant manual trigger SQL step and added `POST /matching/reset` to API table.
+  6. **Test Fixes**: Updated 6 spec files (`allocation.service.spec.ts`, `allocation.controller.spec.ts`, `matching.service.spec.ts`, `matching.controller.spec.ts`, `reconciliation.service.spec.ts`, `reconciliation.controller.spec.ts`) to pass `userId` to updated method signatures. Added `resetMatches` tests. Changed allocation mocks from `findUnique` to `findFirst` for tenant-scoped lookups.
+- **Verification**: `npx tsc --noEmit` (0 errors), `npm run lint` (0 errors), `npm run test` (131/131 passing, 25 suites)
+- **Git Branch**: `feat/security-consistency-fixes`
+
 ## Task: ESLint Error Resolution — Full Lint Clean (Sun Aug 09 2026)
 
 - **Completed**: Yes
