@@ -98,7 +98,7 @@ Swagger UI is exposed at **`/docs`**. Key modules include:
 | **Accounts** | `GET /api/v1/accounts`, `POST /api/v1/accounts` | Manage bank, cash, and e-wallet accounts |
 | **Ledger** | `GET /api/v1/ledger-entries`, `POST /api/v1/ledger-entries` | CRUD categorized internal business records |
 | **Matching** | `POST /api/v1/matching/propose` | Run exact, fuzzy, & aggregate matching engine |
-| | `POST /matching/reset` | Reset PENDING_REVIEW transactions back to UNRESOLVED | Protected |
+| | `POST /api/v1/matching/reset` | Reset PENDING_REVIEW transactions back to UNRESOLVED | Protected |
 | **Allocation** | `POST /api/v1/allocations`, `POST /api/v1/allocations/:id/revoke` | Create split allocations or revoke allocations |
 | **Reconciliation** | `GET /api/v1/reconciliation/dashboard` | 4-way transaction status breakdown & balance variance |
 | **Health** | `GET /api/v1/health` | System and database health status checks |

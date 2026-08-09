@@ -5,7 +5,7 @@ import {
 import { parse } from 'csv-parse/sync';
 import * as crypto from 'crypto';
 import { TransactionType } from '@prisma/client';
-import { Decimal } from 'decimal.js';
+import Decimal from 'decimal.js';
 
 export class MandiriCsvParser implements BankParser {
   parse(fileBuffer: Buffer): Promise<ParsedTransaction[]> {

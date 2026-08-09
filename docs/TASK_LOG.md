@@ -189,3 +189,10 @@
 - **Modules**: `AccountsModule`, `ImportModule`, `PrismaModule`
 - **Description**: Implemented Account CRUD and Bank CSV file imports (BCA, Mandiri) utilizing a generic BankParser interface and `csv-parse`. Added Jest unit tests and CSV fixtures.
 - **Git Branch**: `feat/accounts-and-import`
+
+## Task: Final Consistency Findings Fix (Sun Aug 09 2026)
+
+- **Completed**: Yes
+- **Modules**: Documentation, common/decimal imports
+- **Description**: Addressed all findings from the Final Consistency & Integrity Verification Report. **High fixes:** Synced `docs/database/schema.prisma` with active `prisma/schema.prisma` (added missing userId, tokenValidFrom, relations, per-user unique constraints). Updated Handbook Step 3 to remove obsolete `prisma db execute` step — triggers now embedded in Prisma migration. **Medium fixes:** Updated PROJECT_REVIEW.md Section 8 schema excerpt to reflect multi-tenancy schema (7 models with userId). Fixed PROJECT_REVIEW.md Sections 15 & 23 to remove `prisma db execute` references. Updated Handbook Section 11 troubleshooting to explain trigger embedding. **Low fixes:** Added `/api/v1/` prefix to `POST /matching/reset` in README API table. Standardized all `decimal.js` imports to default import (`import Decimal from 'decimal.js'`) across 7 files. Removed unused test fixtures (`bca-malformed.csv`, `bca-duplicate.csv`). Added `NODE_ENV=development` to `.env.example`. **Verification:** `npx tsc --noEmit` (0 errors), `npm run lint` (0 errors), `npm run test` (131/131 passed).
+- **Git Branch**: `fix/final-consistency-findings`

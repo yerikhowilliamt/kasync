@@ -67,10 +67,9 @@ docker-compose up -d
 ```
 
 ### Step 3: Run Database Migrations & Triggers
-Run Prisma schema migration and apply raw SQL trigger migrations (`docs/database/migration.sql`):
+Run Prisma schema migration — database triggers (`check_allocation_sum` with `FOR UPDATE` lock and `sync_transaction_status`) are embedded in the native Prisma migration and applied automatically:
 ```bash
-npx prisma migrate dev --name init
-npx prisma db execute --file ./docs/database/migration.sql
+npx prisma migrate dev
 ```
 
 ### Step 4: Seed Synthetic Test Data (GDPR Safe)
@@ -176,5 +175,5 @@ Follow the branching, commit, and self-review conventions in `docs/engineering-p
 | Problem | Likely cause / fix |
 |---|---|
 | `docker-compose up -d` fails, port 5432 already in use | Another local Postgres instance is running. Stop it, or remap the port in `docker-compose.yml` and update `DATABASE_URL` accordingly. |
-| `prisma migrate dev` succeeds but allocation over-limits aren't rejected | The raw SQL trigger migration (`docs/database/migration.sql`) wasn't applied — Prisma migrations alone don't include it; re-run Step 3 in Section 3. |
+| `prisma migrate dev` succeeds but allocation over-limits aren't rejected | Triggers are embedded in the Prisma migration `20260809180000_multi_tenancy_and_triggers`. If using an older migration history, run `npx prisma migrate reset` then `npx prisma migrate dev` to reapply all migrations including triggers. |
 | Seed script fails with a foreign key error | Run `npx prisma migrate reset` to get a clean schema before reseeding — usually caused by seeding against a partially-migrated database. |

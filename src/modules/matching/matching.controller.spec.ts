@@ -3,7 +3,7 @@ import { MatchingController } from './matching.controller';
 import { MatchingService } from './matching.service';
 import { ProposeMatchesDto } from './dto/propose-matches.dto';
 
-import { Decimal } from 'decimal.js';
+import Decimal from 'decimal.js';
 
 describe('MatchingController', () => {
   const TEST_USER_ID = 'test-user-id';

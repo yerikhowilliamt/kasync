@@ -6,7 +6,7 @@ import {
   BankTransactionInput,
   LedgerEntryInput,
 } from './matching-engine';
-import { Decimal } from 'decimal.js';
+import Decimal from 'decimal.js';
 
 import { TransactionStatus } from '@prisma/client';
 
