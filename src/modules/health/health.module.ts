@@ -4,7 +4,12 @@ import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 import { HealthController } from './health.controller';
 
 @Module({
-  imports: [TerminusModule, PrometheusModule.register()],
+  imports: [
+    TerminusModule,
+    PrometheusModule.register({
+      path: '/metrics',
+    }),
+  ],
   controllers: [HealthController],
 })
 export class HealthModule {}

@@ -26,7 +26,9 @@ async function bootstrap() {
 
   app.use(cookieParser());
   app.useLogger(app.get(Logger));
-  app.setGlobalPrefix('api/v1');
+  app.setGlobalPrefix('api/v1', {
+    exclude: ['metrics'],
+  });
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
   app.useGlobalFilters(new PostgresTriggerExceptionFilter());
 

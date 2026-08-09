@@ -11,7 +11,10 @@
   - Update Password (`PATCH /users/me/password`): Validates `oldPassword` with bcrypt, updates password hash.
   - Upload Profile Photo (`POST /users/me/photo`): Streams image buffer directly to Cloudinary via `CloudinaryService` and updates `photoUrl`.
   - Delete Account (`DELETE /users/me`): Deletes user record and clears authentication cookies.
-- **Global Protection**: Replaced static `ApiKeyGuard` with `JwtAuthGuard` in `AppModule`. Unprotected routes (`/auth/register`, `/auth/login`, `/auth/refresh`, `/health`, `/docs`) use `@Public()` decorator.
+- **Server Runtime Error Handling (QA Verification Fixes)**:
+  - Handled Prisma P2003 foreign key constraint errors in `CategoriesService.remove` and `BranchesService.remove`, returning `400 Bad Request`.
+  - Added safety error handling in `AuthService.logout` so deleting a user before logout completes without error.
+  - Added global prefix exclusion for `metrics` and added `GET /metrics` in `HealthController` to serve Prometheus metrics at `GET /metrics`.
 
 ## Progress & Verification Status
 - Created `docs/plannings/07 - Authentication & Token Refresh.md`.

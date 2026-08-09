@@ -1,8 +1,12 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
-import { Category } from '@prisma/client';
+import { Category, Prisma } from '@prisma/client';
 
 @Injectable()
 export class CategoriesService {
@@ -41,8 +45,20 @@ export class CategoriesService {
 
   async remove(id: string): Promise<Category> {
     await this.findOne(id); // Check existence
-    return await this.prisma.category.delete({
-      where: { id },
-    });
+    try {
+      return await this.prisma.category.delete({
+        where: { id },
+      });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2003'
+      ) {
+        throw new BadRequestException(
+          'Cannot delete category referenced by existing ledger entries',
+        );
+      }
+      throw error;
+    }
   }
 }

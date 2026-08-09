@@ -22,6 +22,16 @@ This document records errors encountered during development, their root causes, 
 
 ## Log Entries
 
+### [2026-08-09] Unhandled Prisma Foreign Key Constraint (P2003) on Delete Category/Branch
+- **Module / Area:** `categories`, `branches`, `categories.service.ts`, `branches.service.ts`
+- **Error Message / Symptom:**
+  ```text
+  Internal Server Error (500): Invalid `this.prisma.category.delete()` invocation: Foreign key constraint violated: `ledger_entries_category_id_fkey (index)`
+  ```
+- **Root Cause:** Deleting a Category or Branch referenced by existing `LedgerEntry` records caused Prisma to throw a `PrismaClientKnownRequestError` with code `P2003`. Without a try/catch, NestJS returned an uncaught 500 error.
+- **Resolution:** Caught `P2003` errors in `CategoriesService.remove` and `BranchesService.remove` and threw `BadRequestException('Cannot delete category/branch referenced by existing ledger entries')`.
+- **Prevention / Note:** Always wrap Prisma delete operations in try/catch blocks for entities referenced in FK relations and throw standard NestJS `BadRequestException` or `ConflictException`.
+
 ### [2026-08-09] Docker Multi-Stage Build Fails Due to `.dockerignore` Excluding `docs/`
 - **Module / Area:** `Dockerfile`, `.dockerignore`, `docker`, `devops`
 - **Error Message / Symptom:**
