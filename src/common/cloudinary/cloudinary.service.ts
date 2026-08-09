@@ -25,7 +25,7 @@ export class CloudinaryService implements StorageProvider {
       throw new BadRequestException('File buffer is required');
     }
 
-    const { folder = 'general', resourceType = 'auto' } = options;
+    const { folder = 'kasync/general', resourceType = 'auto' } = options;
 
     return new Promise((resolve, reject) => {
       const uploadStream = cloudinary.uploader.upload_stream(
@@ -55,7 +55,7 @@ export class CloudinaryService implements StorageProvider {
 
   async uploadImage(
     file: Express.Multer.File,
-    folder = 'profile_photos',
+    folder = 'kasync/profile-photos',
   ): Promise<UploadResult> {
     return this.uploadFile(file, { folder, resourceType: 'image' });
   }

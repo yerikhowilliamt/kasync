@@ -84,7 +84,7 @@ export class UsersService {
 
     const uploadResult = await this.storageProvider.uploadImage(
       file,
-      'profile_photos',
+      'kasync/profile-photos',
     );
 
     const updatedUser = await this.prisma.user.update({

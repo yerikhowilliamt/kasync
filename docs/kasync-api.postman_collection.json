@@ -25,6 +25,36 @@
 			"key": "accessToken",
 			"value": "",
 			"type": "string"
+		},
+		{
+			"key": "accountId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "categoryId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "branchId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "ledgerEntryId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "bankTransactionId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "allocationId",
+			"value": "",
+			"type": "string"
 		}
 	],
 	"item": [
@@ -262,6 +292,22 @@
 			"item": [
 				{
 					"name": "Create Account",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201 || pm.response.code === 200) {",
+									"    const data = pm.response.json();",
+									"    if (data && data.id) {",
+									"        pm.collectionVariables.set('accountId', data.id);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
 					"request": {
 						"method": "POST",
 						"header": [
@@ -322,7 +368,7 @@
 							"variable": [
 								{
 									"key": "id",
-									"value": "00000000-0000-0000-0000-000000000000"
+									"value": "{{accountId}}"
 								}
 							]
 						},
@@ -356,7 +402,7 @@
 							"variable": [
 								{
 									"key": "id",
-									"value": "00000000-0000-0000-0000-000000000000"
+									"value": "{{accountId}}"
 								}
 							]
 						},
@@ -381,7 +427,7 @@
 							"variable": [
 								{
 									"key": "id",
-									"value": "00000000-0000-0000-0000-000000000000"
+									"value": "{{accountId}}"
 								}
 							]
 						},
@@ -396,6 +442,22 @@
 			"item": [
 				{
 					"name": "Create Category",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201 || pm.response.code === 200) {",
+									"    const data = pm.response.json();",
+									"    if (data && data.id) {",
+									"        pm.collectionVariables.set('categoryId', data.id);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
 					"request": {
 						"method": "POST",
 						"header": [
@@ -456,7 +518,7 @@
 							"variable": [
 								{
 									"key": "id",
-									"value": "00000000-0000-0000-0000-000000000000"
+									"value": "{{categoryId}}"
 								}
 							]
 						},
@@ -490,7 +552,7 @@
 							"variable": [
 								{
 									"key": "id",
-									"value": "00000000-0000-0000-0000-000000000000"
+									"value": "{{categoryId}}"
 								}
 							]
 						},
@@ -515,7 +577,7 @@
 							"variable": [
 								{
 									"key": "id",
-									"value": "00000000-0000-0000-0000-000000000000"
+									"value": "{{categoryId}}"
 								}
 							]
 						},
@@ -530,6 +592,22 @@
 			"item": [
 				{
 					"name": "Create Branch",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201 || pm.response.code === 200) {",
+									"    const data = pm.response.json();",
+									"    if (data && data.id) {",
+									"        pm.collectionVariables.set('branchId', data.id);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
 					"request": {
 						"method": "POST",
 						"header": [
@@ -590,7 +668,7 @@
 							"variable": [
 								{
 									"key": "id",
-									"value": "00000000-0000-0000-0000-000000000000"
+									"value": "{{branchId}}"
 								}
 							]
 						},
@@ -624,7 +702,7 @@
 							"variable": [
 								{
 									"key": "id",
-									"value": "00000000-0000-0000-0000-000000000000"
+									"value": "{{branchId}}"
 								}
 							]
 						},
@@ -649,7 +727,7 @@
 							"variable": [
 								{
 									"key": "id",
-									"value": "00000000-0000-0000-0000-000000000000"
+									"value": "{{branchId}}"
 								}
 							]
 						},
@@ -664,6 +742,22 @@
 			"item": [
 				{
 					"name": "Import Bank CSV",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201 || pm.response.code === 200) {",
+									"    const data = pm.response.json();",
+									"    if (data && data.importedCount > 0 && Array.isArray(data.transactions) && data.transactions[0]) {",
+									"        pm.collectionVariables.set('bankTransactionId', data.transactions[0].id);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
 					"request": {
 						"method": "POST",
 						"header": [],
@@ -672,7 +766,7 @@
 							"formdata": [
 								{
 									"key": "accountId",
-									"value": "00000000-0000-0000-0000-000000000000",
+									"value": "{{accountId}}",
 									"type": "text"
 								},
 								{
@@ -719,7 +813,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"accountId\": \"00000000-0000-0000-0000-000000000000\",\n  \"dateToleranceDays\": 7,\n  \"maxAggregationSubsetSize\": 4,\n  \"maxCandidates\": 50\n}"
+							"raw": "{\n  \"accountId\": \"{{accountId}}\",\n  \"dateToleranceDays\": 7,\n  \"maxAggregationSubsetSize\": 4,\n  \"maxCandidates\": 50\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/matching/propose",
@@ -742,6 +836,22 @@
 			"item": [
 				{
 					"name": "Create Single Allocation",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201 || pm.response.code === 200) {",
+									"    const data = pm.response.json();",
+									"    if (data && data.id) {",
+									"        pm.collectionVariables.set('allocationId', data.id);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
 					"request": {
 						"method": "POST",
 						"header": [
@@ -752,7 +862,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"bankTransactionId\": \"00000000-0000-0000-0000-000000000000\",\n  \"ledgerEntryId\": \"00000000-0000-0000-0000-000000000000\",\n  \"amountPortion\": \"150000.00\",\n  \"idempotencyKey\": \"alloc-single-unique-key-1\"\n}"
+							"raw": "{\n  \"bankTransactionId\": \"{{bankTransactionId}}\",\n  \"ledgerEntryId\": \"{{ledgerEntryId}}\",\n  \"amountPortion\": \"150000.00\",\n  \"idempotencyKey\": \"alloc-single-unique-key-1\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/allocations",
@@ -779,7 +889,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"idempotencyKey\": \"alloc-split-batch-key-1\",\n  \"allocations\": [\n    {\n      \"bankTransactionId\": \"00000000-0000-0000-0000-000000000000\",\n      \"ledgerEntryId\": \"00000000-0000-0000-0000-000000000001\",\n      \"amountPortion\": \"100000.00\"\n    },\n    {\n      \"bankTransactionId\": \"00000000-0000-0000-0000-000000000000\",\n      \"ledgerEntryId\": \"00000000-0000-0000-0000-000000000002\",\n      \"amountPortion\": \"50000.00\"\n    }\n  ]\n}"
+							"raw": "{\n  \"idempotencyKey\": \"alloc-split-batch-key-1\",\n  \"allocations\": [\n    {\n      \"bankTransactionId\": \"{{bankTransactionId}}\",\n      \"ledgerEntryId\": \"{{ledgerEntryId}}\",\n      \"amountPortion\": \"100000.00\"\n    }\n  ]\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/allocations",
@@ -812,7 +922,7 @@
 							"variable": [
 								{
 									"key": "id",
-									"value": "00000000-0000-0000-0000-000000000000"
+									"value": "{{allocationId}}"
 								}
 							]
 						},
@@ -838,7 +948,7 @@
 							"variable": [
 								{
 									"key": "txnId",
-									"value": "00000000-0000-0000-0000-000000000000"
+									"value": "{{bankTransactionId}}"
 								}
 							]
 						},
@@ -864,7 +974,7 @@
 							"variable": [
 								{
 									"key": "ledgerEntryId",
-									"value": "00000000-0000-0000-0000-000000000000"
+									"value": "{{ledgerEntryId}}"
 								}
 							]
 						},
@@ -879,6 +989,22 @@
 			"item": [
 				{
 					"name": "Create Ledger Entry",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201 || pm.response.code === 200) {",
+									"    const data = pm.response.json();",
+									"    if (data && data.id) {",
+									"        pm.collectionVariables.set('ledgerEntryId', data.id);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
 					"request": {
 						"method": "POST",
 						"header": [
@@ -889,7 +1015,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"categoryId\": \"00000000-0000-0000-0000-000000000000\",\n  \"branchId\": \"00000000-0000-0000-0000-000000000000\",\n  \"entryDate\": \"2026-08-09T00:00:00.000Z\",\n  \"amount\": \"150000.00\",\n  \"type\": \"INFLOW\",\n  \"note\": \"Payment from Client A\"\n}"
+							"raw": "{\n  \"categoryId\": \"{{categoryId}}\",\n  \"branchId\": \"{{branchId}}\",\n  \"entryDate\": \"2026-08-09T00:00:00.000Z\",\n  \"amount\": \"150000.00\",\n  \"type\": \"INFLOW\",\n  \"note\": \"Payment from Client A\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/ledger-entries",
@@ -954,7 +1080,7 @@
 							"variable": [
 								{
 									"key": "id",
-									"value": "00000000-0000-0000-0000-000000000000"
+									"value": "{{ledgerEntryId}}"
 								}
 							]
 						},
@@ -988,7 +1114,7 @@
 							"variable": [
 								{
 									"key": "id",
-									"value": "00000000-0000-0000-0000-000000000000"
+									"value": "{{ledgerEntryId}}"
 								}
 							]
 						},
@@ -1013,7 +1139,7 @@
 							"variable": [
 								{
 									"key": "id",
-									"value": "00000000-0000-0000-0000-000000000000"
+									"value": "{{ledgerEntryId}}"
 								}
 							]
 						},
@@ -1043,17 +1169,17 @@
 							"query": [
 								{
 									"key": "accountId",
-									"value": "00000000-0000-0000-0000-000000000000",
+									"value": "{{accountId}}",
 									"disabled": true
 								},
 								{
 									"key": "branchId",
-									"value": "00000000-0000-0000-0000-000000000000",
+									"value": "{{branchId}}",
 									"disabled": true
 								},
 								{
 									"key": "categoryId",
-									"value": "00000000-0000-0000-0000-000000000000",
+									"value": "{{categoryId}}",
 									"disabled": true
 								},
 								{

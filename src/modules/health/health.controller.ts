@@ -1,15 +1,17 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Res } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import {
   HealthCheck,
   HealthCheckService,
   PrismaHealthIndicator,
 } from '@nestjs/terminus';
+import type { Response } from 'express';
+import { register } from 'prom-client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { Public } from '../../common/decorators/public.decorator';
 
 @ApiTags('Health')
-@Controller('health')
+@Controller()
 export class HealthController {
   constructor(
     private readonly health: HealthCheckService,
@@ -17,7 +19,7 @@ export class HealthController {
     private readonly prisma: PrismaService,
   ) {}
 
-  @Get()
+  @Get('health')
   @Public()
   @HealthCheck()
   @ApiOperation({ summary: 'Check system and database health status' })
@@ -27,5 +29,14 @@ export class HealthController {
     return this.health.check([
       () => this.prismaHealth.pingCheck('database', this.prisma),
     ]);
+  }
+
+  @Get('metrics')
+  @Public()
+  @ApiOperation({ summary: 'Prometheus application metrics' })
+  @ApiResponse({ status: 200, description: 'Prometheus metrics string' })
+  async getMetrics(@Res() res: Response) {
+    res.set('Content-Type', register.contentType);
+    res.end(await register.metrics());
   }
 }

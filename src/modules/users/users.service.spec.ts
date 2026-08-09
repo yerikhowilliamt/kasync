@@ -133,7 +133,7 @@ describe('UsersService', () => {
 
       expect(mockStorageProvider.uploadImage).toHaveBeenCalledWith(
         mockFile,
-        'profile_photos',
+        'kasync/profile-photos',
       );
       expect(result).toEqual({
         id: 'usr-1',
