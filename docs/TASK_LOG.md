@@ -1,3 +1,26 @@
+## Task: QA Remediation — Critical + High Defect Fixes (Mon Aug 10 2026)
+
+- **Completed**: Yes
+- **Modules**: `AllocationModule`, `MatchingModule`, `AuthModule`, `ImportModule`, `CommonGuards`, `CommonFilters`, `CommonCloudinary`, `PrismaSeed`, Tests
+- **Description**: Fixed 11 defects identified by professional QA review. All changes verified via tsc (0 errors), lint (0 errors), unit tests (133/133 passing):
+  1. **Critical DEF-001: Concurrent Allocation Race** — Added `SELECT ... FOR UPDATE` raw SQL lock inside Prisma `$transaction` in `AllocationService.create()` to serialize concurrent access to the same bank_transaction row. Prevents double-allocation when two requests arrive simultaneously.
+  2. **High DEF-003: Token Revocation Tolerance** — Fixed reversed clock-skew tolerance in `JwtAuthGuard`. Changed from `iat*1000 < tokenValidFrom - 2000` (accepted stale tokens) to `iat*1000 + 2000 < tokenValidFrom` (rejects tokens issued >2s before revocation). Also fixed `iat &&` falsy guard to `iat !== undefined` (handles iat=0 correctly).
+  3. **High DEF-004: Idempotency Key Cross-User Leakage** — Replaced `allocation.findUnique({ idempotencyKey })` (returns ANY user's allocation) with user-scoped `findFirst({ idempotencyKey, bankTransaction: { account: { userId } } })`.
+  4. **High DEF-005: Cap Check Over-Counts Idempotent Items** — Pre-resolves idempotent items into a Map BEFORE cap calculation. Idempotent items that already exist in DB are excluded from `newItemsSum`, preventing false `AllocationExceededError` on retry.
+  5. **High DEF-006: Missing DTO Validation on Reset** — Created `ResetMatchesDto` with `@IsOptional() @IsUUID()` for `accountId`. Updated `MatchingController.reset()` to use typed DTO.
+  6. **High DEF-007: bankFormat Not Enum-Validated** — Changed `ImportCsvDto.bankFormat` from `@IsString()` to `@IsIn(['BCA', 'MANDIRI'])`. Rejects invalid formats and trailing spaces at validation layer.
+  7. **High DEF-009: No Import E2E Tests** — Created `test/import.e2e-spec.ts` with 11 scenarios: BCA/Mandiri happy path, BCA dedup, Mandiri dedup, cross-user account, invalid format, trailing space format, file size limit, empty CSV, missing file, unauthenticated access.
+  8. **Medium DEF-014: Seed Raw Number Literals** — Changed all money fields in `prisma/seed.ts` from raw JS numbers (e.g. `1500000.0`) to string literals (`'1500000.00'`) per Decimal invariant.
+  9. **Medium DEF-015: Cloudinary No Fail-Fast** — Added env var validation in `CloudinaryService` constructor. Throws explicit `Error` if `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, or `CLOUDINARY_API_SECRET` are missing.
+  10. **Medium DEF-016: LoginDto No MaxLength** — Added `@MaxLength(128)` to `LoginDto.password` matching `RegisterDto`.
+  11. **Medium DEF-017: 500 Response Leaks Internal Error** — Changed `PostgresTriggerExceptionFilter` 500 fallback from returning raw `exception.message` to generic `'An unexpected error occurred. Please try again later.'`.
+- **Defects Not Fixed (Not Actual Defects)**:
+  - DEF-008 (Mandiri dedup broken): `@@unique([accountId, externalRef])` already exists in init migration and schema. Mandiri re-import IS blocked by this constraint. QA report was based on stale source read.
+- **Test Updates**: `allocation.service.spec.ts` (idempotency scoping + cap interaction tests), `matching.controller.spec.ts` (reset endpoint coverage), `postgres-trigger-exception.filter.spec.ts` (masked 500 message assertion).
+- **Verification**: `npx tsc --noEmit` (0 errors), `npm run lint` (0 errors), `npm run test` (133/133 passing, 25 suites)
+- **Git Branch**: `fix/qa-remediation`
+- **Commit**: `61294f6`
+
 ## Task: Security & Consistency Fixes — Multi-Tenancy, Schema, Types, Docs (Sun Aug 09 2026)
 
 - **Completed**: Yes
