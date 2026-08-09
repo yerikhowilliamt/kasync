@@ -22,6 +22,26 @@ This document records errors encountered during development, their root causes, 
 
 ## Log Entries
 
+### [2026-08-09] Unhandled Exception on POST /auth/logout When User Record Deleted
+- **Module / Area:** `auth`, `auth.service.ts`
+- **Error Message / Symptom:**
+  ```text
+  Internal Server Error (500): Invalid `this.prisma.user.update()` invocation: An operation failed because it depends on one or more records that were required but not found.
+  ```
+- **Root Cause:** If a user account was deleted via `DELETE /users/me` before logging out, `AuthService.logout` attempted to update `refreshTokenHash` on the non-existent Prisma user record, throwing an uncaught P2025 error.
+- **Resolution:** Wrapped `prisma.user.update` in `AuthService.logout` with a try/catch block so that if the user record no longer exists, logout proceeds silently to clear client cookies.
+- **Prevention / Note:** Always gracefully handle record-not-found errors during logout/cleanup operations to prevent unnecessary 500 server crashes.
+
+### [2026-08-09] Prometheus Metrics Route 404 Not Found
+- **Module / Area:** `health`, `health.controller.ts`, `main.ts`
+- **Error Message / Symptom:**
+  ```text
+  GET /metrics -> 404 Not Found: Cannot GET /metrics
+  ```
+- **Root Cause:** `app.setGlobalPrefix('api/v1')` caused `/metrics` to be mapped to `/api/v1/metrics`, which was blocked by global JWT authentication. Postman and Prometheus expect unauthenticated `/metrics` at the root level.
+- **Resolution:** Added `{ exclude: ['metrics'] }` to `app.setGlobalPrefix` in `main.ts` and created explicit `@Public()` route `GET /metrics` in `HealthController` serving Prometheus metrics.
+- **Prevention / Note:** When using NestJS global prefixing, explicitly exclude observability endpoints like `/metrics` or `/health` if they must be served unauthenticated at root level.
+
 ### [2026-08-09] Unhandled Prisma Foreign Key Constraint (P2003) on Delete Category/Branch
 - **Module / Area:** `categories`, `branches`, `categories.service.ts`, `branches.service.ts`
 - **Error Message / Symptom:**
