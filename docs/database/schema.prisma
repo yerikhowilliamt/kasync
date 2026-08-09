@@ -137,6 +137,8 @@ model Allocation {
 
   @@index([bankTransactionId])
   @@index([ledgerEntryId])
+  idempotencyKey String? @map("idempotency_key") @unique
+
   @@map("allocations")
 }
 

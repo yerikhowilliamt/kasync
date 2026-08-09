@@ -51,6 +51,32 @@ describe('UsersService', () => {
     jest.clearAllMocks();
   });
 
+  describe('getProfile', () => {
+    it('should return user profile when found', async () => {
+      mockPrismaService.user.findUnique.mockResolvedValue(mockUser);
+
+      const result = await service.getProfile('usr-1');
+
+      expect(result).toEqual({
+        id: 'usr-1',
+        email: 'test@example.com',
+        name: 'Test User',
+        photoUrl: null,
+      });
+      expect(mockPrismaService.user.findUnique).toHaveBeenCalledWith({
+        where: { id: 'usr-1' },
+      });
+    });
+
+    it('should throw NotFoundException if user is not found', async () => {
+      mockPrismaService.user.findUnique.mockResolvedValue(null);
+
+      await expect(service.getProfile('usr-1')).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+  });
+
   describe('updatePassword', () => {
     it('should update password successfully when old password is correct', async () => {
       mockPrismaService.user.findUnique.mockResolvedValue(mockUser);

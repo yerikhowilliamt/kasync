@@ -33,7 +33,7 @@ export class ImageMimeTypeValidator extends FileValidator<ImageMimeTypeValidator
     );
     const hasValidExtension = /\.(jpg|jpeg|png|webp|gif)$/i.test(filename);
 
-    return hasValidMimeType || hasValidExtension;
+    return hasValidMimeType && hasValidExtension;
   }
 
   public buildErrorMessage(): string {

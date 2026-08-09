@@ -26,6 +26,23 @@ export class UsersService {
     private readonly storageProvider: StorageProvider,
   ) {}
 
+  async getProfile(userId: string): Promise<UserProfileResponse> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      photoUrl: user.photoUrl,
+    };
+  }
+
   async updatePassword(
     userId: string,
     dto: UpdatePasswordDto,

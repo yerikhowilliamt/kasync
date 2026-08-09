@@ -5,7 +5,6 @@ node_modules
 test/
 coverage/
 dist/
-docs/
 *.md
 .github/
 .vscode/

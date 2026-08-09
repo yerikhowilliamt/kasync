@@ -7,6 +7,7 @@
   - Refresh Token: `30d` lifetime, set via `refresh_token` HttpOnly cookie. Hash stored in DB `users.refresh_token_hash`.
 - **Token Rotation & Revocation**: `POST /auth/refresh` verifies the refresh cookie against the DB bcrypt hash before issuing a new access token. `POST /auth/logout` sets `refreshTokenHash = null` in the database and clears HttpOnly cookies.
 - **User Profile Management (`UsersModule`)**:
+  - Get Profile (`GET /users/me`): Returns authenticated user profile (`id`, `email`, `name`, `photoUrl`).
   - Update Password (`PATCH /users/me/password`): Validates `oldPassword` with bcrypt, updates password hash.
   - Upload Profile Photo (`POST /users/me/photo`): Streams image buffer directly to Cloudinary via `CloudinaryService` and updates `photoUrl`.
   - Delete Account (`DELETE /users/me`): Deletes user record and clears authentication cookies.
