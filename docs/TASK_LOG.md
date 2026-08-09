@@ -1,11 +1,13 @@
-## Task: Fix QA Reported Server & Route Exception Issues (Sun Aug 09 2026)
+## Task: Fix QA Reported Server & Route Exception Issues & Cloudinary Target Folder (Sun Aug 09 2026)
 
 - **Completed**: Yes
-- **Modules**: `CategoriesModule`, `BranchesModule`, `AuthModule`, `HealthModule`, `main.ts`
-- **Description**: Handled server runtime exception findings from Postman QA execution:
+- **Modules**: `CategoriesModule`, `BranchesModule`, `AuthModule`, `HealthModule`, `CloudinaryModule`, `UsersModule`, `main.ts`
+- **Description**: Resolved server runtime findings from Postman QA execution:
   1. **Foreign Key Deletion Guard**: Handled Prisma P2003 constraint errors in `CategoriesService.remove` and `BranchesService.remove` to throw `400 Bad Request` instead of uncaught `500 Internal Server Error`.
   2. **Logout Resilience**: Added try-catch wrapper in `AuthService.logout` so deleting a user before logout completes gracefully without crashing.
-  3. **Metrics Route Mapping**: Added global prefix exclusion for `metrics` and added `GET /metrics` endpoint in `HealthController` to expose Prometheus metrics at `GET /metrics`.
+  3. **Metrics Route Mapping**: Added global prefix exclusion for `metrics` and added `GET /metrics` in `HealthController` to serve Prometheus metrics at `GET /metrics`.
+  4. **Cloudinary Upload Folder**: Updated Cloudinary target upload folder to `kasync/profile-photos` and `kasync/general`.
+  5. **Postman Collection Automation**: Updated `docs/kasync-api.postman_collection.json` with dynamic Postman Collection Variables (`{{accountId}}`, `{{categoryId}}`, `{{branchId}}`, `{{ledgerEntryId}}`, `{{bankTransactionId}}`, `{{allocationId}}`) and post-response Test Scripts for automated sequential execution.
 - **Git Branch**: `fix/qa-reported-issues`
 
 ## Task: Generate Postman API Collection (Sun Aug 09 2026)
