@@ -9,28 +9,31 @@ import {
 
 @Injectable()
 export class CloudinaryService implements StorageProvider {
-  constructor() {
+  private configured = false;
+
+  private ensureConfigured(): void {
+    if (this.configured) return;
     const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
     const apiKey = process.env.CLOUDINARY_API_KEY;
     const apiSecret = process.env.CLOUDINARY_API_SECRET;
-
     if (!cloudName || !apiKey || !apiSecret) {
-      throw new Error(
-        'Cloudinary configuration is incomplete. Required environment variables: CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET',
+      throw new BadRequestException(
+        'Cloudinary is not configured. Required environment variables: CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET',
       );
     }
-
     cloudinary.config({
       cloud_name: cloudName,
       api_key: apiKey,
       api_secret: apiSecret,
     });
+    this.configured = true;
   }
 
   async uploadFile(
     file: Express.Multer.File,
     options: UploadOptions = {},
   ): Promise<UploadResult> {
+    this.ensureConfigured();
     if (!file || !file.buffer) {
       throw new BadRequestException('File buffer is required');
     }
