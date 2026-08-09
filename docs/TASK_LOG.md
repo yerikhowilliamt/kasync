@@ -1,3 +1,32 @@
+## Task: Generate Postman API Collection (Sun Aug 09 2026)
+
+- **Completed**: Yes
+- **Modules**: System-wide / `docs/kasync.postman_collection.json`, `README.md`
+- **Description**: Created Postman API Collection v2.1.0 (`docs/kasync.postman_collection.json`) covering all 28 API endpoints across 11 modules:
+  1. Auth (Register, Login, Refresh, Logout)
+  2. Users (Update Password, Upload Profile Photo, Delete Account)
+  3. Accounts (Create, List, Get, Update, Delete)
+  4. Categories (Create, List, Get, Update, Delete)
+  5. Branches (Create, List, Get, Update, Delete)
+  6. Import (Import Bank CSV)
+  7. Matching (Propose Matches)
+  8. Allocations (Create Single/Split, Revoke, Find by Bank Txn/Ledger Entry)
+  9. Ledger Entries (Create, List Paginated, Get, Update, Delete)
+  10. Reconciliation (Get Dashboard Summary)
+  11. Health & Metrics (Check System Health, Prometheus Metrics)
+  Includes `baseUrl` (`http://localhost:3000/api/v1`) & `accessToken` collection variables and auto-set test script on login.
+- **Git Branch**: `docs/postman-collection`
+
+## Task: Final Consistency, Integrity & Security Fixes (Sun Aug 09 2026)
+
+- **Completed**: Yes
+- **Modules**: System-wide / `MatchingEngine`, `ImageMimeTypeValidator`, `.dockerignore`, `docker-compose.yml`, `.env.local.example`, `docs/database/schema.prisma`, `README.md`, `Engineering_Playbook.md`
+- **Description**: Resolved all findings from the final project consistency and integrity review:
+  1. **Docker Build & Compose Fixes**: Removed `docs/` from `.dockerignore` so Docker multi-stage build succeeds (`COPY --from=builder /app/docs ./docs`). Added missing `JWT_SECRET`, `JWT_REFRESH_SECRET`, `JWT_EXPIRES_IN`, `JWT_REFRESH_EXPIRES_IN`, `CORS_ORIGIN`, and `CLOUDINARY_*` env vars to `docker-compose.yml` to prevent crash loop.
+  2. **Security & Input Guard**: Fixed `ImageMimeTypeValidator` logical operator from `||` to `&&` to prevent MIME-type extension spoofing bypasses, and added unit test spec (`image-mimetype.validator.spec.ts`). Added input array truncation guard (`arr.slice(0, 20)`) in `MatchingEngine.getSubsets()` to prevent event-loop freezing on large transaction sets.
+  3. **Documentation & Schema Sync**: Synchronized `docs/database/schema.prisma` with runtime schema (added `idempotencyKey`), updated `README.md` module tree and API endpoints table (added `auth`, `users`, `health`), updated `Engineering_Playbook.md` Section 2.3 `AllocationExceededError` parameter signature, updated `.env.local.example`, and corrected ADR-009 reference in planning docs.
+- **Git Branch**: `fix/final-integrity-fixes`
+
 ## Task: Code Review Fixes — Security, API Versioning, Observability, Idempotency (Aug 09 2026)
 
 - **Completed**: Yes

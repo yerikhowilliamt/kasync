@@ -32,7 +32,7 @@ Small business owners routinely struggle with cash flow reconciliation due to th
 - **ORM:** Prisma ORM
 - **Financial Math:** `decimal.js` / Prisma `Decimal` (Banker's Rounding `ROUND_HALF_EVEN`)
 - **Logging:** `nestjs-pino` (GDPR-safe structured logging)
-- **API Documentation:** `@nestjs/swagger` (Interactive UI at [/docs](http://localhost:3000/docs))
+- **API Documentation:** `@nestjs/swagger` (Interactive UI at [/docs](http://localhost:3000/docs)) & Postman Collection (`docs/kasync-api.postman_collection.json`)
 - **Testing:** Jest (Unit tests), Supertest (E2E & PostgreSQL Trigger tests)
 
 ---
@@ -93,12 +93,15 @@ Swagger UI is exposed at **`/docs`**. Key modules include:
 
 | Module | Endpoint | Description |
 |---|---|---|
-| **Import** | `POST /import/csv` | Upload bank CSV statement (BCA, Mandiri) |
-| **Accounts** | `GET /accounts`, `POST /accounts` | Manage bank, cash, and e-wallet accounts |
-| **Ledger** | `GET /ledger-entries`, `POST /ledger-entries` | CRUD categorized internal business records |
-| **Matching** | `POST /matching/propose` | Run exact, fuzzy, & aggregate matching engine |
-| **Allocation** | `POST /allocations`, `POST /allocations/:id/revoke` | Create split allocations or revoke allocations |
-| **Reconciliation** | `GET /reconciliation/dashboard` | 4-way transaction status breakdown & balance variance |
+| **Auth** | `POST /api/v1/auth/register`, `/login`, `/refresh`, `/logout` | Dual-token authentication & session management |
+| **Users** | `PATCH /api/v1/users/me/password`, `POST /me/photo`, `DELETE /me` | Password updates, profile photo streaming, account deletion |
+| **Import** | `POST /api/v1/import/csv` | Upload bank CSV statement (BCA, Mandiri) |
+| **Accounts** | `GET /api/v1/accounts`, `POST /api/v1/accounts` | Manage bank, cash, and e-wallet accounts |
+| **Ledger** | `GET /api/v1/ledger-entries`, `POST /api/v1/ledger-entries` | CRUD categorized internal business records |
+| **Matching** | `POST /api/v1/matching/propose` | Run exact, fuzzy, & aggregate matching engine |
+| **Allocation** | `POST /api/v1/allocations`, `POST /api/v1/allocations/:id/revoke` | Create split allocations or revoke allocations |
+| **Reconciliation** | `GET /api/v1/reconciliation/dashboard` | 4-way transaction status breakdown & balance variance |
+| **Health** | `GET /api/v1/health` | System and database health status checks |
 
 ---
 
@@ -161,6 +164,8 @@ npx tsc --noEmit && npm run lint
 ```
 src/
 ├── modules/
+│   ├── auth/            # Dual-token auth, register, login, refresh, logout
+│   ├── users/           # Password update, profile photo (Cloudinary), account deletion
 │   ├── import/          # Bank statement CSV parsers (BCA, Mandiri strategy pattern)
 │   ├── accounts/        # Account management (Bank, Cash, E-Wallet)
 │   ├── matching/        # Matching Engine (Pure TS, exact/fuzzy/aggregate logic)
@@ -168,10 +173,14 @@ src/
 │   ├── ledger-entries/  # Internal categorized business records
 │   ├── categories/      # Expense/income categories
 │   ├── branches/        # Cost centers / branches
-│   └── reconciliation/  # Read-side aggregate dashboard queries
+│   ├── reconciliation/  # Read-side aggregate dashboard queries
+│   └── health/          # System health check endpoint
 ├── common/
 │   ├── filters/         # Exception filters (PostgresTriggerExceptionFilter)
 │   ├── errors/          # Domain errors (AllocationExceededError)
+│   ├── storage/         # StorageProvider DIP interface
+│   ├── validators/      # Custom file & payload validators
+│   ├── decorators/      # Custom decorators (@ReqUser, @Public)
 │   └── prisma/          # Prisma Module & Service
 docs/
 ├── 00 - PRD.md

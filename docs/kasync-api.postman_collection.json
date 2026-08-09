@@ -1,0 +1,1126 @@
+{
+	"info": {
+		"_postman_id": "a8f34291-7c98-4f11-9e20-kasync-api",
+		"name": "Kasync Financial Reconciliation Engine API",
+		"description": "Complete Postman API Collection for Kasync Financial Reconciliation Engine v1. Includes Auth, Users, Accounts, Categories, Branches, Import, Matching, Allocations, Ledger Entries, Reconciliation Dashboard, Health & Metrics.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{accessToken}}",
+				"type": "string"
+			}
+		]
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:3000/api/v1",
+			"type": "string"
+		},
+		{
+			"key": "accessToken",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "Register User",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"Password123!\",\n  \"name\": \"John Doe\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/register",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"register"
+							]
+						},
+						"description": "Register a new user account and set auth cookies."
+					},
+					"response": []
+				},
+				{
+					"name": "Login User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const setCookie = pm.response.headers.get('Set-Cookie');",
+									"    if (setCookie) {",
+									"        const match = setCookie.match(/access_token=([^;]+)/);",
+									"        if (match) {",
+									"            pm.collectionVariables.set('accessToken', match[1]);",
+									"        }",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"Password123!\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Authenticate user and set HttpOnly access_token & refresh_token cookies."
+					},
+					"response": []
+				},
+				{
+					"name": "Refresh Token",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/auth/refresh",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"refresh"
+							]
+						},
+						"description": "Refresh access token using refresh_token cookie."
+					},
+					"response": []
+				},
+				{
+					"name": "Logout User",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/auth/logout",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"logout"
+							]
+						},
+						"description": "Revoke refresh token and clear authentication cookies."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Users",
+			"item": [
+				{
+					"name": "Update Password",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"oldPassword\": \"Password123!\",\n  \"newPassword\": \"NewPassword123!\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/users/me/password",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"users",
+								"me",
+								"password"
+							]
+						},
+						"description": "Update user password after verifying current password."
+					},
+					"response": []
+				},
+				{
+					"name": "Upload Profile Photo",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": []
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/users/me/photo",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"users",
+								"me",
+								"photo"
+							]
+						},
+						"description": "Upload user profile photo to Cloudinary (image file <= 5MB)."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Account",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/users/me",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"users",
+								"me"
+							]
+						},
+						"description": "Permanently delete current user account and clear auth cookies."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Accounts",
+			"item": [
+				{
+					"name": "Create Account",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"BCA Operational\",\n  \"type\": \"BANK\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/accounts",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"accounts"
+							]
+						},
+						"description": "Create a new bank/financial account (type: BANK, EWALLET, CASH)."
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Accounts",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/accounts",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"accounts"
+							]
+						},
+						"description": "Retrieve all accounts."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Account by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/accounts/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"accounts",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "00000000-0000-0000-0000-000000000000"
+								}
+							]
+						},
+						"description": "Retrieve account details by UUID."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Account",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"BCA Main Operational\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/accounts/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"accounts",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "00000000-0000-0000-0000-000000000000"
+								}
+							]
+						},
+						"description": "Update an existing account by UUID."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Account",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/accounts/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"accounts",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "00000000-0000-0000-0000-000000000000"
+								}
+							]
+						},
+						"description": "Delete an account by UUID."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Categories",
+			"item": [
+				{
+					"name": "Create Category",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Operational Expense\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/categories",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"categories"
+							]
+						},
+						"description": "Create a new ledger category."
+					},
+					"response": []
+				},
+				{
+					"name": "List Categories",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/categories",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"categories"
+							]
+						},
+						"description": "List all ledger categories."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Category by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/categories/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"categories",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "00000000-0000-0000-0000-000000000000"
+								}
+							]
+						},
+						"description": "Get category details by UUID."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Category",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"General & Administrative Expense\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/categories/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"categories",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "00000000-0000-0000-0000-000000000000"
+								}
+							]
+						},
+						"description": "Update category by UUID."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Category",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/categories/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"categories",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "00000000-0000-0000-0000-000000000000"
+								}
+							]
+						},
+						"description": "Delete category by UUID."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Branches",
+			"item": [
+				{
+					"name": "Create Branch",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Head Office Jakarta\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/branches",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"branches"
+							]
+						},
+						"description": "Create a new branch office record."
+					},
+					"response": []
+				},
+				{
+					"name": "List Branches",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/branches",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"branches"
+							]
+						},
+						"description": "List all branch office records."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Branch by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/branches/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"branches",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "00000000-0000-0000-0000-000000000000"
+								}
+							]
+						},
+						"description": "Get branch details by UUID."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Branch",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"HQ Jakarta South\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/branches/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"branches",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "00000000-0000-0000-0000-000000000000"
+								}
+							]
+						},
+						"description": "Update branch by UUID."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Branch",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/branches/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"branches",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "00000000-0000-0000-0000-000000000000"
+								}
+							]
+						},
+						"description": "Delete branch by UUID."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Import",
+			"item": [
+				{
+					"name": "Import Bank CSV",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "accountId",
+									"value": "00000000-0000-0000-0000-000000000000",
+									"type": "text"
+								},
+								{
+									"key": "bankFormat",
+									"value": "BCA",
+									"type": "text",
+									"description": "Supported: BCA, MANDIRI"
+								},
+								{
+									"key": "file",
+									"type": "file",
+									"src": []
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/import/csv",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"import",
+								"csv"
+							]
+						},
+						"description": "Import bank statement CSV file (BCA or MANDIRI format, <= 5MB)."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Matching",
+			"item": [
+				{
+					"name": "Propose Matches",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"accountId\": \"00000000-0000-0000-0000-000000000000\",\n  \"dateToleranceDays\": 7,\n  \"maxAggregationSubsetSize\": 4,\n  \"maxCandidates\": 50\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/matching/propose",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"matching",
+								"propose"
+							]
+						},
+						"description": "Run transaction matching engine to propose candidate matches (Exact, Fuzzy, Aggregation)."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Allocations",
+			"item": [
+				{
+					"name": "Create Single Allocation",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"bankTransactionId\": \"00000000-0000-0000-0000-000000000000\",\n  \"ledgerEntryId\": \"00000000-0000-0000-0000-000000000000\",\n  \"amountPortion\": \"150000.00\",\n  \"idempotencyKey\": \"alloc-single-unique-key-1\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/allocations",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"allocations"
+							]
+						},
+						"description": "Allocate a portion or full amount of bank transaction to a ledger entry."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Split Allocation",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"idempotencyKey\": \"alloc-split-batch-key-1\",\n  \"allocations\": [\n    {\n      \"bankTransactionId\": \"00000000-0000-0000-0000-000000000000\",\n      \"ledgerEntryId\": \"00000000-0000-0000-0000-000000000001\",\n      \"amountPortion\": \"100000.00\"\n    },\n    {\n      \"bankTransactionId\": \"00000000-0000-0000-0000-000000000000\",\n      \"ledgerEntryId\": \"00000000-0000-0000-0000-000000000002\",\n      \"amountPortion\": \"50000.00\"\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/allocations",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"allocations"
+							]
+						},
+						"description": "Execute multi-portion split allocation in atomic transaction."
+					},
+					"response": []
+				},
+				{
+					"name": "Revoke Allocation",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/allocations/:id/revoke",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"allocations",
+								":id",
+								"revoke"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "00000000-0000-0000-0000-000000000000"
+								}
+							]
+						},
+						"description": "Revoke an allocation (append-only audit log immutability)."
+					},
+					"response": []
+				},
+				{
+					"name": "Find Allocations by Bank Transaction",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/allocations/transaction/:txnId",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"allocations",
+								"transaction",
+								":txnId"
+							],
+							"variable": [
+								{
+									"key": "txnId",
+									"value": "00000000-0000-0000-0000-000000000000"
+								}
+							]
+						},
+						"description": "List allocations associated with a specific bank transaction."
+					},
+					"response": []
+				},
+				{
+					"name": "Find Allocations by Ledger Entry",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/allocations/ledger-entry/:ledgerEntryId",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"allocations",
+								"ledger-entry",
+								":ledgerEntryId"
+							],
+							"variable": [
+								{
+									"key": "ledgerEntryId",
+									"value": "00000000-0000-0000-0000-000000000000"
+								}
+							]
+						},
+						"description": "List allocations associated with a specific ledger entry."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Ledger Entries",
+			"item": [
+				{
+					"name": "Create Ledger Entry",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"categoryId\": \"00000000-0000-0000-0000-000000000000\",\n  \"branchId\": \"00000000-0000-0000-0000-000000000000\",\n  \"entryDate\": \"2026-08-09T00:00:00.000Z\",\n  \"amount\": \"150000.00\",\n  \"type\": \"INFLOW\",\n  \"note\": \"Payment from Client A\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/ledger-entries",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ledger-entries"
+							]
+						},
+						"description": "Create internal ledger record."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Ledger Entries (Paginated)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/ledger-entries?page=1&limit=50&sortBy=entryDate",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ledger-entries"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "50"
+								},
+								{
+									"key": "sortBy",
+									"value": "entryDate",
+									"description": "entryDate, amount, createdAt"
+								}
+							]
+						},
+						"description": "List internal ledger entries with pagination and sorting."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Ledger Entry by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/ledger-entries/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ledger-entries",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "00000000-0000-0000-0000-000000000000"
+								}
+							]
+						},
+						"description": "Get ledger entry by UUID."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Ledger Entry",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"note\": \"Updated Payment Note\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/ledger-entries/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ledger-entries",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "00000000-0000-0000-0000-000000000000"
+								}
+							]
+						},
+						"description": "Update existing ledger entry."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Ledger Entry",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/ledger-entries/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ledger-entries",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "00000000-0000-0000-0000-000000000000"
+								}
+							]
+						},
+						"description": "Delete ledger entry."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Reconciliation",
+			"item": [
+				{
+					"name": "Get Dashboard Summary",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/reconciliation/dashboard?page=1&limit=50",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"reconciliation",
+								"dashboard"
+							],
+							"query": [
+								{
+									"key": "accountId",
+									"value": "00000000-0000-0000-0000-000000000000",
+									"disabled": true
+								},
+								{
+									"key": "branchId",
+									"value": "00000000-0000-0000-0000-000000000000",
+									"disabled": true
+								},
+								{
+									"key": "categoryId",
+									"value": "00000000-0000-0000-0000-000000000000",
+									"disabled": true
+								},
+								{
+									"key": "startDate",
+									"value": "2026-08-01T00:00:00.000Z",
+									"disabled": true
+								},
+								{
+									"key": "endDate",
+									"value": "2026-08-31T23:59:59.999Z",
+									"disabled": true
+								},
+								{
+									"key": "type",
+									"value": "INFLOW",
+									"disabled": true
+								},
+								{
+									"key": "status",
+									"value": "UNRESOLVED",
+									"disabled": true
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "50"
+								}
+							]
+						},
+						"description": "Get reconciliation dashboard summary with 4-way transaction status breakdown, balances, variance, and paginated transactions."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Health & Metrics",
+			"item": [
+				{
+					"name": "Check System Health",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/health",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"health"
+							]
+						},
+						"description": "Check database and application health status (@Public)."
+					},
+					"response": []
+				},
+				{
+					"name": "Prometheus Metrics",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3000/metrics",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"metrics"
+							]
+						},
+						"description": "Expose Prometheus application metrics."
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}
