@@ -208,16 +208,28 @@ model User {
   passwordHash     String   @map("password_hash")
   refreshTokenHash String?  @map("refresh_token_hash")
   photoUrl         String?  @map("photo_url")
+  tokenValidFrom   DateTime @default(now()) @map("token_valid_from")
   createdAt        DateTime @default(now()) @map("created_at")
   updatedAt        DateTime @updatedAt @map("updated_at")
+
+  accounts      Account[]
+  categories    Category[]
+  branches      Branch[]
+  ledgerEntries LedgerEntry[]
 }
 
 model Account {
-  id          String      @id @default(uuid())
-  name        String
-  type        AccountType
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  id        String      @id @default(uuid())
+  userId    String      @map("user_id")
+  name      String
+  type      AccountType
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions BankTransaction[]
+
+  @@index([userId])
 }
 
 model BankTransaction {
@@ -232,14 +244,42 @@ model BankTransaction {
   status      TransactionStatus @default(UNRESOLVED)
   importedAt  DateTime          @default(now()) @map("imported_at")
 
+  account     Account      @relation(fields: [accountId], references: [id])
+  allocations Allocation[]
+
   @@unique([accountId, externalRef])
   @@unique([accountId, dedupHash])
   @@index([txnDate])
   @@index([status])
 }
 
+model Category {
+  id     String @id @default(uuid())
+  userId String @map("user_id")
+  name   String
+
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ledgerEntries LedgerEntry[]
+
+  @@unique([userId, name])
+  @@index([userId])
+}
+
+model Branch {
+  id     String @id @default(uuid())
+  userId String @map("user_id")
+  name   String
+
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ledgerEntries LedgerEntry[]
+
+  @@unique([userId, name])
+  @@index([userId])
+}
+
 model LedgerEntry {
   id         String          @id @default(uuid())
+  userId     String          @map("user_id")
   categoryId String          @map("category_id")
   branchId   String          @map("branch_id")
   entryDate  DateTime        @map("entry_date")
@@ -247,6 +287,12 @@ model LedgerEntry {
   type       TransactionType @default(OUTFLOW)
   note       String?
 
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category    Category     @relation(fields: [categoryId], references: [id])
+  branch      Branch       @relation(fields: [branchId], references: [id])
+  allocations Allocation[]
+
+  @@index([userId])
   @@index([entryDate])
   @@index([categoryId])
   @@index([branchId])
@@ -372,9 +418,8 @@ cp .env.example .env
 # 2. Database Infrastructure
 docker-compose up -d
 
-# 3. Database Migration & Triggers
+# 3. Database Migration & Triggers (Embedded in Prisma Migration)
 npx prisma migrate dev
-npx prisma db execute --file ./docs/database/migration.sql
 
 # 4. Seed Synthetic Test Data
 npm run seed
@@ -489,8 +534,7 @@ Financial totals are calculated using `Decimal` (decimal.js), and allocation cap
 3. **Environment Setup & Run:**
    - Run `cp .env.example .env`
    - Run `docker-compose up -d`
-   - Run `npx prisma migrate dev`
-   - Run `npx prisma db execute --file ./docs/database/migration.sql`
+   - Run `npx prisma migrate dev` (triggers are embedded in migration)
    - Run `npm run seed`
    - Start app with `npm run start:dev`
    - Run unit tests with `npm run test`

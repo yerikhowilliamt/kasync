@@ -3,7 +3,7 @@ import { MatchingService } from './matching.service';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { TransactionStatus, TransactionType } from '@prisma/client';
 import { ProposeMatchesDto } from './dto/propose-matches.dto';
-import { Decimal } from 'decimal.js';
+import Decimal from 'decimal.js';
 
 describe('MatchingService', () => {
   const TEST_USER_ID = 'test-user-id';
