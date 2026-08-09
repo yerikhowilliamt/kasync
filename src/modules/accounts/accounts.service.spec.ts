@@ -53,7 +53,7 @@ describe('AccountsService', () => {
 
       const result = await service.create(createDto, testUserId);
       expect(result).toEqual(expected);
-      expect(createSpy).toHaveBeenCalledWith({ data: { ...createDto, userId: testUserId } });
+      expect(createSpy).toHaveBeenCalledWith({ data: { ...createDto, user: { connect: { id: testUserId } } } });
     });
   });
 

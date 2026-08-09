@@ -25,13 +25,13 @@ export class LedgerEntriesService {
     try {
       return await this.prisma.ledgerEntry.create({
         data: {
-          userId,
-          categoryId: dto.categoryId,
-          branchId: dto.branchId,
-          entryDate: new Date(dto.entryDate),
-          amount: new Prisma.Decimal(dto.amount),
-          type: dto.type,
-          note: dto.note,
+user: { connect: { id: userId } },
+          category: { connect: { id: dto.categoryId } },
+          branch: { connect: { id: dto.branchId } },
+           entryDate: new Date(dto.entryDate),
+           amount: new Prisma.Decimal(dto.amount),
+           type: dto.type,
+           note: dto.note,
         },
         include: { category: true, branch: true },
       });

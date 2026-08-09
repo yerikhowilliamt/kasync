@@ -138,15 +138,15 @@ export class AuthService {
   }
 
   async logout(userId: string): Promise<void> {
-    try {
-      await this.prisma.user.update({
-        where: { id: userId },
-        data: { refreshTokenHash: null },
-      });
-    } catch {
-      // User might already be deleted; logout proceeds silently
-    }
+  try {
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { refreshTokenHash: null, tokenValidFrom: new Date() },
+    });
+  } catch {
+    // User might already be deleted; logout proceeds silently
   }
+}
 
   private async generateTokens(
     userId: string,

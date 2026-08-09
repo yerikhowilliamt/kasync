@@ -63,18 +63,18 @@ describe('Reconciliation User Journey (e2e)', () => {
       data: {
         name: `E2E Journey Account ${Date.now()}`,
         type: 'BANK',
-        userId,
+        user: { connect: { id: userId } },
       },
     });
     accountId = account.id;
 
     const category = await prisma.category.create({
-      data: { name: `E2E Category ${Date.now()}`, userId },
+      data: { name: `E2E Category ${Date.now()}`, user: { connect: { id: userId } } },
     });
     categoryId = category.id;
 
     const branch = await prisma.branch.create({
-      data: { name: `E2E Branch ${Date.now()}`, userId },
+      data: { name: `E2E Branch ${Date.now()}`, user: { connect: { id: userId } } },
     });
     branchId = branch.id;
   });
@@ -132,37 +132,37 @@ describe('Reconciliation User Journey (e2e)', () => {
     // Step 2: Create manual ledger entries matching total bank statement
     const le1 = await prisma.ledgerEntry.create({
       data: {
-        categoryId,
-        branchId,
+        category: { connect: { id: categoryId } },
+        branch: { connect: { id: branchId } },
         entryDate: tx150.txnDate,
         amount: 1000.0,
         type: 'INFLOW',
         note: 'Transfer Masuk 1000',
-        userId,
+        user: { connect: { id: userId } },
       },
     });
 
     const le2a = await prisma.ledgerEntry.create({
       data: {
-        categoryId,
-        branchId,
+        category: { connect: { id: categoryId } },
+        branch: { connect: { id: branchId } },
         entryDate: tx50.txnDate,
         amount: 300.0,
         type: 'OUTFLOW',
         note: 'Beli ATK 300',
-        userId,
+        user: { connect: { id: userId } },
       },
     });
 
     const le2b = await prisma.ledgerEntry.create({
       data: {
-        categoryId,
-        branchId,
+        category: { connect: { id: categoryId } },
+        branch: { connect: { id: branchId } },
         entryDate: tx50.txnDate,
         amount: 200.5,
         type: 'OUTFLOW',
         note: 'Beli Snack 200.5',
-        userId,
+        user: { connect: { id: userId } },
       },
     });
 

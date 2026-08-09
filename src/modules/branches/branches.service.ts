@@ -12,7 +12,7 @@ export class BranchesService {
 
   async create(dto: CreateBranchDto, userId: string): Promise<Branch> {
     return await this.prisma.branch.create({
-      data: { ...dto, userId },
+       data: { ...dto, user: { connect: { id: userId } } },
     });
   }
 

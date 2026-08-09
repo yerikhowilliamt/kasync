@@ -47,7 +47,7 @@ describe('CategoriesService', () => {
       const result = await service.create({ name: 'test-category' }, testUserId);
       expect(result).toEqual(mockCategory);
       expect(prisma.category.create).toHaveBeenCalledWith({
-        data: { name: 'test-category', userId: testUserId },
+        data: { name: 'test-category', user: { connect: { id: testUserId } } },
       });
     });
   });

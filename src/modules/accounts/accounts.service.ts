@@ -10,7 +10,7 @@ export class AccountsService {
 
   async create(createAccountDto: CreateAccountDto, userId: string): Promise<Account> {
     return this.prisma.account.create({
-      data: { ...createAccountDto, userId },
+       data: { ...createAccountDto, user: { connect: { id: userId } } },
     });
   }
 

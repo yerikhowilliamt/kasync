@@ -52,7 +52,9 @@ describe('LedgerEntriesService', () => {
       expect((result as any).id).toEqual('1');
       expect(mockPrisma.ledgerEntry.create).toHaveBeenCalledWith({
         data: {
-          userId: testUserId, categoryId: 'cat1', branchId: 'branch1',
+          user: { connect: { id: testUserId } },
+          category: { connect: { id: 'cat1' } },
+          branch: { connect: { id: 'branch1' } },
           entryDate: new Date('2023-10-10T00:00:00Z'),
           amount: expect.anything(), type: TransactionType.OUTFLOW, note: 'test',
         },

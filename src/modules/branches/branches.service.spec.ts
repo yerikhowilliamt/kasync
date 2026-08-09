@@ -47,7 +47,7 @@ describe('BranchesService', () => {
       const result = await service.create({ name: 'test-branch' }, testUserId);
       expect(result).toEqual(mockBranch);
       expect(prisma.branch.create).toHaveBeenCalledWith({
-        data: { name: 'test-branch', userId: testUserId },
+        data: { name: 'test-branch', user: { connect: { id: testUserId } } },
       });
     });
   });

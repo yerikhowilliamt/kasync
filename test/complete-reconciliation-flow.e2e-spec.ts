@@ -63,18 +63,18 @@ describe('Complete Reconciliation Flow (e2e)', () => {
       data: {
         name: `Complete Flow Account ${Date.now()}`,
         type: 'BANK',
-        userId,
+        user: { connect: { id: userId } },
       },
     });
     accountId = account.id;
 
     const category = await prisma.category.create({
-      data: { name: `Complete Category ${Date.now()}`, userId },
+      data: { name: `Complete Category ${Date.now()}`, user: { connect: { id: userId } } },
     });
     categoryId = category.id;
 
     const branch = await prisma.branch.create({
-      data: { name: `Complete Branch ${Date.now()}`, userId },
+      data: { name: `Complete Branch ${Date.now()}`, user: { connect: { id: userId } } },
     });
     branchId = branch.id;
   });

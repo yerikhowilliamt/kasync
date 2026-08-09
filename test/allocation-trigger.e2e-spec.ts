@@ -28,18 +28,18 @@ describe('Allocation Triggers (e2e)', () => {
       data: {
         name: 'Test Trigger Account',
         type: 'BANK',
-        userId,
+        user: { connect: { id: userId } },
       },
     });
     accountId = account.id;
 
     const category = await prisma.category.create({
-      data: { name: `Test Trigger Category ${Date.now()}`, userId },
+      data: { name: `Test Trigger Category ${Date.now()}`, user: { connect: { id: userId } } },
     });
     categoryId = category.id;
 
     const branch = await prisma.branch.create({
-      data: { name: `Test Trigger Branch ${Date.now()}`, userId },
+      data: { name: `Test Trigger Branch ${Date.now()}`, user: { connect: { id: userId } } },
     });
     branchId = branch.id;
   });
@@ -60,26 +60,26 @@ describe('Allocation Triggers (e2e)', () => {
 
     const le1 = await prisma.ledgerEntry.create({
       data: {
-        categoryId,
-        branchId,
+        category: { connect: { id: categoryId } },
+        branch: { connect: { id: branchId } },
         entryDate: new Date(),
         amount: 600.0,
         type: 'INFLOW',
         note: 'Entry 1',
-        userId,
+        user: { connect: { id: userId } },
       },
     });
     ledgerEntryId1 = le1.id;
 
     const le2 = await prisma.ledgerEntry.create({
       data: {
-        categoryId,
-        branchId,
+        category: { connect: { id: categoryId } },
+        branch: { connect: { id: branchId } },
         entryDate: new Date(),
         amount: 600.0,
         type: 'INFLOW',
         note: 'Entry 2',
-        userId,
+        user: { connect: { id: userId } },
       },
     });
     ledgerEntryId2 = le2.id;

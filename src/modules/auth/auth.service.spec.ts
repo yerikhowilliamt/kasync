@@ -171,13 +171,16 @@ describe('AuthService', () => {
   });
 
   describe('logout', () => {
-    it('should clear refresh token hash in DB', async () => {
+    it('should clear refresh token hash and set tokenValidFrom in DB', async () => {
       prismaService.user.update.mockResolvedValue(mockUser);
 
       await service.logout(mockUser.id);
       expect(prismaService.user.update).toHaveBeenCalledWith({
         where: { id: mockUser.id },
-        data: { refreshTokenHash: null },
+        data: {
+          refreshTokenHash: null,
+          tokenValidFrom: expect.any(Date),
+        },
       });
     });
   });

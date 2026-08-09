@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
+import { PrismaService } from '../prisma/prisma.service';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 
 interface JwtPayload {
@@ -16,9 +17,10 @@ interface JwtPayload {
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
   constructor(
-    private readonly reflector: Reflector,
-    private readonly jwtService: JwtService,
-  ) {}
+  private readonly reflector: Reflector,
+  private readonly jwtService: JwtService,
+  private readonly prisma: PrismaService,
+) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
@@ -63,11 +65,22 @@ export class JwtAuthGuard implements CanActivate {
       const payload = await this.jwtService.verifyAsync<{
         sub: string;
         email: string;
+        iat: number;
       }>(token, {
         secret,
       });
       request.user = payload;
-    } catch {
+
+      // Token revocation check: reject tokens issued before tokenValidFrom
+      const user = await this.prisma.user.findUnique({
+        where: { id: payload.sub },
+        select: { tokenValidFrom: true },
+      });
+      if (user && payload.iat && payload.iat * 1000 < user.tokenValidFrom.getTime()) {
+        throw new UnauthorizedException('Token has been revoked');
+      }
+    } catch (err) {
+      if (err instanceof UnauthorizedException) throw err;
       throw new UnauthorizedException(
         'Invalid or expired authentication token',
       );

@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum, IsNotEmpty, IsString, IsOptional } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsString } from 'class-validator';
 import { AccountType } from '@prisma/client';
 
 export class CreateAccountDto {
@@ -12,8 +12,4 @@ export class CreateAccountDto {
   @IsEnum(AccountType)
   @IsNotEmpty()
   type!: AccountType;
-
-  @IsString()
-  @IsOptional()
-  userId?: string;
 }

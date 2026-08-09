@@ -49,20 +49,20 @@ describe('Allocation Split (e2e)', () => {
     // Setup test data
     const account = await prisma.account.create({
       data: {
-        name: 'Test Split Account',
-        type: 'BANK',
-        userId,
+         name: 'Test Split Account',
+         type: 'BANK',
+         user: { connect: { id: userId } },
       },
     });
     accountId = account.id;
 
     const category = await prisma.category.create({
-      data: { name: `Test Split Category ${Date.now()}`, userId },
+       data: { name: `Test Split Category ${Date.now()}`, user: { connect: { id: userId } } },
     });
     categoryId = category.id;
 
     const branch = await prisma.branch.create({
-      data: { name: `Test Split Branch ${Date.now()}`, userId },
+       data: { name: `Test Split Branch ${Date.now()}`, user: { connect: { id: userId } } },
     });
     branchId = branch.id;
   });
@@ -83,26 +83,26 @@ describe('Allocation Split (e2e)', () => {
 
     const le1 = await prisma.ledgerEntry.create({
       data: {
-        categoryId,
-        branchId,
+        category: { connect: { id: categoryId } },
+        branch: { connect: { id: branchId } },
         entryDate: new Date(),
-        amount: 600.0,
-        type: 'INFLOW',
-        note: 'Split Entry 1',
-        userId,
+         amount: 600.0,
+         type: 'INFLOW',
+         note: 'Split Entry 1',
+         user: { connect: { id: userId } },
       },
     });
     ledgerEntryId1 = le1.id;
 
     const le2 = await prisma.ledgerEntry.create({
       data: {
-        categoryId,
-        branchId,
+        category: { connect: { id: categoryId } },
+        branch: { connect: { id: branchId } },
         entryDate: new Date(),
-        amount: 400.0,
-        type: 'INFLOW',
-        note: 'Split Entry 2',
-        userId,
+         amount: 400.0,
+         type: 'INFLOW',
+         note: 'Split Entry 2',
+         user: { connect: { id: userId } },
       },
     });
     ledgerEntryId2 = le2.id;

@@ -64,49 +64,49 @@ async function main() {
   // 5. Create Ledger Entries (Manual Business Records)
   const ledger1 = await prisma.ledgerEntry.create({
     data: {
-      userId: user.id,
-      categoryId: rawMaterialsCat.id,
-      branchId: branchJakarta.id,
-      entryDate: new Date('2026-08-01T08:00:00Z'),
-      amount: 1500000.0,
-      type: TransactionType.OUTFLOW,
-      note: 'Pembelian Tepung Terigu & Gula (Supplier A)',
+       user: { connect: { id: user.id } },
+       category: { connect: { id: rawMaterialsCat.id } },
+       branch: { connect: { id: branchJakarta.id } },
+       entryDate: new Date('2026-08-01T08:00:00Z'),
+       amount: 1500000.0,
+       type: TransactionType.OUTFLOW,
+       note: 'Pembelian Tepung Terigu & Gula (Supplier A)',
     },
   });
 
   const ledger2 = await prisma.ledgerEntry.create({
     data: {
-      userId: user.id,
-      categoryId: fuelCat.id,
-      branchId: branchBandung.id,
-      entryDate: new Date('2026-08-01T09:30:00Z'),
-      amount: 500000.0,
-      type: TransactionType.OUTFLOW,
-      note: 'BBM Armada Pengiriman Bandung',
+       user: { connect: { id: user.id } },
+       category: { connect: { id: fuelCat.id } },
+       branch: { connect: { id: branchBandung.id } },
+       entryDate: new Date('2026-08-01T09:30:00Z'),
+       amount: 500000.0,
+       type: TransactionType.OUTFLOW,
+       note: 'BBM Armada Pengiriman Bandung',
     },
   });
 
   const ledger3 = await prisma.ledgerEntry.create({
     data: {
-      userId: user.id,
-      categoryId: salesCat.id,
-      branchId: branchJakarta.id,
-      entryDate: new Date('2026-08-02T16:00:00Z'),
-      amount: 4500000.0,
-      type: TransactionType.INFLOW,
-      note: 'Settlement EDCC/QRS Omset Harian',
+       user: { connect: { id: user.id } },
+       category: { connect: { id: salesCat.id } },
+       branch: { connect: { id: branchJakarta.id } },
+       entryDate: new Date('2026-08-02T16:00:00Z'),
+       amount: 4500000.0,
+       type: TransactionType.INFLOW,
+       note: 'Settlement EDCC/QRS Omset Harian',
     },
   });
 
   const ledger4 = await prisma.ledgerEntry.create({
     data: {
-      userId: user.id,
-      categoryId: utilitiesCat.id,
-      branchId: branchSurabaya.id,
-      entryDate: new Date('2026-08-03T10:00:00Z'),
-      amount: 750000.0,
-      type: TransactionType.OUTFLOW,
-      note: 'Tagihan Listrik PLN Agustus',
+       user: { connect: { id: user.id } },
+       category: { connect: { id: utilitiesCat.id } },
+       branch: { connect: { id: branchSurabaya.id } },
+       entryDate: new Date('2026-08-03T10:00:00Z'),
+       amount: 750000.0,
+       type: TransactionType.OUTFLOW,
+       note: 'Tagihan Listrik PLN Agustus',
     },
   });
 
