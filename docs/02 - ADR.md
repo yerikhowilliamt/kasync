@@ -328,3 +328,25 @@ Remove all hardcoded fallback secrets. The application throws `UnauthorizedExcep
 - *Keep fallbacks with production-only guard* — rejected; `NODE_ENV` misconfiguration is a realistic failure mode.
 - *Generate random secrets at startup* — rejected; tokens signed with random secrets are useless for refresh flows (server restart invalidates all refresh tokens).
 
+---
+
+## ADR-016: idempotencyKey Scope — Per-Transaction Composite Uniqueness
+
+**Status:** Accepted
+**Date:** August 2026
+
+**Context:**
+The `Allocation` model's `idempotencyKey` field was originally declared as `@unique` (globally unique across all rows). This caused a cross-user collision: if User A created an allocation with `idempotencyKey: "key-abc"`, User B sending the same key on a different transaction received a Prisma `P2002` unique constraint violation instead of a clean application-level response. The idempotency key's semantic scope is per-bank-transaction (retrying the same allocation request for the same transaction), not global.
+
+**Decision:**
+Change `idempotencyKey` uniqueness from global `@unique` to composite `@@unique([bankTransactionId, idempotencyKey])` at the model level. This scopes uniqueness per bank transaction — the same key can be used by different users on different transactions, but within one transaction, duplicates are rejected at the database level.
+
+**Consequences:**
+- Positive: Eliminates cross-user P2002 collisions. Semantically correct — idempotency is per-request, and a request targets one bank transaction.
+- Positive: The existing application-layer idempotency lookup (`findFirst({ idempotencyKey, bankTransaction: { account: { userId } } })`) is already user-scoped — no service change needed.
+- Negative: Requires a Prisma migration to alter the constraint.
+
+**Alternatives considered:**
+- *Keep global `@unique` and add app-layer pre-check* — rejected; loses DB-level deduplication guarantee and still risks race conditions under concurrent requests.
+- *Remove DB uniqueness entirely* — rejected; relies solely on app-layer check, vulnerable to race conditions.
+

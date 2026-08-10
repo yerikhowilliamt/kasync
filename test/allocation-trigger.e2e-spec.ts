@@ -12,6 +12,10 @@ describe('Allocation Triggers (e2e)', () => {
   let ledgerEntryId2: string;
   let userId: string;
 
+  // Track all created IDs across beforeEach calls for reliable cleanup
+  const createdTxnIds: string[] = [];
+  const createdLeIds: string[] = [];
+
   beforeAll(async () => {
     // create user
     const user = await prisma.user.create({
@@ -63,6 +67,7 @@ describe('Allocation Triggers (e2e)', () => {
       },
     });
     bankTransactionId = tx.id;
+    createdTxnIds.push(tx.id);
 
     const le1 = await prisma.ledgerEntry.create({
       data: {
@@ -76,6 +81,7 @@ describe('Allocation Triggers (e2e)', () => {
       },
     });
     ledgerEntryId1 = le1.id;
+    createdLeIds.push(le1.id);
 
     const le2 = await prisma.ledgerEntry.create({
       data: {
@@ -89,19 +95,24 @@ describe('Allocation Triggers (e2e)', () => {
       },
     });
     ledgerEntryId2 = le2.id;
+    createdLeIds.push(le2.id);
   });
 
   afterAll(async () => {
-    // Cleanup
-    await prisma.allocation.deleteMany({
-      where: { bankTransactionId },
-    });
-    await prisma.ledgerEntry.deleteMany({
-      where: { id: { in: [ledgerEntryId1, ledgerEntryId2] } },
-    });
-    await prisma.bankTransaction.deleteMany({
-      where: { id: bankTransactionId },
-    });
+    // Cleanup all created test data (not just last beforeEach's IDs)
+    if (createdTxnIds.length > 0) {
+      await prisma.allocation.deleteMany({
+        where: { bankTransactionId: { in: createdTxnIds } },
+      });
+      await prisma.bankTransaction.deleteMany({
+        where: { id: { in: createdTxnIds } },
+      });
+    }
+    if (createdLeIds.length > 0) {
+      await prisma.ledgerEntry.deleteMany({
+        where: { id: { in: createdLeIds } },
+      });
+    }
 
     // Attempt cleanup of shared setup
     try {

@@ -107,7 +107,13 @@ export class AllocationService {
           ) {
             return sum; // already allocated — skip from cap calculation
           }
-          return sum.plus(new Decimal(item.amountPortion.toString()));
+          const amount = new Decimal(item.amountPortion.toString());
+          if (amount.lte(0)) {
+            throw new BadRequestException(
+              `amountPortion must be positive, got ${item.amountPortion.toString()}`,
+            );
+          }
+          return sum.plus(amount);
         }, new Decimal(0));
 
         const totalSum = existingSum.plus(newItemsSum);
@@ -168,6 +174,10 @@ export class AllocationService {
       throw new NotFoundException(`Allocation with id ${id} not found`);
     }
 
+    if (allocation.status === AllocationStatus.REVOKED) {
+      throw new BadRequestException(`Allocation ${id} is already revoked`);
+    }
+
     return this.prisma.allocation.update({
       where: { id },
       data: {
@@ -189,7 +199,11 @@ export class AllocationService {
 
   async findByLedgerEntry(ledgerEntryId: string, userId: string) {
     return this.prisma.allocation.findMany({
-      where: { ledgerEntryId, ledgerEntry: { userId } },
+      where: {
+        ledgerEntryId,
+        ledgerEntry: { userId },
+        bankTransaction: { account: { userId } },
+      },
       include: { bankTransaction: true },
     });
   }

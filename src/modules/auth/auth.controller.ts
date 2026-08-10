@@ -7,6 +7,7 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import type { Response, Request } from 'express';
 import { AuthService } from './auth.service';
@@ -23,6 +24,7 @@ export class AuthController {
 
   @Public()
   @Post('register')
+  @Throttle({ default: { ttl: 60000, limit: 10 } })
   @ApiOperation({ summary: 'Register a new user' })
   @ApiResponse({ status: 201, description: 'User successfully registered' })
   async register(
@@ -36,6 +38,7 @@ export class AuthController {
 
   @Public()
   @Post('login')
+  @Throttle({ default: { ttl: 60000, limit: 10 } })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Login user' })
   @ApiResponse({ status: 200, description: 'User successfully authenticated' })

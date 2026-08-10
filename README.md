@@ -21,6 +21,7 @@ Small business owners routinely struggle with cash flow reconciliation due to th
 - **1:Many Splits:** Single bank transaction split into multiple allocations across different categories/branches.
 - **Many:1 Aggregations:** Multiple bank transactions allocated to a single ledger entry.
 - **Database-Level Invariant:** The sum of active allocation portions for any bank transaction cannot exceed its total amount (`sum(amountPortion) <= bank_transaction.amount`).
+- **Concurrent Protection:** Row locking (`FOR UPDATE` on the bank transaction) inside the allocation trigger serializes concurrent allocation attempts, preventing race-condition over-allocation.
 
 ---
 
@@ -94,7 +95,7 @@ Swagger UI is exposed at **`/docs`**. Key modules include:
 |---|---|---|
 | **Auth** | `POST /api/v1/auth/register`, `/login`, `/refresh`, `/logout` | Dual-token authentication & session management |
 | **Users** | `PATCH /api/v1/users/me/password`, `POST /me/photo`, `DELETE /me` | Password updates, profile photo streaming, account deletion |
-| **Import** | `POST /api/v1/import/csv` | Upload bank CSV statement (BCA, Mandiri) |
+| **Import** | `POST /api/v1/import/csv` | Upload bank CSV statement — `bankFormat` accepts only `'BCA'` or `'MANDIRI'` |
 | **Accounts** | `GET /api/v1/accounts`, `POST /api/v1/accounts` | Manage bank, cash, and e-wallet accounts |
 | **Ledger** | `GET /api/v1/ledger-entries`, `POST /api/v1/ledger-entries` | CRUD categorized internal business records |
 | **Matching** | `POST /api/v1/matching/propose` | Run exact, fuzzy, & aggregate matching engine |

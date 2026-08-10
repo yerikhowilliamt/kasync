@@ -1,3 +1,28 @@
+## Task: Phase 10 — QA Remediation: Raise Quality Score to 9/10 (Tue Aug 11 2026)
+
+- **Completed**: Yes
+- **Modules**: `MatchingModule`, `AllocationModule`, `LedgerEntriesModule`, `ReconciliationModule`, `AuthModule`, `CommonGuards`, All Tests, All E2E Tests, All Docs
+- **Description**: Resolved all 16 valid QA defects identified by professional QA assessment. Target: raise QA score from 6.0/10 to ≥ 9.0/10. All changes verified via tsc (0 errors), lint (0 errors), unit tests (148/148 passing, 25 suites):
+  1. **DEF-006 (CRITICAL→HIGH): Matching Engine Midnight-Straddle** — Replaced wall-clock `Math.floor(diffMs / 86400000)` with UTC calendar-date comparison in `getDateDiffDays()`. Two timestamps 2 minutes apart across midnight now correctly produce FUZZY (diff=1 day) instead of incorrect EXACT (diff=0). DEF-007 resolved automatically.
+  2. **DEF-008 (HIGH): MatchingService Unbounded Ledger Fetch** — Scoped `ledgerEntry.findMany` to date window `min(txnDate) - tolerance` to `max(txnDate) + tolerance`. Empty bankTxns returns `[]` immediately. Prevents memory exhaustion on large datasets.
+  3. **DEF-001 (HIGH): findByLedgerEntry Cross-User Exposure** — Added `bankTransaction: { account: { userId } }` to `findByLedgerEntry()` where clause. Prevents cross-user bankTransaction data disclosure.
+  4. **DEF-010 (HIGH): Revoke Already-REVOKED Allocation** — Added guard: if `allocation.status === AllocationStatus.REVOKED`, throw `BadRequestException`. Double-revoke now returns 400 instead of silent 200.
+  5. **DEF-011 (MEDIUM): Delete Ledger Entry With Active Allocations** — Added `allocation.count()` check before delete. Returns 409 Conflict with descriptive message instead of unhandled 500 FK violation.
+  6. **DEF-015 (MEDIUM): Dashboard Balance Variance Asymmetry** — Separated `balanceWhere` (ignores `status` filter) from `counts` `where` (uses `status` filter). `actualBankBalance` now always reflects total bank position.
+  7. **DEF-014 (MEDIUM): entryDate Accepts Arbitrary Strings** — Replaced `@IsString()` with `@IsDateString()` on `CreateLedgerEntryDto.entryDate`. `"banana"`, invalid months now return 400 at DTO layer.
+  8. **DEF-012/021 (MEDIUM): Password & Name Validation** — Raised `RegisterDto.password` to `@MinLength(8)` + `@Matches(/(?=.*[A-Z])|(?=.*\d)/)`. Added `@MaxLength(255)` to `name`.
+  9. **DEF-013 (MEDIUM): Auth Rate Limiting** — Added `@Throttle({ default: { ttl: 60000, limit: 10 } })` on `POST /auth/login` and `POST /auth/register`. Global 100 req/min unchanged for other endpoints.
+  10. **DEF-P2-05: idempotencyKey Scope** — Changed from global `@unique` to composite `@@unique([bankTransactionId, idempotencyKey])`. Eliminates cross-user P2002 collisions. Prisma migration `fix_idempotency_key_scope` created.
+  11. **DEF-017: $transaction Mock Refactor** — Introduced separate `txMock` object for `$transaction` callback. Existing tests now mock transaction-scoped calls correctly. Added `FOR UPDATE` assertion test.
+  12. **DEF-020: E2E Test Cleanup** — `allocation-trigger.e2e-spec.ts` now tracks all created IDs in arrays for reliable `afterAll` cleanup.
+  13. **New E2E: Concurrent Allocation** — `test/allocation-concurrent.e2e-spec.ts`: HTTP-layer concurrency test using `Promise.allSettled` with two simultaneous over-limit allocations.
+  14. **New E2E: Authorization Boundaries** — `test/authorization.e2e-spec.ts`: cross-user allocation blocked, post-logout token rejected, concurrent registration race condition.
+  15. **New E2E: Allocation Boundaries** — `test/allocation-boundary.e2e-spec.ts`: revoke idempotency, amountPortion=0/-100, ledger delete with active allocation.
+  16. **New Unit Tests**: 7 matching engine tests (midnight-straddle, empty inputs, tolerance boundaries, 21+ txns), allocation service tests (FOR UPDATE lock, exact cap, revoke guard), ledger entries tests (active alloc guard), matching service tests (date window scoping).
+  17. **Docs: ADR-016** — Documented `idempotencyKey` composite uniqueness decision. Updated ERD and schema.prisma copies.
+- **Verification**: `npx tsc --noEmit` (0 errors), `npm run lint` (0 errors), `npm run test` (148/148 passing, 25 suites)
+- **E2E Tests**: Created but require running PostgreSQL (Docker not available in current environment). Verified structurally via tsc.
+
 ## Task: Docs Sync — QA Remediation Notes (Mon Aug 10 2026)
 
 - **Completed**: Yes

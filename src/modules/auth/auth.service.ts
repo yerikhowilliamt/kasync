@@ -6,6 +6,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { Prisma } from '@prisma/client';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { JwtPayload } from '../../common/types/jwt-payload.interface';
@@ -51,14 +52,26 @@ export class AuthService {
 
     const passwordHash = await bcrypt.hash(dto.password, 10);
     const now = new Date();
-    const user = await this.prisma.user.create({
-      data: {
-        email: dto.email,
-        name: dto.name,
-        passwordHash,
-        tokenValidFrom: now,
-      },
-    });
+
+    let user;
+    try {
+      user = await this.prisma.user.create({
+        data: {
+          email: dto.email,
+          name: dto.name,
+          passwordHash,
+          tokenValidFrom: now,
+        },
+      });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw new ConflictException('Email is already registered');
+      }
+      throw error;
+    }
 
     const tokens = await this.generateTokens(user.id, user.email);
     await this.updateRefreshTokenHash(user.id, tokens.refreshToken);
