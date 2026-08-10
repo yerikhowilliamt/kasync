@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { LedgerEntriesService } from './ledger-entries.service';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { NotFoundException } from '@nestjs/common';
+import { NotFoundException, ConflictException } from '@nestjs/common';
 import { Prisma, TransactionType } from '@prisma/client';
 import { CreateLedgerEntryDto } from './dto/create-ledger-entry.dto';
 import { UpdateLedgerEntryDto } from './dto/update-ledger-entry.dto';
@@ -21,6 +21,7 @@ describe('LedgerEntriesService', () => {
     },
     category: { findFirst: jest.fn() },
     branch: { findFirst: jest.fn() },
+    allocation: { count: jest.fn() },
   };
 
   beforeEach(async () => {
@@ -139,6 +140,26 @@ describe('LedgerEntriesService', () => {
     it('should delete a ledger entry', async () => {
       mockPrisma.ledgerEntry.findFirst.mockResolvedValue({ id: '1' });
       mockPrisma.ledgerEntry.delete.mockResolvedValue({ id: '1' });
+      await service.remove('1', testUserId);
+      expect(mockPrisma.ledgerEntry.delete).toHaveBeenCalledWith({
+        where: { id: '1' },
+      });
+    });
+
+    it('should throw ConflictException if ledger entry has active allocations', async () => {
+      mockPrisma.ledgerEntry.findFirst.mockResolvedValue({ id: '1' });
+      mockPrisma.allocation = { count: jest.fn().mockResolvedValue(2) };
+
+      await expect(service.remove('1', testUserId)).rejects.toThrow(
+        ConflictException,
+      );
+    });
+
+    it('should delete ledger entry when all allocations are revoked', async () => {
+      mockPrisma.ledgerEntry.findFirst.mockResolvedValue({ id: '1' });
+      mockPrisma.allocation = { count: jest.fn().mockResolvedValue(0) };
+      mockPrisma.ledgerEntry.delete.mockResolvedValue({ id: '1' });
+
       await service.remove('1', testUserId);
       expect(mockPrisma.ledgerEntry.delete).toHaveBeenCalledWith({
         where: { id: '1' },

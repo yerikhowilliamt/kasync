@@ -156,8 +156,17 @@ export class MatchingEngine {
   }
 
   private getDateDiffDays(d1: Date, d2: Date): number {
-    const diffMs = Math.abs(d1.getTime() - d2.getTime());
-    return Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    const utc1 = Date.UTC(
+      d1.getUTCFullYear(),
+      d1.getUTCMonth(),
+      d1.getUTCDate(),
+    );
+    const utc2 = Date.UTC(
+      d2.getUTCFullYear(),
+      d2.getUTCMonth(),
+      d2.getUTCDate(),
+    );
+    return Math.abs(Math.round((utc1 - utc2) / (1000 * 60 * 60 * 24)));
   }
 
   private calculateFuzzyConfidence(diffDays: number): number {

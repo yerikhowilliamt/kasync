@@ -68,7 +68,7 @@ async function main() {
        category: { connect: { id: rawMaterialsCat.id } },
        branch: { connect: { id: branchJakarta.id } },
        entryDate: new Date('2026-08-01T08:00:00Z'),
-       amount: 1500000.0,
+       amount: '1500000.00',
        type: TransactionType.OUTFLOW,
        note: 'Pembelian Tepung Terigu & Gula (Supplier A)',
     },
@@ -80,7 +80,7 @@ async function main() {
        category: { connect: { id: fuelCat.id } },
        branch: { connect: { id: branchBandung.id } },
        entryDate: new Date('2026-08-01T09:30:00Z'),
-       amount: 500000.0,
+       amount: '500000.00',
        type: TransactionType.OUTFLOW,
        note: 'BBM Armada Pengiriman Bandung',
     },
@@ -92,7 +92,7 @@ async function main() {
        category: { connect: { id: salesCat.id } },
        branch: { connect: { id: branchJakarta.id } },
        entryDate: new Date('2026-08-02T16:00:00Z'),
-       amount: 4500000.0,
+       amount: '4500000.00',
        type: TransactionType.INFLOW,
        note: 'Settlement EDCC/QRS Omset Harian',
     },
@@ -104,7 +104,7 @@ async function main() {
        category: { connect: { id: utilitiesCat.id } },
        branch: { connect: { id: branchSurabaya.id } },
        entryDate: new Date('2026-08-03T10:00:00Z'),
-       amount: 750000.0,
+       amount: '750000.00',
        type: TransactionType.OUTFLOW,
        note: 'Tagihan Listrik PLN Agustus',
     },
@@ -116,7 +116,7 @@ async function main() {
     data: {
       accountId: bcaAccount.id,
       txnDate: new Date('2026-08-01T10:15:00Z'),
-      amount: 1500000.0,
+      amount: '1500000.00',
       type: TransactionType.OUTFLOW,
       description: 'TRSF E-BANKING SUPPLIER A TEPUNG',
       externalRef: 'BCA-20260801-001',
@@ -130,7 +130,7 @@ async function main() {
     data: {
       bankTransactionId: bankTxn1.id,
       ledgerEntryId: ledger1.id,
-      amountPortion: 1500000.0,
+      amountPortion: '1500000.00',
     },
   });
 
@@ -139,7 +139,7 @@ async function main() {
     data: {
       accountId: mandiriAccount.id,
       txnDate: new Date('2026-08-01T11:00:00Z'),
-      amount: 1250000.0,
+      amount: '1250000.00',
       type: TransactionType.OUTFLOW,
       description: 'TRANSFER COMBINED EXPENSE FUEL AND UTILITIES',
       externalRef: 'MDR-20260801-002',
@@ -153,7 +153,7 @@ async function main() {
     data: {
       bankTransactionId: bankTxn2.id,
       ledgerEntryId: ledger2.id,
-      amountPortion: 500000.0,
+      amountPortion: '500000.00',
     },
   });
 
@@ -162,7 +162,7 @@ async function main() {
     data: {
       accountId: bcaAccount.id,
       txnDate: new Date('2026-08-02T17:00:00Z'),
-      amount: 4500000.0,
+      amount: '4500000.00',
       type: TransactionType.INFLOW,
       description: 'SETTLEMENT QRIS JAKARTA SELATAN',
       externalRef: 'BCA-20260802-003',
@@ -176,7 +176,7 @@ async function main() {
     data: {
       accountId: cashAccount.id,
       txnDate: new Date('2026-08-03T12:00:00Z'),
-      amount: 300000.0,
+      amount: '300000.00',
       type: TransactionType.OUTFLOW,
       description: 'PARKIR DAN BIAYA ADMIN TANPA NOTA',
       externalRef: 'CSH-20260803-004',

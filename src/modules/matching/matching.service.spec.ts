@@ -123,6 +123,61 @@ describe('MatchingService', () => {
         mockPrismaService.bankTransaction.updateMany,
       ).not.toHaveBeenCalled();
     });
+
+    it('should not call ledgerEntry.findMany when bankTxns is empty', async () => {
+      mockPrismaService.bankTransaction.findMany.mockResolvedValue([]);
+      mockPrismaService.ledgerEntry.findMany.mockResolvedValue([]);
+
+      await service.proposeMatches(TEST_USER_ID);
+
+      expect(mockPrismaService.ledgerEntry.findMany).not.toHaveBeenCalled();
+    });
+
+    it('should scope ledger entries by date window when bankTxns exist', async () => {
+      mockPrismaService.bankTransaction.findMany.mockResolvedValue([
+        {
+          id: 'txn-1',
+          amount: new Decimal(100),
+          txnDate: new Date('2024-06-15'),
+          description: 'Test',
+          status: TransactionStatus.UNRESOLVED,
+          type: TransactionType.OUTFLOW,
+          accountId: 'acc-1',
+          externalRef: null,
+          dedupHash: null,
+          importedAt: new Date(),
+        },
+      ]);
+      mockPrismaService.ledgerEntry.findMany.mockResolvedValue([
+        {
+          id: 'le-1',
+          amount: new Decimal(100),
+          entryDate: new Date('2024-06-15'),
+          note: 'Test',
+          type: TransactionType.OUTFLOW,
+          categoryId: 'cat-1',
+          branchId: 'branch-1',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ]);
+      mockPrismaService.bankTransaction.updateMany.mockResolvedValue({
+        count: 1,
+      });
+
+      await service.proposeMatches(TEST_USER_ID, { dateToleranceDays: 7 });
+
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const ledgerCall =
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        mockPrismaService.ledgerEntry.findMany.mock.calls[0][0];
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      expect(ledgerCall.where).toHaveProperty('entryDate');
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      expect(ledgerCall.where.entryDate).toHaveProperty('gte');
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      expect(ledgerCall.where.entryDate).toHaveProperty('lte');
+    });
   });
 
   describe('resetMatches', () => {

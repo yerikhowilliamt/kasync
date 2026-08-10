@@ -79,7 +79,7 @@ export class PostgresTriggerExceptionFilter implements ExceptionFilter {
     return response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
       statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
       error: 'Internal Server Error',
-      message: exception.message,
+      message: 'An unexpected error occurred. Please try again later.',
     });
   }
 }

@@ -88,14 +88,18 @@ export class ReconciliationService {
       counts[sc.status] = sc._count._all;
     }
 
+    // Balance calculation ignores status filter — always show total bank position
+    const balanceWhere = { ...bankTxnWhere };
+    delete balanceWhere.status;
+
     const [bankInflowSum, bankOutflowSum] = await Promise.all([
       this.prisma.bankTransaction.aggregate({
         _sum: { amount: true },
-        where: { ...bankTxnWhere, type: 'INFLOW' },
+        where: { ...balanceWhere, type: 'INFLOW' },
       }),
       this.prisma.bankTransaction.aggregate({
         _sum: { amount: true },
-        where: { ...bankTxnWhere, type: 'OUTFLOW' },
+        where: { ...balanceWhere, type: 'OUTFLOW' },
       }),
     ]);
 

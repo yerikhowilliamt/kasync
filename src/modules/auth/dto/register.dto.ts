@@ -2,6 +2,7 @@ import {
   IsEmail,
   IsNotEmpty,
   IsString,
+  Matches,
   MaxLength,
   MinLength,
 } from 'class-validator';
@@ -13,14 +14,18 @@ export class RegisterDto {
   @IsNotEmpty()
   email!: string;
 
-  @ApiProperty({ example: 'password123', minLength: 6, maxLength: 128 })
+  @ApiProperty({ example: 'Password123', minLength: 8, maxLength: 128 })
   @IsString()
-  @MinLength(6)
+  @MinLength(8)
   @MaxLength(128)
+  @Matches(/(?=.*[A-Z])|(?=.*\d)/, {
+    message: 'Password must contain at least one uppercase letter or one digit',
+  })
   password!: string;
 
   @ApiProperty({ example: 'John Doe' })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(255)
   name!: string;
 }

@@ -2,6 +2,7 @@ import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { MatchingService } from './matching.service';
 import { ProposeMatchesDto } from './dto/propose-matches.dto';
+import { ResetMatchesDto } from './dto/reset-matches.dto';
 import { ReqUser } from '../../common/decorators/req-user.decorator';
 
 @ApiTags('matching')
@@ -27,10 +28,7 @@ export class MatchingController {
   })
   @ApiResponse({ status: 200, description: 'Matches reset successfully' })
   @HttpCode(HttpStatus.OK)
-  async reset(
-    @ReqUser('sub') userId: string,
-    @Body() body: { accountId?: string },
-  ) {
-    return this.matchingService.resetMatches(userId, body.accountId);
+  async reset(@ReqUser('sub') userId: string, @Body() dto: ResetMatchesDto) {
+    return this.matchingService.resetMatches(userId, dto.accountId);
   }
 }

@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { CreateLedgerEntryDto } from './dto/create-ledger-entry.dto';
 import { UpdateLedgerEntryDto } from './dto/update-ledger-entry.dto';
@@ -132,6 +136,16 @@ export class LedgerEntriesService {
 
   async remove(id: string, userId: string) {
     await this.findOne(id, userId);
+
+    const allocCount = await this.prisma.allocation.count({
+      where: { ledgerEntryId: id },
+    });
+    if (allocCount > 0) {
+      throw new ConflictException(
+        `Cannot delete ledger entry with ${allocCount} allocation(s)`,
+      );
+    }
+
     return this.prisma.ledgerEntry.delete({ where: { id } });
   }
 }

@@ -1,6 +1,9 @@
 # Local planning docs
 docs/plannings/
 
+# Deepwork state (local only)
+.slim/deepwork/
+
 # Dependencies
 node_modules/
 

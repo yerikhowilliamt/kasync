@@ -1,3 +1,65 @@
+## Task: Phase 10 — QA Remediation: Raise Quality Score to 9/10 (Tue Aug 11 2026)
+
+- **Completed**: Yes
+- **Modules**: `MatchingModule`, `AllocationModule`, `LedgerEntriesModule`, `ReconciliationModule`, `AuthModule`, `CommonGuards`, All Tests, All E2E Tests, All Docs
+- **Description**: Resolved all 16 valid QA defects identified by professional QA assessment. Target: raise QA score from 6.0/10 to ≥ 9.0/10. All changes verified via tsc (0 errors), lint (0 errors), unit tests (148/148 passing, 25 suites):
+  1. **DEF-006 (CRITICAL→HIGH): Matching Engine Midnight-Straddle** — Replaced wall-clock `Math.floor(diffMs / 86400000)` with UTC calendar-date comparison in `getDateDiffDays()`. Two timestamps 2 minutes apart across midnight now correctly produce FUZZY (diff=1 day) instead of incorrect EXACT (diff=0). DEF-007 resolved automatically.
+  2. **DEF-008 (HIGH): MatchingService Unbounded Ledger Fetch** — Scoped `ledgerEntry.findMany` to date window `min(txnDate) - tolerance` to `max(txnDate) + tolerance`. Empty bankTxns returns `[]` immediately. Prevents memory exhaustion on large datasets.
+  3. **DEF-001 (HIGH): findByLedgerEntry Cross-User Exposure** — Added `bankTransaction: { account: { userId } }` to `findByLedgerEntry()` where clause. Prevents cross-user bankTransaction data disclosure.
+  4. **DEF-010 (HIGH): Revoke Already-REVOKED Allocation** — Added guard: if `allocation.status === AllocationStatus.REVOKED`, throw `BadRequestException`. Double-revoke now returns 400 instead of silent 200.
+  5. **DEF-011 (MEDIUM): Delete Ledger Entry With Active Allocations** — Added `allocation.count()` check before delete. Returns 409 Conflict with descriptive message instead of unhandled 500 FK violation.
+  6. **DEF-015 (MEDIUM): Dashboard Balance Variance Asymmetry** — Separated `balanceWhere` (ignores `status` filter) from `counts` `where` (uses `status` filter). `actualBankBalance` now always reflects total bank position.
+  7. **DEF-014 (MEDIUM): entryDate Accepts Arbitrary Strings** — Replaced `@IsString()` with `@IsDateString()` on `CreateLedgerEntryDto.entryDate`. `"banana"`, invalid months now return 400 at DTO layer.
+  8. **DEF-012/021 (MEDIUM): Password & Name Validation** — Raised `RegisterDto.password` to `@MinLength(8)` + `@Matches(/(?=.*[A-Z])|(?=.*\d)/)`. Added `@MaxLength(255)` to `name`.
+  9. **DEF-013 (MEDIUM): Auth Rate Limiting** — Added `@Throttle({ default: { ttl: 60000, limit: 10 } })` on `POST /auth/login` and `POST /auth/register`. Global 100 req/min unchanged for other endpoints.
+  10. **DEF-P2-05: idempotencyKey Scope** — Changed from global `@unique` to composite `@@unique([bankTransactionId, idempotencyKey])`. Eliminates cross-user P2002 collisions. Prisma migration `fix_idempotency_key_scope` created.
+  11. **DEF-017: $transaction Mock Refactor** — Introduced separate `txMock` object for `$transaction` callback. Existing tests now mock transaction-scoped calls correctly. Added `FOR UPDATE` assertion test.
+  12. **DEF-020: E2E Test Cleanup** — `allocation-trigger.e2e-spec.ts` now tracks all created IDs in arrays for reliable `afterAll` cleanup.
+  13. **New E2E: Concurrent Allocation** — `test/allocation-concurrent.e2e-spec.ts`: HTTP-layer concurrency test using `Promise.allSettled` with two simultaneous over-limit allocations.
+  14. **New E2E: Authorization Boundaries** — `test/authorization.e2e-spec.ts`: cross-user allocation blocked, post-logout token rejected, concurrent registration race condition.
+  15. **New E2E: Allocation Boundaries** — `test/allocation-boundary.e2e-spec.ts`: revoke idempotency, amountPortion=0/-100, ledger delete with active allocation.
+  16. **New Unit Tests**: 7 matching engine tests (midnight-straddle, empty inputs, tolerance boundaries, 21+ txns), allocation service tests (FOR UPDATE lock, exact cap, revoke guard), ledger entries tests (active alloc guard), matching service tests (date window scoping).
+  17. **Docs: ADR-016** — Documented `idempotencyKey` composite uniqueness decision. Updated ERD and schema.prisma copies.
+- **Verification**: `npx tsc --noEmit` (0 errors), `npm run lint` (0 errors), `npm run test` (148/148 passing, 25 suites)
+- **E2E Tests**: Created but require running PostgreSQL (Docker not available in current environment). Verified structurally via tsc.
+
+## Task: Docs Sync — QA Remediation Notes (Mon Aug 10 2026)
+
+- **Completed**: Yes
+- **Modules**: Docs (`01 - System_Design.md`, `02 - ADR.md`)
+- **Description**: Documented the QA remediation changes in architecture and design docs to match implemented source:
+  1. **ADR-003 / System Design Allocation section**: Added `SELECT ... FOR UPDATE` row lock inside `prisma.$transaction` reinforcing the app-layer cap check; noted TOCTOU prevention and the three-layer defense (app-layer check → row lock → trigger `check_allocation_sum`).
+  2. **ADR-009 / System Design Auth row**: Updated token revocation tolerance to `iat * 1000 + 2000 < tokenValidFrom.getTime()` — 2s clock-skew tolerance, no post-logout acceptance window (old math `iat * 1000 < tokenValidFrom - 2000` accepted stale tokens).
+  3. **ADR-012**: Documented user-scoped idempotency lookup `findFirst({ idempotencyKey, bankTransaction: { account: { userId } } })` preventing cross-user key collision.
+  4. **ADR-010 / System Design Cloudinary row**: Documented lazy-initialized Cloudinary config (env vars validated on first `uploadFile()` call) — app boots in test/CI without Cloudinary env vars.
+  5. **System Design 9.3**: Noted generic 500 message instead of raw exception details.
+  6. **System Design 9.4 (new)**: DTO validation notes — `@IsIn(['BCA', 'MANDIRI'])` on `ImportCsvDto.bankFormat`, `@MaxLength(128)` on `LoginDto.password`.
+- **Verification**: `npx tsc --noEmit` (0 errors), `npm run lint` (0 errors), `npm run test` (133/133 passing, 25 suites)
+- **Git Branch**: `fix/qa-remediation`
+
+## Task: QA Remediation — Critical + High Defect Fixes (Mon Aug 10 2026)
+
+- **Completed**: Yes
+- **Modules**: `AllocationModule`, `MatchingModule`, `AuthModule`, `ImportModule`, `CommonGuards`, `CommonFilters`, `CommonCloudinary`, `PrismaSeed`, Tests
+- **Description**: Fixed 11 defects identified by professional QA review. All changes verified via tsc (0 errors), lint (0 errors), unit tests (133/133 passing):
+  1. **Critical DEF-001: Concurrent Allocation Race** — Added `SELECT ... FOR UPDATE` raw SQL lock inside Prisma `$transaction` in `AllocationService.create()` to serialize concurrent access to the same bank_transaction row. Prevents double-allocation when two requests arrive simultaneously.
+  2. **High DEF-003: Token Revocation Tolerance** — Fixed reversed clock-skew tolerance in `JwtAuthGuard`. Changed from `iat*1000 < tokenValidFrom - 2000` (accepted stale tokens) to `iat*1000 + 2000 < tokenValidFrom` (rejects tokens issued >2s before revocation). Also fixed `iat &&` falsy guard to `iat !== undefined` (handles iat=0 correctly).
+  3. **High DEF-004: Idempotency Key Cross-User Leakage** — Replaced `allocation.findUnique({ idempotencyKey })` (returns ANY user's allocation) with user-scoped `findFirst({ idempotencyKey, bankTransaction: { account: { userId } } })`.
+  4. **High DEF-005: Cap Check Over-Counts Idempotent Items** — Pre-resolves idempotent items into a Map BEFORE cap calculation. Idempotent items that already exist in DB are excluded from `newItemsSum`, preventing false `AllocationExceededError` on retry.
+  5. **High DEF-006: Missing DTO Validation on Reset** — Created `ResetMatchesDto` with `@IsOptional() @IsUUID()` for `accountId`. Updated `MatchingController.reset()` to use typed DTO.
+  6. **High DEF-007: bankFormat Not Enum-Validated** — Changed `ImportCsvDto.bankFormat` from `@IsString()` to `@IsIn(['BCA', 'MANDIRI'])`. Rejects invalid formats and trailing spaces at validation layer.
+  7. **High DEF-009: No Import E2E Tests** — Created `test/import.e2e-spec.ts` with 11 scenarios: BCA/Mandiri happy path, BCA dedup, Mandiri dedup, cross-user account, invalid format, trailing space format, file size limit, empty CSV, missing file, unauthenticated access.
+  8. **Medium DEF-014: Seed Raw Number Literals** — Changed all money fields in `prisma/seed.ts` from raw JS numbers (e.g. `1500000.0`) to string literals (`'1500000.00'`) per Decimal invariant.
+  9. **Medium DEF-015: Cloudinary No Fail-Fast** — Added env var validation in `CloudinaryService` constructor. Throws explicit `Error` if `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, or `CLOUDINARY_API_SECRET` are missing.
+  10. **Medium DEF-016: LoginDto No MaxLength** — Added `@MaxLength(128)` to `LoginDto.password` matching `RegisterDto`.
+  11. **Medium DEF-017: 500 Response Leaks Internal Error** — Changed `PostgresTriggerExceptionFilter` 500 fallback from returning raw `exception.message` to generic `'An unexpected error occurred. Please try again later.'`.
+- **Defects Not Fixed (Not Actual Defects)**:
+  - DEF-008 (Mandiri dedup broken): `@@unique([accountId, externalRef])` already exists in init migration and schema. Mandiri re-import IS blocked by this constraint. QA report was based on stale source read.
+- **Test Updates**: `allocation.service.spec.ts` (idempotency scoping + cap interaction tests), `matching.controller.spec.ts` (reset endpoint coverage), `postgres-trigger-exception.filter.spec.ts` (masked 500 message assertion).
+- **Verification**: `npx tsc --noEmit` (0 errors), `npm run lint` (0 errors), `npm run test` (133/133 passing, 25 suites)
+- **Git Branch**: `fix/qa-remediation`
+- **Commit**: `61294f6`
+
 ## Task: Security & Consistency Fixes — Multi-Tenancy, Schema, Types, Docs (Sun Aug 09 2026)
 
 - **Completed**: Yes

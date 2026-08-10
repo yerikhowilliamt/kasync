@@ -62,6 +62,8 @@ Enforce the constraint at **both** the application level and the database level:
 - Application level: validate the running total inside an atomic transaction before persisting a new allocation, rejecting over-allocation with a clear error.
 - Database level: add a trigger (`check_allocation_sum`) via raw SQL migration that acquires an explicit row lock (`SELECT amount FROM bank_transactions WHERE id = NEW.bank_transaction_id FOR UPDATE`) before checking `SUM(amount_portion)`, preventing concurrent race conditions.
 
+The application-layer cap check is now reinforced by its own `SELECT ... FOR UPDATE` row lock inside `prisma.$transaction` (locking the `bank_transactions` row for the transaction being allocated) before the running total is read and validated. This serializes concurrent allocation requests for the same bank transaction, preventing the TOCTOU race where two concurrent requests could both pass the app-layer check before the DB trigger fires. The three-layer defense is now: (1) app-layer cap check, (2) `FOR UPDATE` row lock inside the `$transaction`, (3) DB trigger `check_allocation_sum`.
+
 **Consequences:**
 - Positive: defense in depth — a bug in application logic or concurrent client requests cannot corrupt financial data.
 - Positive: explicit row locking (`FOR UPDATE`) prevents check-then-act race conditions at the database level.
@@ -189,7 +191,7 @@ The initial prototype relied on a static `x-api-key` header. The system requires
 Implement JWT Dual-Token Authentication (`@nestjs/jwt`, `bcrypt`):
 1. **Access Token:** Short lifetime (`1d`), sent via HttpOnly, SameSite cookie (`access_token`) and fallback `Authorization: Bearer` header.
 2. **Refresh Token:** Long lifetime (`30d`), sent via HttpOnly cookie (`refresh_token`). A hashed version (`bcrypt`) is stored in `users.refresh_token_hash`.
-3. **Refresh & Revocation:** `POST /auth/refresh` matches incoming cookie token with DB hash before issuing new Access Token. `POST /auth/logout` clears `refreshTokenHash` in DB and deletes cookies.
+3. **Refresh & Revocation:** `POST /auth/refresh` matches incoming cookie token with DB hash before issuing new Access Token. `POST /auth/logout` clears `refreshTokenHash` in DB, sets `tokenValidFrom`, and deletes cookies. `JwtAuthGuard` rejects tokens with `iat * 1000 + 2000 < tokenValidFrom.getTime()` — i.e., tokens issued more than 2 seconds before `tokenValidFrom` are rejected, providing a 2-second clock-skew tolerance without creating a post-logout acceptance window. (Earlier implementation applied the tolerance in the wrong direction — `iat * 1000 < tokenValidFrom.getTime() - 2000` — which kept accepting tokens for 2 seconds after logout.)
 
 **Consequences:**
 - Positive: Defense in depth against XSS (HttpOnly cookie), token revocation support via DB hash invalidation, explicit session renewal flow.
@@ -218,6 +220,7 @@ The application requires file and media uploading capabilities across multiple d
 
 **Consequences:**
 - Positive: Domain layer completely decoupled from Cloudinary SDK (DIP compliant), multi-cloud storage (S3/GCS) can be swapped seamlessly, clean NestJS controller layer without `req.user!.sub` non-null assertions.
+- Positive: Cloudinary config is lazy-initialized — env vars (`CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`) are validated on first `uploadFile()` call, not at constructor time. This prevents app startup failure in environments without Cloudinary configured (test, CI).
 - Negative: Extra interface and injection token abstraction.
 
 ---
@@ -252,7 +255,7 @@ Apply `app.setGlobalPrefix('api/v1')` in `main.ts`. All routes automatically rec
 Network retries, client bugs, or user double-clicks can send duplicate `POST /allocations` requests. For financial data, duplicate allocations corrupt the allocation-sum invariant and create incorrect reconciliation states. The existing `FOR UPDATE` trigger prevents over-allocation but does not prevent creating two identical allocations from two separate requests.
 
 **Decision:**
-Add an optional `idempotencyKey String? @unique` field to the `Allocation` model. When a client includes `idempotencyKey` in the request, the service checks for an existing allocation with that key before creating. If found, returns the existing allocation (idempotent response). The key is optional — backward compatible.
+Add an optional `idempotencyKey String? @unique` field to the `Allocation` model. When a client includes `idempotencyKey` in the request, the service checks for an existing allocation with that key before creating. If found, returns the existing allocation (idempotent response). The key is optional — backward compatible. The idempotency key lookup is scoped to the requesting user via `findFirst({ idempotencyKey, bankTransaction: { account: { userId } } })`, preventing cross-user idempotency key collisions where User B could receive User A's allocation.
 
 **Consequences:**
 - Positive: Safe retries without duplicate records. Client controls uniqueness scope. Optional — no impact on existing clients.
@@ -324,4 +327,26 @@ Remove all hardcoded fallback secrets. The application throws `UnauthorizedExcep
 **Alternatives considered:**
 - *Keep fallbacks with production-only guard* — rejected; `NODE_ENV` misconfiguration is a realistic failure mode.
 - *Generate random secrets at startup* — rejected; tokens signed with random secrets are useless for refresh flows (server restart invalidates all refresh tokens).
+
+---
+
+## ADR-016: idempotencyKey Scope — Per-Transaction Composite Uniqueness
+
+**Status:** Accepted
+**Date:** August 2026
+
+**Context:**
+The `Allocation` model's `idempotencyKey` field was originally declared as `@unique` (globally unique across all rows). This caused a cross-user collision: if User A created an allocation with `idempotencyKey: "key-abc"`, User B sending the same key on a different transaction received a Prisma `P2002` unique constraint violation instead of a clean application-level response. The idempotency key's semantic scope is per-bank-transaction (retrying the same allocation request for the same transaction), not global.
+
+**Decision:**
+Change `idempotencyKey` uniqueness from global `@unique` to composite `@@unique([bankTransactionId, idempotencyKey])` at the model level. This scopes uniqueness per bank transaction — the same key can be used by different users on different transactions, but within one transaction, duplicates are rejected at the database level.
+
+**Consequences:**
+- Positive: Eliminates cross-user P2002 collisions. Semantically correct — idempotency is per-request, and a request targets one bank transaction.
+- Positive: The existing application-layer idempotency lookup (`findFirst({ idempotencyKey, bankTransaction: { account: { userId } } })`) is already user-scoped — no service change needed.
+- Negative: Requires a Prisma migration to alter the constraint.
+
+**Alternatives considered:**
+- *Keep global `@unique` and add app-layer pre-check* — rejected; loses DB-level deduplication guarantee and still risks race conditions under concurrent requests.
+- *Remove DB uniqueness entirely* — rejected; relies solely on app-layer check, vulnerable to race conditions.
 

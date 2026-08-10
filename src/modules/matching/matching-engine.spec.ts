@@ -134,4 +134,78 @@ describe('MatchingEngine', () => {
     expect(res[1].matchType).toBe(MatchType.FUZZY); // 0.9 confidence
     expect(res[1].ledgerEntryId).toBe('L2');
   });
+
+  it('finds EXACT match for timestamps on same UTC day (midnight straddle)', () => {
+    const txn = createTxn('T1', '500.00', 'INFLOW', 0);
+    txn.txnDate = new Date('2024-06-15T23:50:00Z');
+    const entry = createEntry('L1', '500.00', 'INFLOW', 0);
+    entry.entryDate = new Date('2024-06-15T23:59:00Z');
+
+    const res = engine.proposeMatches([txn], [entry]);
+
+    expect(res).toHaveLength(1);
+    expect(res[0].matchType).toBe(MatchType.EXACT);
+    expect(res[0].dateDifferenceDays).toBe(0);
+  });
+
+  it('finds FUZZY match for timestamps straddling midnight across UTC days', () => {
+    const txn = createTxn('T1', '500.00', 'INFLOW', 0);
+    txn.txnDate = new Date('2024-06-15T23:59:00Z');
+    const entry = createEntry('L1', '500.00', 'INFLOW', 0);
+    entry.entryDate = new Date('2024-06-16T00:01:00Z');
+
+    const res = engine.proposeMatches([txn], [entry]);
+
+    expect(res).toHaveLength(1);
+    expect(res[0].matchType).toBe(MatchType.FUZZY);
+    expect(res[0].dateDifferenceDays).toBe(1);
+  });
+
+  it('returns empty array when bankTxns is empty', () => {
+    const entry = createEntry('L1', '100.00', 'INFLOW');
+    const res = engine.proposeMatches([], [entry]);
+    expect(res).toHaveLength(0);
+  });
+
+  it('returns empty array when ledgerEntries is empty', () => {
+    const txn = createTxn('T1', '100.00', 'INFLOW');
+    const res = engine.proposeMatches([txn], []);
+    expect(res).toHaveLength(0);
+  });
+
+  it('handles 21+ bank transactions without crash (getSubsets bound)', () => {
+    const txns: BankTransactionInput[] = [];
+    for (let i = 1; i <= 25; i++) {
+      txns.push(createTxn(`T${i}`, '10.00', 'INFLOW', i));
+    }
+    const entry = createEntry('L1', '20.00', 'INFLOW', 1);
+
+    const res = engine.proposeMatches(txns, [entry], {
+      maxAggregationSubsetSize: 4,
+    });
+
+    expect(Array.isArray(res)).toBe(true);
+    // Should find at least one aggregation match (any 2 txns summing to 20)
+    expect(res.length).toBeGreaterThan(0);
+  });
+
+  it('finds FUZZY match at exact 3-day tolerance boundary', () => {
+    const txn = createTxn('T1', '100.00', 'INFLOW', 3);
+    const entry = createEntry('L1', '100.00', 'INFLOW', 0);
+
+    const res = engine.proposeMatches([txn], [entry]);
+
+    expect(res).toHaveLength(1);
+    expect(res[0].matchType).toBe(MatchType.FUZZY);
+    expect(res[0].dateDifferenceDays).toBe(3);
+  });
+
+  it('ignores FUZZY match at 4 days (exceeds default tolerance)', () => {
+    const txn = createTxn('T1', '100.00', 'INFLOW', 4);
+    const entry = createEntry('L1', '100.00', 'INFLOW', 0);
+
+    const res = engine.proposeMatches([txn], [entry]);
+
+    expect(res).toHaveLength(0);
+  });
 });

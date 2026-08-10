@@ -1,3 +1,5 @@
 !docs/plannings/
 !docs/plannings/*
 !docs/plannings/**
+!.slim/deepwork/
+!.slim/deepwork/**

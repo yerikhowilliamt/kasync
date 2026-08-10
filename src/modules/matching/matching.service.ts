@@ -28,9 +28,22 @@ export class MatchingService {
       where: bankTxnWhere,
     });
 
-    const ledgerEntries = await this.prisma.ledgerEntry.findMany({
-      where: { userId },
-    });
+    // Scope ledger entries to a date window around the bank transactions to avoid loading all history
+    let ledgerEntries;
+    if (bankTxns.length === 0) {
+      return [];
+    } else {
+      const tolerance = dto?.dateToleranceDays ?? 3;
+      const dates = bankTxns.map((tx) => new Date(tx.txnDate).getTime());
+      const minDate = new Date(Math.min(...dates));
+      const maxDate = new Date(Math.max(...dates));
+      minDate.setUTCDate(minDate.getUTCDate() - tolerance);
+      maxDate.setUTCDate(maxDate.getUTCDate() + tolerance);
+
+      ledgerEntries = await this.prisma.ledgerEntry.findMany({
+        where: { userId, entryDate: { gte: minDate, lte: maxDate } },
+      });
+    }
 
     const bankInputs: BankTransactionInput[] = bankTxns.map((tx) => ({
       id: tx.id,

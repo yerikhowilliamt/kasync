@@ -10,7 +10,7 @@
 
 KAsync is a cash flow reconciliation and split-allocation web application tailored for small, multi-branch business owners in Indonesia. It resolves core accounting discrepancies caused by bank settlement timing delays, aggregated manual transactions, and multi-purpose bank transfers covering multiple branches or expense categories.
 
-The application is structured as a **NestJS modular monolith** with **PostgreSQL 16** and **Prisma ORM**. The primary financial invariant — `sum(Allocation.amountPortion) <= BankTransaction.amount` — is guarded at both the application level and via a PostgreSQL trigger (`check_allocation_sum`) acquiring `FOR UPDATE` row-level locks. The project has completed 7 development phases, features 24 unit test files, 7 E2E test suites, 15 Architecture Decision Records (ADRs), and full Swagger API documentation.
+The application is structured as a **NestJS modular monolith** with **PostgreSQL 16** and **Prisma ORM**. The primary financial invariant — `sum(Allocation.amountPortion) <= BankTransaction.amount` — is guarded at both the application level and via a PostgreSQL trigger (`check_allocation_sum`) acquiring `FOR UPDATE` row-level locks. The project has completed 7 development phases, features 24 unit test files (133 passing unit tests across 25 suites), 8 E2E test suites, 15 Architecture Decision Records (ADRs), and full Swagger API documentation.
 
 ---
 
@@ -63,7 +63,7 @@ kasync/
 │   └── migrations/                      # Prisma migration SQL history
 ├── test/                                # Integration & E2E tests
 │   ├── jest-e2e.json                    # E2E test configuration
-│   ├── *.e2e-spec.ts                    # 7 E2E test suites (complete lifecycle, triggers, auth, split)
+│   ├── *.e2e-spec.ts                    # 8 E2E test suites (complete lifecycle, triggers, auth, split, import)
 │   └── fixtures/                        # CSV test fixtures (bca-valid, bca-duplicate, mandiri-valid, bca-malformed)
 ├── docs/                                # Project documentation
 │   ├── 00 - PRD.md                      # Product Requirements Document
@@ -355,7 +355,7 @@ model Allocation {
 - **Dual JWT Tokens via HttpOnly Cookies:**
   - `access_token`: Short lifetime (`1d`), delivered via HttpOnly cookie or `Authorization: Bearer` header.
   - `refresh_token`: Long lifetime (`30d`), delivered via HttpOnly cookie.
-- **Session Revocation:** Refresh token is hashed with `bcrypt` and stored in `users.refresh_token_hash`. `POST /auth/logout` sets this field to `null`.
+- **Session Revocation:** Refresh token is hashed with `bcrypt` and stored in `users.refresh_token_hash`. `POST /auth/logout` sets this field to `null`. Access tokens are validated against `users.tokenValidFrom`: tokens issued more than 2 seconds before `tokenValidFrom` are rejected (2s clock-skew tolerance for Node.js/PostgreSQL drift).
 - **Timing Attack Mitigation:** `AuthService.login()` uses constant-time bcrypt comparisons even for non-existent users.
 - **Guards:** Global `JwtAuthGuard` applied across `AppModule`. Public endpoints explicitly annotated with `@Public()`.
 
@@ -382,6 +382,7 @@ model Allocation {
 - **Database Trigger Filter:** `PostgresTriggerExceptionFilter` intercepts Prisma error codes `P2010` and `P2034` (thrown by PL/pgSQL trigger failures) and maps them to HTTP 400 Bad Request with formatted JSON.
 - **Validation Pipe:** Global NestJS `ValidationPipe` enforces class-validator constraints and strips unwhitelisted properties.
 - **Rate Limiting:** `ThrottlerGuard` returns HTTP 429 Too Many Requests upon exceeding 100 requests per minute.
+- **Generic 500 Responses:** Unhandled exceptions return a generic message — `'An unexpected error occurred. Please try again later.'` Internal error details are no longer leaked to clients.
 
 ---
 
@@ -485,7 +486,7 @@ A standard operation (e.g., creating a split allocation) proceeds as follows:
 1. **Input:** Client submits JSON payload to `POST /api/v1/allocations`.
 2. **Validation:** NestJS `ValidationPipe` parses DTO and validates UUIDs and positive numbers.
 3. **Authentication:** `JwtAuthGuard` extracts `access_token` cookie, verifies JWT signature, and attaches user payload.
-4. **Business Logic:** `AllocationService` groups allocations by `bankTransactionId`, computes Decimal sum, checks running total against `bankTransaction.amount`, and verifies `ledgerEntryId` existence.
+4. **Business Logic:** `AllocationService` groups allocations by `bankTransactionId`, computes Decimal sum, checks running total against `bankTransaction.amount`, and verifies `ledgerEntryId` existence. Concurrent allocation is additionally protected by `SELECT ... FOR UPDATE` row locking inside the `$transaction`, in addition to the app-layer cap check and the DB trigger `check_allocation_sum`.
 5. **Persistence:** `prisma.$transaction` executes queries inside a database transaction.
 6. **Database Triggers:** PostgreSQL `check_allocation_sum` acquires `FOR UPDATE` row lock on `bank_transactions` and verifies sum. `sync_transaction_status` updates transaction status to `MATCHED` or `PARTIALLY_ALLOCATED`.
 7. **Response:** Created `Allocation` entities returned to client with HTTP 201.

@@ -1,4 +1,5 @@
 import {
+  IsDateString,
   IsEnum,
   IsNotEmpty,
   IsNumber,
@@ -23,7 +24,7 @@ export class CreateLedgerEntryDto {
   branchId!: string;
 
   @ApiProperty({ description: 'Entry Date (ISO-8601)' })
-  @IsString()
+  @IsDateString()
   @IsNotEmpty()
   entryDate!: string;
 

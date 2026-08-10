@@ -53,7 +53,7 @@ A standard PostgreSQL `CHECK` constraint can only validate columns within the sa
 The category and branch live on `LedgerEntry`, not duplicated onto `Allocation`. This keeps a single source of truth: if a `LedgerEntry`'s category needs correcting, it's fixed in one place rather than needing to update every `Allocation` row that points to it.
 
 ### 3.7 `idempotencyKey` on Allocation
-An optional unique `idempotencyKey` field prevents duplicate allocation records from network retries or client bugs. When provided, the service checks for an existing allocation with that key before creating. The `@unique` constraint enforces database-level deduplication. See ADR-012.
+An optional `idempotencyKey` field prevents duplicate allocation records from network retries or client bugs. When provided, the service checks for an existing allocation with that key before creating. The key is scoped per bank transaction via composite unique constraint `@@unique([bankTransactionId, idempotencyKey])` — different users may reuse the same key on different transactions, but within one transaction duplicates are rejected at the database level. See ADR-016.
 
 ### 3.8 Per-User Unique Constraints on Category and Branch
 `Category.name` and `Branch.name` use `@@unique([userId, name])` instead of global `@unique`. This allows different users to create categories/branches with the same name while preventing duplicates within a single user's scope.
