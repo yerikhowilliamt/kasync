@@ -91,9 +91,9 @@ Map domain exceptions to HTTP responses in NestJS global Exception Filters. Spec
 
 | Level | Target Scope | Technology | Requirement |
 |---|---|---|---|
-| **Unit Tests** | `MatchingEngine`, `BankParser` implementations, `Allocation` math | Jest | **Min 90% Coverage**, 0 DB dependency, fast execution (<1s). Required scenarios: exact match, fuzzy date tolerance, aggregate match, exact/under/over-allocation. |
-| **Integration Tests** | `AllocationService` + Postgres triggers, Prisma queries | Jest + Testcontainers / Local Postgres | Verifies `prisma.$transaction` & DB trigger `check_allocation_sum` |
-| **E2E Tests** | CSV Upload → Match → Split Allocation Flow & Complete Lifecycle | Supertest | Verifies full happy path & complete reconciliation user journey via API controllers (`test/complete-reconciliation-flow.e2e-spec.ts`, `test/import.e2e-spec.ts` for the import flows) |
+| **Unit Tests** | `MatchingEngine`, `BankParser` implementations, `Allocation` math | Jest | **Min 90% Coverage**, 0 DB dependency, fast execution (<1s). Required scenarios: exact match, fuzzy date tolerance (including midnight-straddle), aggregate match, exact/under/over-allocation, allocation cap boundary, revoke idempotency. |
+| **Integration Tests** | `AllocationService` + Postgres triggers, Prisma queries | Jest + Testcontainers / Local Postgres | Verifies `prisma.$transaction` with separate `txMock` (asserts `FOR UPDATE` lock), DB trigger `check_allocation_sum`, and `sync_transaction_status` across all 4 statuses. |
+| **E2E Tests** | CSV Upload → Match → Split Allocation Flow, Complete Lifecycle, Concurrent Allocation, Authorization Boundaries, Allocation Boundaries | Supertest | Verifies full happy path, complete reconciliation user journey, HTTP-layer concurrency (over-allocation rejection via `Promise.allSettled`), cross-user data isolation, post-refresh-token-invalidation, revoke idempotency, ledger entry delete guard, and DTO validation boundaries. |
 
 ---
 
