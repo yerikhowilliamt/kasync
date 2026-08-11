@@ -139,6 +139,12 @@ export class AllocationService {
             );
           }
 
+          if (bankTransaction.type !== ledgerEntry.type) {
+            throw new BadRequestException(
+              `BankTransaction type (${bankTransaction.type}) does not match LedgerEntry type (${ledgerEntry.type})`,
+            );
+          }
+
           // Idempotency check (already resolved above — use cached result)
           if (item.idempotencyKey) {
             const existing = resolvedIdempotent.get(item.idempotencyKey);

@@ -11,9 +11,16 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ImportService } from './import.service';
-import { ApiTags, ApiOperation, ApiConsumes, ApiBody } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiConsumes,
+  ApiBody,
+  ApiOkResponse,
+} from '@nestjs/swagger';
 import { ImportCsvDto } from './dto/import-csv.dto';
 import { ReqUser } from '../../common/decorators/req-user.decorator';
+import { ImportCsvResponseDto } from './dto/import-csv-response.dto';
 
 @ApiTags('import')
 @Controller('import')
@@ -37,6 +44,10 @@ export class ImportController {
       },
     },
   })
+  @ApiOkResponse({
+    description: 'CSV import result with detailed error reporting.',
+    type: ImportCsvResponseDto,
+  })
   @UseInterceptors(FileInterceptor('file'))
   @HttpCode(HttpStatus.OK)
   async importCsv(
@@ -48,7 +59,7 @@ export class ImportController {
     )
     file: Express.Multer.File,
     @Body() dto: ImportCsvDto,
-  ) {
+  ): Promise<ImportCsvResponseDto> {
     return this.importService.importCsv(
       dto.accountId,
       dto.bankFormat,

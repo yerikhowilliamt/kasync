@@ -38,13 +38,13 @@ export class AccountsService {
   ): Promise<Account> {
     await this.findOne(id, userId);
     return this.prisma.account.update({
-      where: { id },
+      where: { id, userId },
       data: updateAccountDto,
     });
   }
 
   async remove(id: string, userId: string): Promise<Account> {
     await this.findOne(id, userId);
-    return this.prisma.account.delete({ where: { id } });
+    return this.prisma.account.delete({ where: { id, userId } });
   }
 }

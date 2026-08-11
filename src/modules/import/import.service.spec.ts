@@ -60,6 +60,8 @@ describe('ImportService', () => {
       totalParsed: 1,
       importedCount: 1,
       duplicateCount: 0,
+      failedCount: 0,
+      errors: [],
     });
     expect(createManySpy).toHaveBeenCalledWith(
       expect.objectContaining({ skipDuplicates: true }),

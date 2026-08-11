@@ -42,14 +42,23 @@ jobs:
           DATABASE_URL: "postgresql://postgres:postgrespassword@localhost:5432/kasync_db?schema=public"
         run: npx prisma migrate deploy
 
+      - name: Apply raw SQL migrations
+        env:
+          DATABASE_URL: "postgresql://postgres:postgrespassword@localhost:5432/kasync_db?schema=public"
+        run: npx prisma db execute --file ./docs/database/migration.sql
+
       - name: Typecheck
         run: npx tsc --noEmit
 
       - name: Lint
         run: npm run lint
 
-      - name: Unit Tests
-        run: npm run test
+      - name: Build
+        run: npm run build
+
+      - name: Test
+        run: npm run test -- --coverage
+
 
       - name: E2E Tests
         env:

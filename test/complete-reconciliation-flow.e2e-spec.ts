@@ -9,6 +9,9 @@ import * as path from 'path';
 
 interface ImportResponse {
   importedCount: number;
+  totalParsed: number;
+  duplicateCount: number;
+  failedCount: number;
 }
 
 interface DashboardResponse {
@@ -173,6 +176,7 @@ describe('Complete Reconciliation Flow (e2e)', () => {
 
     const importBody = importRes.body as ImportResponse;
     expect(importBody.importedCount).toBe(2);
+    expect(importBody.failedCount).toBe(0);
 
     const txns = await prisma.bankTransaction.findMany({
       where: { accountId },

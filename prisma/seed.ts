@@ -1,4 +1,5 @@
 import { PrismaClient, AccountType, TransactionType, TransactionStatus } from '@prisma/client';
+import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
@@ -12,7 +13,7 @@ async function main() {
       data: {
         name: 'Admin Demo',
         email: 'admin@demo.com',
-        passwordHash: 'hashed_pass_placeholder',
+        passwordHash: await bcrypt.hash('Password123!', 10),
       }
     });
   }
@@ -121,7 +122,6 @@ async function main() {
       description: 'TRSF E-BANKING SUPPLIER A TEPUNG',
       externalRef: 'BCA-20260801-001',
       dedupHash: 'hash-bca-001',
-      status: TransactionStatus.MATCHED,
     },
   });
 
@@ -144,7 +144,6 @@ async function main() {
       description: 'TRANSFER COMBINED EXPENSE FUEL AND UTILITIES',
       externalRef: 'MDR-20260801-002',
       dedupHash: 'hash-mdr-002',
-      status: TransactionStatus.PARTIALLY_ALLOCATED,
     },
   });
 
@@ -167,7 +166,6 @@ async function main() {
       description: 'SETTLEMENT QRIS JAKARTA SELATAN',
       externalRef: 'BCA-20260802-003',
       dedupHash: 'hash-bca-003',
-      status: TransactionStatus.PENDING_REVIEW,
     },
   });
 
@@ -181,7 +179,6 @@ async function main() {
       description: 'PARKIR DAN BIAYA ADMIN TANPA NOTA',
       externalRef: 'CSH-20260803-004',
       dedupHash: 'hash-csh-004',
-      status: TransactionStatus.UNRESOLVED,
     },
   });
 

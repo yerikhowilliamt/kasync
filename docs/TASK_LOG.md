@@ -1,3 +1,17 @@
+## Task: QA Remediation & Hardening (Phase 2) (Mon Aug 10 2026)
+
+- **Completed**: Yes
+- **Modules**: `prisma/schema.prisma`, `src/modules/users/dto/update-password.dto.ts`, `src/modules/allocation/allocation.service.ts`, `src/modules/accounts/accounts.service.ts`, `src/modules/reconciliation/reconciliation.service.ts`, `test/cascade-delete.e2e-spec.ts`, `test/rate-limit.e2e-spec.ts`, `.github/workflows/ci.yml`
+- **Description**: Executed the "Full QA Remediation & Hardening" plan to resolve all High/Medium severity defects and testing gaps identified in the QA audit. Target: Raise overall QA score from 6.0/10 to >=9.0/10.
+  1.  **DEF-012 (Data Integrity):** Added `onDelete: Cascade` to `Account -> BankTransaction` and `BankTransaction -> Allocation` relations in `schema.prisma` to ensure clean user account deletion.
+  2.  **DEF-011 (Security):** Added `@Matches` complexity validator to `UpdatePasswordDto` to enforce consistent password policy.
+  3.  **DEF-002 (Business Logic):** Added `bankTransaction.type === ledgerEntry.type` validation in `AllocationService` to prevent semantic errors.
+  4.  **DEF-007 (Security):** Hardened `AccountsService` update/remove methods to use atomic `where: { id, userId }` queries.
+  5.  **DEF-008 (Business Logic):** Corrected `ReconciliationService` dashboard query to properly scope `recordedLedgerBalance` by `accountId` when filtered.
+  6.  **Test Suite Expansion:** Created new E2E tests `cascade-delete.e2e-spec.ts` and `rate-limit.e2e-spec.ts`.
+  7.  **CI Pipeline Upgrade:** Added `npm run build` and `npm run test -- --coverage` steps to `ci.yml`.
+- **Verification**: `npx prisma migrate deploy` (successful), `npx jest --config ./test/jest-e2e.json` (13/13 suites passed).
+
 ## Task: Phase 10 — QA Remediation: Raise Quality Score to 9/10 (Tue Aug 11 2026)
 
 - **Completed**: Yes

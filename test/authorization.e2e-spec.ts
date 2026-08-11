@@ -3,7 +3,14 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import cookieParser from 'cookie-parser';
 import { AppModule } from './../src/app.module';
-import { PrismaClient } from '@prisma/client';
+import {
+  Account,
+  Branch,
+  Category,
+  LedgerEntry,
+  PrismaClient,
+  User,
+} from '@prisma/client';
 import { PostgresTriggerExceptionFilter } from '../src/common/filters/postgres-trigger-exception.filter';
 
 jest.setTimeout(30000);
@@ -12,8 +19,7 @@ describe('Authorization (e2e)', () => {
   let app: INestApplication;
   const prisma = new PrismaClient();
 
-  let userA: { id: string; email: string; name: string },
-    userB: { id: string; email: string; name: string };
+  let userA: User, userB: User;
   let authCookieA: string, authCookieB: string;
 
   beforeAll(async () => {
@@ -40,7 +46,7 @@ describe('Authorization (e2e)', () => {
         password: 'Password1',
         name: 'User A',
       });
-    userA = resA.body as { id: string; email: string; name: string };
+    userA = resA.body as User;
     authCookieA = (resA.headers['set-cookie'] as unknown as string[]).find(
       (c) => c.startsWith('access_token='),
     )!;
@@ -55,7 +61,7 @@ describe('Authorization (e2e)', () => {
         password: 'Password1',
         name: 'User B',
       });
-    userB = resB.body as { id: string; email: string; name: string };
+    userB = resB.body as User;
     authCookieB = (resB.headers['set-cookie'] as unknown as string[]).find(
       (c) => c.startsWith('access_token='),
     )!;
@@ -210,5 +216,105 @@ describe('Authorization (e2e)', () => {
 
     // Cleanup
     await prisma.user.delete({ where: { email } });
+  });
+
+  describe('Horizontal Privilege Escalation (DEF-004)', () => {
+    let resourceA: {
+      account: Account;
+      category: Category;
+      branch: Branch;
+      ledger: LedgerEntry;
+    };
+
+    beforeAll(async () => {
+      const account = await prisma.account.create({
+        data: { name: 'Horiz Acc A', type: 'BANK', userId: userA.id },
+      });
+      const category = await prisma.category.create({
+        data: { name: `Horiz Cat A ${Date.now()}`, userId: userA.id },
+      });
+      const branch = await prisma.branch.create({
+        data: { name: `Horiz Branch A ${Date.now()}`, userId: userA.id },
+      });
+      const ledger = await prisma.ledgerEntry.create({
+        data: {
+          userId: userA.id,
+          categoryId: category.id,
+          branchId: branch.id,
+          entryDate: new Date(),
+          amount: 1,
+          type: 'INFLOW',
+        },
+      });
+      resourceA = { account, category, branch, ledger };
+    });
+
+    afterAll(async () => {
+      // Cleanup resources
+      await prisma.ledgerEntry.deleteMany({
+        where: { id: resourceA.ledger.id },
+      });
+      await prisma.account.deleteMany({ where: { id: resourceA.account.id } });
+      await prisma.category.deleteMany({
+        where: { id: resourceA.category.id },
+      });
+      await prisma.branch.deleteMany({ where: { id: resourceA.branch.id } });
+    });
+
+    it.each([
+      ['accounts', () => resourceA.account.id],
+      ['categories', () => resourceA.category.id],
+      ['branches', () => resourceA.branch.id],
+      ['ledger-entries', () => resourceA.ledger.id],
+    ])(
+      'should prevent GET /%s/:id from other users',
+      async (path, idFn: () => string) => {
+        await request(
+          app.getHttpServer() as unknown as Parameters<typeof request>[0],
+        )
+          .get(`/api/v1/${path}/${idFn()}`)
+          .set('Cookie', authCookieB) // User B attemps to access User A resource
+          .expect(404);
+      },
+    );
+
+    it.each([
+      ['accounts', () => resourceA.account.id, { name: 'Modified by B' }],
+      [
+        'categories',
+        () => resourceA.category.id,
+        { name: 'Modified by B Cat' },
+      ],
+      ['branches', () => resourceA.branch.id, { name: 'Modified by B Branch' }],
+      ['ledger-entries', () => resourceA.ledger.id, { note: 'Modified by B' }],
+    ])(
+      'should prevent PATCH /%s/:id from other users',
+      async (path, idFn: () => string, payload: Record<string, string>) => {
+        await request(
+          app.getHttpServer() as unknown as Parameters<typeof request>[0],
+        )
+          .patch(`/api/v1/${path}/${idFn()}`)
+          .set('Cookie', authCookieB) // User B attemps to access User A resource
+          .send(payload)
+          .expect(404);
+      },
+    );
+
+    it.each([
+      ['accounts', () => resourceA.account.id],
+      ['categories', () => resourceA.category.id],
+      ['branches', () => resourceA.branch.id],
+      ['ledger-entries', () => resourceA.ledger.id],
+    ])(
+      'should prevent DELETE /%s/:id from other users',
+      async (path, idFn: () => string) => {
+        await request(
+          app.getHttpServer() as unknown as Parameters<typeof request>[0],
+        )
+          .delete(`/api/v1/${path}/${idFn()}`)
+          .set('Cookie', authCookieB) // User B attemps to access User A resource
+          .expect(404);
+      },
+    );
   });
 });

@@ -1,7 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { DashboardQueryDto } from './dto/dashboard-query.dto';
-import { TransactionStatus, AllocationStatus, Prisma } from '@prisma/client';
+import {
+  TransactionStatus,
+  AllocationStatus,
+  Prisma,
+  BankTransaction,
+} from '@prisma/client';
 import Decimal from 'decimal.js';
 
 export interface DashboardSummaryResponse {
@@ -11,21 +16,40 @@ export interface DashboardSummaryResponse {
   variance: string;
 }
 
+export interface PaginatedTransactionsResponse {
+  data: BankTransaction[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
 @Injectable()
 export class ReconciliationService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getDashboardSummary(
+  private buildWhereClause(
     userId: string,
     query: DashboardQueryDto,
-  ): Promise<DashboardSummaryResponse> {
+  ): [Prisma.BankTransactionWhereInput, Prisma.LedgerEntryWhereInput] {
     const bankTxnWhere: Prisma.BankTransactionWhereInput = {
-      account: { userId },
+      account: {
+        userId,
+      },
     };
-    const ledgerWhere: Prisma.LedgerEntryWhereInput = { userId };
+    const ledgerWhere: Prisma.LedgerEntryWhereInput = {
+      userId,
+    };
 
     if (query.accountId) {
       bankTxnWhere.accountId = query.accountId;
+      ledgerWhere.allocations = {
+        some: {
+          bankTransaction: {
+            accountId: query.accountId,
+          },
+        },
+      };
     }
 
     if (query.type) {
@@ -69,6 +93,43 @@ export class ReconciliationService {
       if (query.branchId) ledgerWhere.branchId = query.branchId;
     }
 
+    return [bankTxnWhere, ledgerWhere];
+  }
+
+  async getTransactions(
+    userId: string,
+    query: DashboardQueryDto,
+  ): Promise<PaginatedTransactionsResponse> {
+    const { page = 1, limit = 50 } = query;
+    const [bankTxnWhere] = this.buildWhereClause(userId, query);
+
+    const total = await this.prisma.bankTransaction.count({
+      where: bankTxnWhere,
+    });
+    const data = await this.prisma.bankTransaction.findMany({
+      where: bankTxnWhere,
+      skip: (page - 1) * limit,
+      take: limit,
+      orderBy: {
+        txnDate: 'desc',
+      },
+    });
+
+    return {
+      data,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
+  async getDashboardSummary(
+    userId: string,
+    query: DashboardQueryDto,
+  ): Promise<DashboardSummaryResponse> {
+    const [bankTxnWhere, ledgerWhere] = this.buildWhereClause(userId, query);
+
     const counts: Record<TransactionStatus, number> = {
       [TransactionStatus.UNRESOLVED]: 0,
       [TransactionStatus.PENDING_REVIEW]: 0,
@@ -94,11 +155,15 @@ export class ReconciliationService {
 
     const [bankInflowSum, bankOutflowSum] = await Promise.all([
       this.prisma.bankTransaction.aggregate({
-        _sum: { amount: true },
+        _sum: {
+          amount: true,
+        },
         where: { ...balanceWhere, type: 'INFLOW' },
       }),
       this.prisma.bankTransaction.aggregate({
-        _sum: { amount: true },
+        _sum: {
+          amount: true,
+        },
         where: { ...balanceWhere, type: 'OUTFLOW' },
       }),
     ]);
@@ -113,11 +178,15 @@ export class ReconciliationService {
 
     const [ledgerInflowSum, ledgerOutflowSum] = await Promise.all([
       this.prisma.ledgerEntry.aggregate({
-        _sum: { amount: true },
+        _sum: {
+          amount: true,
+        },
         where: { ...ledgerWhere, type: 'INFLOW' },
       }),
       this.prisma.ledgerEntry.aggregate({
-        _sum: { amount: true },
+        _sum: {
+          amount: true,
+        },
         where: { ...ledgerWhere, type: 'OUTFLOW' },
       }),
     ]);
