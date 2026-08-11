@@ -88,12 +88,6 @@ describe('Complete Reconciliation Flow (e2e)', () => {
     branchId = branch.id;
   });
 
-  beforeEach(async () => {
-    await prisma.allocation.deleteMany({ where: { bankTransaction: { accountId } } });
-    await prisma.bankTransaction.deleteMany({ where: { accountId } });
-    await prisma.ledgerEntry.deleteMany({ where: { userId } });
-  });
-
   afterAll(async () => {
     // Cleanup in reverse dependency order
     await prisma.allocation.deleteMany({
