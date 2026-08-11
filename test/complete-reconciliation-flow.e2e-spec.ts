@@ -9,6 +9,9 @@ import * as path from 'path';
 
 interface ImportResponse {
   importedCount: number;
+  totalParsed: number;
+  duplicateCount: number;
+  failedCount: number;
 }
 
 interface DashboardResponse {
@@ -83,6 +86,12 @@ describe('Complete Reconciliation Flow (e2e)', () => {
       },
     });
     branchId = branch.id;
+  });
+
+  beforeEach(async () => {
+    await prisma.allocation.deleteMany({ where: { bankTransaction: { accountId } } });
+    await prisma.bankTransaction.deleteMany({ where: { accountId } });
+    await prisma.ledgerEntry.deleteMany({ where: { userId } });
   });
 
   afterAll(async () => {
@@ -173,6 +182,7 @@ describe('Complete Reconciliation Flow (e2e)', () => {
 
     const importBody = importRes.body as ImportResponse;
     expect(importBody.importedCount).toBe(2);
+    expect(importBody.failedCount).toBe(0);
 
     const txns = await prisma.bankTransaction.findMany({
       where: { accountId },

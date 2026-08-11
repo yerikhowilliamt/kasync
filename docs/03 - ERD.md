@@ -34,8 +34,8 @@ Full column-level detail lives in `prisma/schema.prisma` — this document expla
 
 ## 3. Key Design Decisions
 
-### 3.1 Multi-Tenancy via `userId` Foreign Key
-All domain entities (`Account`, `Category`, `Branch`, `LedgerEntry`) include a `userId` field with `onDelete: Cascade` to the `User` model. Services scope all queries by `userId` extracted from the JWT token via `@ReqUser('sub')`. This ensures complete data isolation between users.
+### 3.1 Full Cascade Deletion for Data Integrity
+All domain entities (`Account`, `Category`, `Branch`, `LedgerEntry`) include a `userId` foreign key with `onDelete: Cascade` to the `User` model. This relationship is extended down the chain: `Account` -> `BankTransaction` and `BankTransaction` -> `Allocation` also use `onDelete: Cascade`. This ensures that when a user deletes their account, all associated data is cleanly and atomically removed from the database, preventing orphaned records and maintaining referential integrity. Services scope all queries by `userId` extracted from the JWT token via `@ReqUser('sub')`, ensuring complete data isolation between users.
 
 ### 3.2 `externalRef`, `dedupHash` + unique constraints
 Bank CSV exports usually include some reference/transaction ID column. Storing it and enforcing uniqueness per account (`@@unique([accountId, externalRef])`) prevents the same statement row from being imported twice. When banks omit this ID, the system computes a SHA-256 fallback hash (`dedupHash`) and enforces uniqueness (`@@unique([accountId, dedupHash])`) to ensure deduplication.

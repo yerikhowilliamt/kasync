@@ -82,7 +82,7 @@ model BankTransaction {
   createdAt   DateTime          @default(now()) @map("created_at")
   updatedAt   DateTime          @updatedAt @map("updated_at")
 
-  account     Account      @relation(fields: [accountId], references: [id])
+  account     Account      @relation(fields: [accountId], references: [id], onDelete: Cascade)
   allocations Allocation[]
 
   // Prevents importing the exact same bank row twice within one account
@@ -152,8 +152,8 @@ model Allocation {
   revokedAt         DateTime? @map("revoked_at")
   createdAt         DateTime @default(now()) @map("created_at")
 
-  bankTransaction BankTransaction @relation(fields: [bankTransactionId], references: [id])
-  ledgerEntry     LedgerEntry     @relation(fields: [ledgerEntryId], references: [id])
+  bankTransaction BankTransaction @relation(fields: [bankTransactionId], references: [id], onDelete: Cascade)
+  ledgerEntry     LedgerEntry     @relation(fields: [ledgerEntryId], references: [id], onDelete: Cascade)
 
   @@index([bankTransactionId])
   @@index([ledgerEntryId])

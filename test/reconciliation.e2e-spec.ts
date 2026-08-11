@@ -9,6 +9,9 @@ import * as path from 'path';
 
 interface ImportResponse {
   importedCount: number;
+  totalParsed: number;
+  duplicateCount: number;
+  failedCount: number;
 }
 
 interface DashboardResponse {
@@ -21,6 +24,14 @@ interface DashboardResponse {
   actualBankBalance: string;
   recordedLedgerBalance: string;
   variance: string;
+}
+
+interface PaginatedTxnResponse {
+  data: { id: string }[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
 }
 
 describe('Reconciliation User Journey (e2e)', () => {
@@ -125,6 +136,7 @@ describe('Reconciliation User Journey (e2e)', () => {
     expect(importRes.status).toBe(200);
     const importBody = importRes.body as ImportResponse;
     expect(importBody.importedCount).toBe(2);
+    expect(importBody.failedCount).toBe(0);
 
     const importedTxns = await prisma.bankTransaction.findMany({
       where: { accountId },
@@ -267,5 +279,59 @@ describe('Reconciliation User Journey (e2e)', () => {
 
     // Bank txns in account: +1000.00 (INFLOW) - 500.50 (OUTFLOW) = 499.50
     expect(dashBody.actualBankBalance).toBe('499.50');
+  });
+
+  it('GET /transactions - should return paginated transaction list', async () => {
+    // We have 2 transactions from the previous test
+    const server = app.getHttpServer() as unknown as Parameters<
+      typeof request
+    >[0];
+
+    // 1. Get first page, limit 1
+    const page1Res = await request(server)
+      .get(
+        `/api/v1/reconciliation/transactions?accountId=${accountId}&limit=1&page=1`,
+      )
+      .set('Cookie', [authCookie])
+      .expect(200);
+
+    const page1Body = page1Res.body as PaginatedTxnResponse;
+    expect(page1Body.total).toBe(2);
+    expect(page1Body.page).toBe(1);
+    expect(page1Body.limit).toBe(1);
+    expect(page1Body.totalPages).toBe(2);
+    expect(page1Body.data).toHaveLength(1);
+    const firstTxId = page1Body.data[0].id;
+
+    // 2. Get second page, limit 1
+    const page2Res = await request(server)
+      .get(
+        `/api/v1/reconciliation/transactions?accountId=${accountId}&limit=1&page=2`,
+      )
+      .set('Cookie', [authCookie])
+      .expect(200);
+
+    const page2Body = page2Res.body as PaginatedTxnResponse;
+    expect(page2Body.total).toBe(2);
+    expect(page2Body.page).toBe(2);
+    expect(page2Body.limit).toBe(1);
+    expect(page2Body.totalPages).toBe(2);
+    expect(page2Body.data).toHaveLength(1);
+    const secondTxId = page2Body.data[0].id;
+
+    expect(firstTxId).not.toBe(secondTxId);
+
+    // 3. Get all on one page
+    const allRes = await request(server)
+      .get(`/api/v1/reconciliation/transactions?accountId=${accountId}&limit=5`)
+      .set('Cookie', [authCookie])
+      .expect(200);
+
+    const allBody = allRes.body as PaginatedTxnResponse;
+    expect(allBody.total).toBe(2);
+    expect(allBody.page).toBe(1);
+    expect(allBody.limit).toBe(5);
+    expect(allBody.totalPages).toBe(1);
+    expect(allBody.data).toHaveLength(2);
   });
 });

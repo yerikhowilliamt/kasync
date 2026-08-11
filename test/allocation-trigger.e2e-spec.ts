@@ -222,4 +222,94 @@ describe('Allocation Triggers (e2e)', () => {
     });
     expect(tx.status).toBe('UNRESOLVED');
   });
+
+  it('Test 3: Boundary value - exact remaining amount should succeed', async () => {
+    // Transaction amount is 1000.00
+    // Create an allocation of 999.99
+    await prisma.allocation.create({
+      data: {
+        bankTransactionId,
+        ledgerEntryId: ledgerEntryId1,
+        amountPortion: 999.99,
+        status: 'ACTIVE',
+      },
+    });
+
+    // Verify transaction status is PARTIALLY_ALLOCATED
+    let tx = await prisma.bankTransaction.findUniqueOrThrow({
+      where: { id: bankTransactionId },
+    });
+    expect(tx.status).toBe('PARTIALLY_ALLOCATED');
+
+    // Attempt to allocate the exact remaining amount: 0.01
+    // This should SUCCEED because 999.99 + 0.01 == 1000.00 (not > 1000.00)
+    await prisma.allocation.create({
+      data: {
+        bankTransactionId,
+        ledgerEntryId: ledgerEntryId2,
+        amountPortion: 0.01,
+        status: 'ACTIVE',
+      },
+    });
+
+    tx = await prisma.bankTransaction.findUniqueOrThrow({
+      where: { id: bankTransactionId },
+    });
+    expect(tx.status).toBe('MATCHED');
+
+    // Verify sum is exactly 1000
+    const sum = await prisma.allocation.aggregate({
+      _sum: { amountPortion: true },
+      where: { bankTransactionId, status: 'ACTIVE' },
+    });
+    expect(Number(sum._sum.amountPortion)).toBe(1000);
+  });
+
+  it('Test 4: Concurrent allocation UPDATEs should be serialized', async () => {
+    // Create an initial allocation of 800
+    const initialAlloc = await prisma.allocation.create({
+      data: {
+        bankTransactionId,
+        ledgerEntryId: ledgerEntryId1,
+        amountPortion: 800,
+        status: 'ACTIVE',
+      },
+    });
+
+    // Transaction has 200 remaining. Attempt two concurrent updates:
+    // 1. User tries to add 200 to existing allocation (800+200=1000) - should succeed
+    // 2. User tries to add 200 to a new allocation (800+200=1000, then +200=1200 > 1000) - should fail
+
+    // Update the first allocation to the max (800 -> 1000)
+    const update1 = prisma.allocation.update({
+      where: { id: initialAlloc.id },
+      data: { amountPortion: 1000 },
+    });
+
+    // Try to create a second allocation for 300 (which would total 1300 > 1000)
+    const update2 = prisma.allocation.create({
+      data: {
+        bankTransactionId,
+        ledgerEntryId: ledgerEntryId2,
+        amountPortion: 300,
+        status: 'ACTIVE',
+      },
+    });
+
+    const results = await Promise.allSettled([update1, update2]);
+
+    // One should succeed (the update), one should fail (the new allocation)
+    const fulfilled = results.filter((r) => r.status === 'fulfilled');
+    const rejected = results.filter((r) => r.status === 'rejected');
+
+    expect(fulfilled).toHaveLength(1);
+    expect(rejected).toHaveLength(1);
+
+    // Final state: only the first allocation exists with amount 1000
+    const allocations = await prisma.allocation.findMany({
+      where: { bankTransactionId, status: 'ACTIVE' },
+    });
+    expect(allocations).toHaveLength(1);
+    expect(Number(allocations[0].amountPortion)).toBe(1000);
+  });
 });

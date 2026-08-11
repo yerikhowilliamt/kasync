@@ -68,11 +68,10 @@ DATABASE_URL="postgresql://postgres:postgrespassword@localhost:5432/kasync_db?sc
 docker compose up -d
 ```
 
-### 4. Run Migrations & Apply Database Triggers
+### 4. Run Migrations
 ```bash
 npx prisma migrate dev
 ```
-*Note: Database triggers (`check_allocation_sum` with `FOR UPDATE` lock and `sync_transaction_status`) are embedded in the Prisma migration `20260809180000_multi_tenancy_and_triggers` and applied automatically.*
 
 ### 5. Seed Synthetic Demo Data
 ```bash
