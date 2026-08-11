@@ -26,5 +26,6 @@ export class ParsedTransactionDto {
   externalRef?: string;
 
   @IsString()
-  dedupHash?: string;
+  @IsOptional()
+  dedupHash?: string | null;
 }
