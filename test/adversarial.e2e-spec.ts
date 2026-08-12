@@ -392,7 +392,10 @@ describe('Adversarial E2E - Financial Integrity & Security', () => {
     const finalTxn = await prisma.bankTransaction.findUnique({
       where: { id: txn.id },
     });
-    expect([TransactionStatus.MATCHED, TransactionStatus.PARTIALLY_ALLOCATED]).toContain(finalTxn?.status);
+    expect([
+      TransactionStatus.MATCHED,
+      TransactionStatus.PARTIALLY_ALLOCATED,
+    ]).toContain(finalTxn?.status);
   });
 
   it('Boundary: Allocation with zero amountPortion is rejected', async () => {
