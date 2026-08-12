@@ -1,10 +1,10 @@
-# KAsync — Cash Flow Reconciliation & Allocation Tool
+# Kasync — Cash Flow Reconciliation & Allocation Tool
 
 [![CI Pipeline](https://github.com/yerikhowilliamt/kasync/actions/workflows/ci.yml/badge.svg)](https://github.com/yerikhowilliamt/kasync/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D20-brightgreen.svg)](https://nodejs.org)
 
-KAsync is a NestJS + PostgreSQL + Prisma application designed for small multi-branch business owners to reconcile bank statements against manual internal cash records, manage multi-category split allocations, and maintain strict financial auditability.
+Kasync is a NestJS + PostgreSQL + Prisma application designed for small multi-branch business owners to reconcile bank statements against manual internal cash records, manage multi-category split allocations, and maintain strict financial auditability.
 
 ---
 
