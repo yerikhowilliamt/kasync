@@ -315,3 +315,15 @@ This document records errors encountered during development, their root causes, 
 - **Root Cause**: Clock-skew tolerance between Node.js and PostgreSQL — `tokenValidFrom` stored via `new Date()` in the app may differ slightly from DB clock. The 2-second window prevents legitimate tokens from being rejected due to drift.
 - **Resolution**: Tolerance is now correctly scoped — tokens issued more than 2s before `tokenValidFrom` are rejected. Tokens issued within 2s before logout are accepted (DEF-003).
 - **Mitigation**: Cookies are cleared client-side immediately on logout. The window only matters if an attacker has already captured the raw token.
+
+### [2026-08-12] Allocation Cap Violation Returns HTTP 500 Instead of 400
+- **Module / Area:** `allocation`, `allocation.service.ts`, `allocation.service.spec.ts`, `PostgresTriggerExceptionFilter`
+- **Error Message / Symptom:**
+  ```text
+  Expected: 400 Bad Request
+  Received: 500 Internal Server Error
+  Error: Total allocation (1100) exceeds transaction amount (1000) for transaction <id>
+  ```
+- **Root Cause:** `AllocationExceededError` was thrown inside the `prisma.$transaction` callback. Exceptions raised inside async transaction callbacks bypass the global `PostgresTriggerExceptionFilter` (its `@Catch(Error, ...)` never receives them), so NestJS's default `ExceptionsHandler` returned a generic HTTP 500. This contradicted the documented contract of HTTP 400 for over-allocation.
+- **Resolution:** Changed `AllocationExceededError` to `BadRequestException` in `AllocationService.create()` (line ~125). NestJS HTTP exceptions are handled by the framework's HTTP exception layer regardless of where they are thrown, producing the correct HTTP 400. Unit test assertions in `allocation.service.spec.ts` updated accordingly (2 occurrences).
+- **Prevention / Note:** For validation inside `prisma.$transaction` callbacks, prefer NestJS HTTP exceptions (`BadRequestException`, `NotFoundException`) over custom `Error` subclasses. Custom domain errors only work when they can reach an exception filter synchronously — inside transaction callbacks they degrade to HTTP 500.

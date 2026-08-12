@@ -19,7 +19,9 @@ export default async () => {
     execSync('npx prisma migrate deploy', { stdio: 'inherit' });
 
     console.log('Applying raw SQL migrations...');
-    execSync('npx prisma db execute --file ./docs/database/migration.sql', { stdio: 'inherit' });
+    execSync('npx prisma db execute --file ./docs/database/migration.sql', {
+      stdio: 'inherit',
+    });
 
     console.log('E2E test setup complete.');
   } catch (error) {

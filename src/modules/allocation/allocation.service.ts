@@ -2,6 +2,8 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  HttpException,
+  HttpStatus,
 } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import {
@@ -120,12 +122,9 @@ export class AllocationService {
         const txnAmount = new Decimal(bankTransaction.amount.toString());
 
         if (totalSum.gt(txnAmount)) {
-          throw new AllocationExceededError({
-            message: `Total allocation (${totalSum.toString()}) exceeds transaction amount (${txnAmount.toString()}) for transaction ${txnId}`,
-            txnId,
-            attempted: totalSum.toString(),
-            max: txnAmount.toString(),
-          });
+          throw new BadRequestException(
+            `Total allocation (${totalSum.toString()}) exceeds transaction amount (${txnAmount.toString()}) for transaction ${txnId}`,
+          );
         }
 
         for (const item of txnItems) {

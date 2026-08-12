@@ -156,7 +156,7 @@ describe('AllocationService', () => {
           },
           TEST_USER_ID,
         ),
-      ).rejects.toThrow(AllocationExceededError);
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('should create single allocation successfully', async () => {
@@ -268,7 +268,7 @@ describe('AllocationService', () => {
           },
           TEST_USER_ID,
         ),
-      ).rejects.toThrow(AllocationExceededError);
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('should create split allocation successfully', async () => {

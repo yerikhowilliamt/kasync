@@ -136,6 +136,8 @@ The Postgres database relies on triggers (like `check_allocation_sum`) that thro
 
 Unhandled exceptions fall through to a generic `500 Internal Server Error` response with a fixed message ("An unexpected error occurred. Please try again later.") — raw exception details, stack traces, and internal state are never returned to clients.
 
+**Application-layer validation inside `prisma.$transaction`:** custom `Error` subclasses (e.g. `AllocationExceededError`) thrown inside async transaction callbacks never reach the global exception filter and degrade to HTTP 500. Application-layer cap validation therefore uses NestJS HTTP exceptions (`BadRequestException`) directly, which the framework's HTTP exception layer handles regardless of throw location (resolved DEF-A01, 2026-08-12).
+
 ### 9.4 DTO Validation
 Incoming request payloads are validated with class-validator via a global `ValidationPipe` (`whitelist: true, transform: true`). Key bounds:
 - `ImportCsvDto.bankFormat` is restricted with `@IsIn(['BCA', 'MANDIRI'])` — rejects unknown bank formats at the boundary instead of surfacing parser errors later.

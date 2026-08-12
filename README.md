@@ -129,15 +129,13 @@ Swagger UI is exposed at **`/docs`**. Key modules include:
 
 ## 🔒 Database-Level Integrity & Triggers
 
-To prevent race conditions and guarantee financial data integrity, two SQL triggers enforce rules directly in PostgreSQL (`docs/database/migration.sql`):
+To prevent race conditions and guarantee financial data integrity, allocation cap enforcement uses a **three-layer defense**:
 
-1. **`trg_check_allocation_sum` (`BEFORE INSERT OR UPDATE ON allocations`)**:
-   - Acquires row lock via `SELECT amount FROM bank_transactions WHERE id = NEW.bank_transaction_id FOR UPDATE`.
-   - Rejects write if `sum(active_allocations) + NEW.amount_portion > bank_transaction.amount`.
-   - Intercepted globally by `PostgresTriggerExceptionFilter` returning HTTP 400 Bad Request.
+1. **Application Layer:** `AllocationService` validates `sum(allocation.amountPortion) <= bank_transaction.amount` inside `prisma.$transaction`.
+2. **Row Locking:** `SELECT ... FOR UPDATE` on `bank_transactions` serializes concurrent allocations to the same transaction.
+3. **Database Trigger:** `trg_check_allocation_sum` (`BEFORE INSERT OR UPDATE ON allocations`) enforces the same invariant at PostgreSQL level using `FOR UPDATE` row locking.
 
-2. **`trg_sync_transaction_status` (`AFTER INSERT OR UPDATE OR DELETE ON allocations`)**:
-   - Auto-syncs `bank_transactions.status` between `UNRESOLVED`, `PARTIALLY_ALLOCATED`, and `MATCHED`.
+**Status Auto-Sync:** `trg_sync_transaction_status` (`AFTER INSERT OR UPDATE OR DELETE ON allocations`) automatically updates `bank_transactions.status` between `UNRESOLVED`, `PARTIALLY_ALLOCATED`, and `MATCHED`.
 
 *Note: Both triggers are embedded in the native Prisma migration and applied automatically via `npx prisma migrate dev`. No manual SQL step required.*
 

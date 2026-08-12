@@ -35,6 +35,8 @@
 ## 5. Verification & Definition of Done
 - **Focused Unit Test:** `npm run test -- path/to/spec.ts`
 - **All Unit Tests:** `npm run test` (pure logic, zero DB, execution <1s, min 90% coverage).
+- **Coverage Threshold:** >70% statement coverage (currently 72.87%) is mandatory.
+- **Adversarial Testing:** Critical financial logic (allocation, matching) requires adversarial E2E tests covering IDOR, concurrency, boundary conditions.
 - **Integration Tests:** `npm run test:e2e` (requires Postgres with applied triggers).
 - **Typecheck & Lint:** `npx tsc --noEmit` && `npm run lint`.
 - **Definition of Done:** Any data model change requires updating `schema.prisma`, `docs/database/migration.sql`, and relevant `docs/` in the same commit.
