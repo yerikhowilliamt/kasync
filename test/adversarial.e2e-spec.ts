@@ -5,6 +5,7 @@ import cookieParser from 'cookie-parser';
 import { AppModule } from '../src/app.module';
 import { PrismaService } from '../src/common/prisma/prisma.service';
 import { AllocationStatus, TransactionStatus } from '@prisma/client';
+import * as http from 'http';
 
 describe('Adversarial E2E - Financial Integrity & Security', () => {
   let app: INestApplication;
@@ -47,45 +48,54 @@ describe('Adversarial E2E - Financial Integrity & Security', () => {
     return cookie;
   };
 
-  async function createUserAndGetAuth(email: string, name: string) {
-    const res = await request(app.getHttpServer())
+  async function createUserAndGetAuth(
+    email: string,
+    name: string,
+  ): Promise<{ userId: string; accessToken: string }> {
+    const res = await request(app.getHttpServer() as unknown as http.Server)
       .post('/api/v1/auth/register')
       .send({ email, name, password: 'StrongPass1!' })
       .expect(201);
-    const cookies = res.headers['set-cookie'] as string[];
+    const cookies = res.headers['set-cookie'] as unknown as string[];
     const accessToken = extractAccessToken(cookies);
-    return { userId: res.body.id, accessToken };
+    return { userId: (res.body as { id: string }).id, accessToken };
   }
 
   async function createAccount(
     accessToken: string,
     name: string,
     type: 'BANK' | 'CASH' | 'EWALLET',
-  ) {
-    const res = await request(app.getHttpServer())
+  ): Promise<string> {
+    const res = await request(app.getHttpServer() as unknown as http.Server)
       .post('/api/v1/accounts')
       .set('Cookie', [accessToken])
       .send({ name, type })
       .expect(201);
-    return res.body.id;
+    return (res.body as { id: string }).id;
   }
 
-  async function createCategory(accessToken: string, name: string) {
-    const res = await request(app.getHttpServer())
+  async function createCategory(
+    accessToken: string,
+    name: string,
+  ): Promise<string> {
+    const res = await request(app.getHttpServer() as unknown as http.Server)
       .post('/api/v1/categories')
       .set('Cookie', [accessToken])
       .send({ name })
       .expect(201);
-    return res.body.id;
+    return (res.body as { id: string }).id;
   }
 
-  async function createBranch(accessToken: string, name: string) {
-    const res = await request(app.getHttpServer())
+  async function createBranch(
+    accessToken: string,
+    name: string,
+  ): Promise<string> {
+    const res = await request(app.getHttpServer() as unknown as http.Server)
       .post('/api/v1/branches')
       .set('Cookie', [accessToken])
       .send({ name })
       .expect(201);
-    return res.body.id;
+    return (res.body as { id: string }).id;
   }
 
   async function createBankTransaction(
@@ -148,7 +158,7 @@ describe('Adversarial E2E - Financial Integrity & Security', () => {
       'UserB',
     );
 
-    await request(app.getHttpServer())
+    await request(app.getHttpServer() as unknown as http.Server)
       .post('/api/v1/allocations')
       .set('Cookie', [tokenB])
       .send({
@@ -182,7 +192,7 @@ describe('Adversarial E2E - Financial Integrity & Security', () => {
       'OUTFLOW',
     );
 
-    await request(app.getHttpServer())
+    await request(app.getHttpServer() as unknown as http.Server)
       .post('/api/v1/allocations')
       .set('Cookie', [accessToken])
       .send({
@@ -216,7 +226,9 @@ describe('Adversarial E2E - Financial Integrity & Security', () => {
       'INFLOW',
     );
 
-    const createRes = await request(app.getHttpServer())
+    const createRes = await request(
+      app.getHttpServer() as unknown as http.Server,
+    )
       .post('/api/v1/allocations')
       .set('Cookie', [accessToken])
       .send({
@@ -225,14 +237,15 @@ describe('Adversarial E2E - Financial Integrity & Security', () => {
         amountPortion: 200,
       })
       .expect(201);
-    const allocationId = createRes.body[0].id;
+    const body = createRes.body as Array<{ id: string }>;
+    const allocationId = body[0].id;
 
-    await request(app.getHttpServer())
+    await request(app.getHttpServer() as unknown as http.Server)
       .post(`/api/v1/allocations/${allocationId}/revoke`)
       .set('Cookie', [accessToken])
       .expect(200);
 
-    await request(app.getHttpServer())
+    await request(app.getHttpServer() as unknown as http.Server)
       .post(`/api/v1/allocations/${allocationId}/revoke`)
       .set('Cookie', [accessToken])
       .expect(400);
@@ -268,7 +281,7 @@ describe('Adversarial E2E - Financial Integrity & Security', () => {
       'INFLOW',
     );
 
-    await request(app.getHttpServer())
+    await request(app.getHttpServer() as unknown as http.Server)
       .post('/api/v1/allocations')
       .set('Cookie', [accessToken])
       .send({
@@ -278,7 +291,7 @@ describe('Adversarial E2E - Financial Integrity & Security', () => {
       })
       .expect(201);
 
-    await request(app.getHttpServer())
+    await request(app.getHttpServer() as unknown as http.Server)
       .post('/api/v1/allocations')
       .set('Cookie', [accessToken])
       .send({
@@ -330,7 +343,7 @@ describe('Adversarial E2E - Financial Integrity & Security', () => {
     );
 
     const allocatePromises = [
-      request(app.getHttpServer())
+      request(app.getHttpServer() as unknown as http.Server)
         .post('/api/v1/allocations')
         .set('Cookie', [accessToken])
         .send({
@@ -338,7 +351,7 @@ describe('Adversarial E2E - Financial Integrity & Security', () => {
           ledgerEntryId: ledger1.id,
           amountPortion: 500,
         }),
-      request(app.getHttpServer())
+      request(app.getHttpServer() as unknown as http.Server)
         .post('/api/v1/allocations')
         .set('Cookie', [accessToken])
         .send({
@@ -346,7 +359,7 @@ describe('Adversarial E2E - Financial Integrity & Security', () => {
           ledgerEntryId: ledger2.id,
           amountPortion: 500,
         }),
-      request(app.getHttpServer())
+      request(app.getHttpServer() as unknown as http.Server)
         .post('/api/v1/allocations')
         .set('Cookie', [accessToken])
         .send({
@@ -400,7 +413,7 @@ describe('Adversarial E2E - Financial Integrity & Security', () => {
       'INFLOW',
     );
 
-    await request(app.getHttpServer())
+    await request(app.getHttpServer() as unknown as http.Server)
       .post('/api/v1/allocations')
       .set('Cookie', [accessToken])
       .send({
@@ -429,7 +442,7 @@ describe('Adversarial E2E - Financial Integrity & Security', () => {
       'INFLOW',
     );
 
-    await request(app.getHttpServer())
+    await request(app.getHttpServer() as unknown as http.Server)
       .post('/api/v1/allocations')
       .set('Cookie', [accessToken])
       .send({
@@ -446,7 +459,7 @@ describe('Adversarial E2E - Financial Integrity & Security', () => {
       'EmptyArrayTest',
     );
 
-    await request(app.getHttpServer())
+    await request(app.getHttpServer() as unknown as http.Server)
       .post('/api/v1/allocations')
       .set('Cookie', [accessToken])
       .send({ allocations: [] })
@@ -459,7 +472,7 @@ describe('Adversarial E2E - Financial Integrity & Security', () => {
       'NoDataTest',
     );
 
-    await request(app.getHttpServer())
+    await request(app.getHttpServer() as unknown as http.Server)
       .post('/api/v1/allocations')
       .set('Cookie', [accessToken])
       .send({})

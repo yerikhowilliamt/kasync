@@ -2,15 +2,12 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
-  HttpException,
-  HttpStatus,
 } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import {
   CreateAllocationDto,
   CreateSingleAllocationDto,
 } from './dto/create-allocation.dto';
-import { AllocationExceededError } from '../../common/errors/allocation-exceeded.error';
 import { AllocationStatus } from '@prisma/client';
 import Decimal from 'decimal.js';
 
