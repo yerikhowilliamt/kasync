@@ -33,7 +33,7 @@ async function bootstrap() {
   app.useGlobalFilters(new PostgresTriggerExceptionFilter());
 
   const config = new DocumentBuilder()
-    .setTitle('KAsync v1 — Cash Flow Reconciliation & Allocation Tool API')
+    .setTitle('Kasync v1 — Cash Flow Reconciliation & Allocation Tool API')
     .setDescription('API documentation for kasync tool')
     .setVersion('1.0')
     .addApiKey({ type: 'apiKey', name: 'x-api-key', in: 'header' }, 'x-api-key')

@@ -1,6 +1,6 @@
 # QA Test Plan
 
-This document outlines the risk-based testing strategy for the KAsync application.
+This document outlines the risk-based testing strategy for the Kasync application.
 
 ## Phase 1: Authentication & Authorization
 

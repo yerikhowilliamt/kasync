@@ -1,4 +1,4 @@
-# KAsync — Project Investigation & Comprehensive Review Document
+# Kasync — Project Investigation & Comprehensive Review Document
 
 **Date:** August 2026  
 **Repository:** kasync  
@@ -8,7 +8,7 @@
 
 ## 1. Executive Summary
 
-KAsync is a cash flow reconciliation and split-allocation web application tailored for small, multi-branch business owners in Indonesia. It resolves core accounting discrepancies caused by bank settlement timing delays, aggregated manual transactions, and multi-purpose bank transfers covering multiple branches or expense categories.
+Kasync is a cash flow reconciliation and split-allocation web application tailored for small, multi-branch business owners in Indonesia. It resolves core accounting discrepancies caused by bank settlement timing delays, aggregated manual transactions, and multi-purpose bank transfers covering multiple branches or expense categories.
 
 The application is structured as a **NestJS modular monolith** with **PostgreSQL 16** and **Prisma ORM**. The primary financial invariant — `sum(Allocation.amountPortion) <= BankTransaction.amount` — is guarded at both the application level and via a PostgreSQL trigger (`check_allocation_sum`) acquiring `FOR UPDATE` row-level locks. The project has completed 7 development phases, features 24 unit test files (133 passing unit tests across 25 suites), 8 E2E test suites, 15 Architecture Decision Records (ADRs), and full Swagger API documentation.
 
@@ -17,10 +17,10 @@ The application is structured as a **NestJS modular monolith** with **PostgreSQL
 ## 2. Project Purpose
 
 ### Simple Explanation
-Small business owners often spend hours manually matching bank statement transfers against notebooks or spreadsheets. A single bank transfer might pay for both raw materials and branch fuel, making basic 1:1 categorization impossible. KAsync lets owners import CSV bank statements, automatically match transactions against internal records, split multi-category transfers, and view a dashboard showing real bank vs. recorded balances.
+Small business owners often spend hours manually matching bank statement transfers against notebooks or spreadsheets. A single bank transfer might pay for both raw materials and branch fuel, making basic 1:1 categorization impossible. Kasync lets owners import CSV bank statements, automatically match transactions against internal records, split multi-category transfers, and view a dashboard showing real bank vs. recorded balances.
 
 ### Technical Explanation
-KAsync is a single-tenant financial reconciliation monolith. It ingests CSV statements into `BankTransaction` entities, manages manual entries in `LedgerEntry` entities, proposes matches via a pure TypeScript `MatchingEngine` (exact, fuzzy with date tolerance, and subset-sum aggregation), and records linkages via `Allocation` entities. Money is strictly calculated using `Decimal` (decimal.js) to avoid floating-point errors.
+Kasync is a single-tenant financial reconciliation monolith. It ingests CSV statements into `BankTransaction` entities, manages manual entries in `LedgerEntry` entities, proposes matches via a pure TypeScript `MatchingEngine` (exact, fuzzy with date tolerance, and subset-sum aggregation), and records linkages via `Allocation` entities. Money is strictly calculated using `Decimal` (decimal.js) to avoid floating-point errors.
 
 ### Target Users
 Owner-operators of small multi-branch businesses in Indonesia tracking cash flow manually across multiple bank and cash accounts.
@@ -514,9 +514,9 @@ A standard operation (e.g., creating a split allocation) proceeds as follows:
 
 ## 22. Mental Model
 
-"If I had to explain KAsync to another engineer in 5 minutes:"
+"If I had to explain Kasync to another engineer in 5 minutes:"
 
-KAsync is a NestJS modular monolith for small business cash flow reconciliation. Instead of forcing a naive 1:1 match between bank statement rows and internal records, KAsync introduces an **`Allocation` junction table** that carries an `amountPortion`. This single data model solves three real-world accounting problems: timing delays (fuzzy matching), 3 small deposits matching 1 manual entry (aggregation matching), and 1 large transfer split across 2 branches (split allocation).
+Kasync is a NestJS modular monolith for small business cash flow reconciliation. Instead of forcing a naive 1:1 match between bank statement rows and internal records, Kasync introduces an **`Allocation` junction table** that carries an `amountPortion`. This single data model solves three real-world accounting problems: timing delays (fuzzy matching), 3 small deposits matching 1 manual entry (aggregation matching), and 1 large transfer split across 2 branches (split allocation).
 
 Financial totals are calculated using `Decimal` (decimal.js), and allocation caps are enforced twice — once in application code and once inside PostgreSQL using a BEFORE INSERT trigger with `FOR UPDATE` row locking to prevent race conditions. The API uses REST under `/api/v1/`, dual-token JWT authentication delivered via HttpOnly cookies, and structured JSON logging with correlation IDs.
 
