@@ -114,7 +114,7 @@ A `BankTransaction` and a `LedgerEntry` are never linked directly. They're conne
 - **Timing gaps** → handled at the matching stage (a date-tolerance window when proposing a match).
 - **Aggregated transactions** (3 small deposits = 1 manual record) → multiple `BankTransaction` rows point to one `LedgerEntry`, via separate `Allocation` rows.
 - **Multi-category / multi-branch transfers** (1 transfer = raw materials + fuel, split across branches) → one `BankTransaction` is split across multiple `Allocation` rows, each pointing to a different `LedgerEntry` (different category/branch).
-**The invariant that must never break:** the sum of `Allocation.amountPortion` for any given `BankTransaction` can never exceed that transaction's `amount`. This is enforced twice — once in application code, once by a PostgreSQL trigger (`check_allocation_sum` in `docs/database/migration.sql`) — so a bug in the app layer alone can't corrupt financial data. If you're changing anything inside `modules/allocation/` or `modules/matching/`, read the relevant ADR entry first (see Section 8).
+**The invariant that must never break:** the sum of `Allocation.amountPortion` for any given `BankTransaction` can never exceed that transaction's `amount`. This is enforced twice — once in application code, once by a PostgreSQL trigger (`check_allocation_sum`) — so a bug in the app layer alone can't corrupt financial data. If you're changing anything inside `modules/allocation/` or `modules/matching/`, read the relevant ADR entry first (see Section 8).
 
 **Idempotency:** Allocation requests support an optional `idempotencyKey` — if two identical requests arrive with the same key, the second returns the existing allocation instead of creating a duplicate. This prevents double-allocations from network retries. The key is scoped per bank transaction via composite unique `@@unique([bankTransactionId, idempotencyKey])` — different users may reuse the same key on different transactions, but within one transaction duplicates are rejected at the database level.
 
@@ -146,7 +146,7 @@ A `BankTransaction` and a `LedgerEntry` are never linked directly. They're conne
 | Product requirements / scope | `docs/00 - PRD.md` |
 | System architecture & component design | `docs/01 - System_Design.md` |
 | Why a technical decision was made | `docs/02 - ADR.md` |
-| Database schema & design rationale | `docs/03 - ERD.md`, `docs/database/schema.prisma` |
+| Database schema & design rationale | `docs/03 - ERD.md`, `prisma/schema.prisma` |
 | Coding conventions, testing, review standards | `docs/04 - Engineering_Playbook.md` |
 | Project Handbook & Setup | `docs/05 - Project_Handbook.md` |
  

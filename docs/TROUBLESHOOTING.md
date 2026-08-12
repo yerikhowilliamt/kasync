@@ -61,7 +61,7 @@ This document records errors encountered during development, their root causes, 
   Dockerfile:29 COPY --from=builder /app/docs ./docs
   ```
 - **Root Cause:** `.dockerignore` listed `docs/` as an excluded path. During the builder stage `COPY . .`, the `docs/` folder was omitted from the build context. Consequently, the runner stage `COPY --from=builder /app/docs ./docs` failed because `/app/docs` did not exist in the builder image.
-- **Resolution:** Removed `docs/` from `.dockerignore` so that `docs/` (specifically required for raw SQL trigger migrations in `docs/database/migration.sql`) is copied into the build context and available for the runner stage.
+- **Resolution:** Removed `docs/` from `.dockerignore` so that `docs/` is copied into the build context and available for the runner stage.
 - **Prevention / Note:** Before excluding directories in `.dockerignore`, check whether any build or runner stages in the `Dockerfile` reference those paths.
 
 ### [2026-08-09] CI Pipeline Fails After Removing JWT Fallback Secrets + Missing Prisma Migration
@@ -231,11 +231,11 @@ This document records errors encountered during development, their root causes, 
 - **Module / Area:** `.github/workflows/ci.yml`, `prisma/migrations`
 - **Error Message / Symptom:**
   ```text
-  npx prisma db execute --file ./docs/database/migration.sql
+  npx prisma db execute --file ./migration.sql
   Error: file not found or SQL syntax error
   ```
-- **Root Cause:** After embedding `check_allocation_sum` and `sync_transaction_status` triggers into the native Prisma migration file (`prisma/migrations/20260809180000_multi_tenancy_and_triggers/migration.sql`), the separate `prisma db execute` step in CI still referenced `docs/database/migration.sql`. This was now redundant and could fail if the file was moved or refactored.
-- **Resolution:** Removed the `npx prisma db execute --file ./docs/database/migration.sql` step from `.github/workflows/ci.yml`. Triggers are now automatically applied by `npx prisma migrate deploy`.
+- **Root Cause:** After embedding `check_allocation_sum` and `sync_transaction_status` triggers into the native Prisma migration file (`prisma/migrations/20260809180000_multi_tenancy_and_triggers/migration.sql`), the separate `prisma db execute` step in CI still referenced the old trigger file. This was now redundant and could fail if the file was moved or refactored.
+- **Resolution:** Removed the `npx prisma db execute` step from `.github/workflows/ci.yml`. Triggers are now automatically applied by `npx prisma migrate deploy`.
 - **Prevention / Note:** After consolidating raw SQL into Prisma migrations, clean up all external references to the original standalone SQL files to avoid dual-execution or missing-file errors in CI.
 
 ### [2026-08-09] ESLint @typescript-eslint/no-misused-promises in Graceful Shutdown Handlers

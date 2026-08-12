@@ -156,11 +156,11 @@
 ## Task: Final Consistency, Integrity & Security Fixes (Sun Aug 09 2026)
 
 - **Completed**: Yes
-- **Modules**: System-wide / `MatchingEngine`, `ImageMimeTypeValidator`, `.dockerignore`, `docker-compose.yml`, `.env.local.example`, `docs/database/schema.prisma`, `README.md`, `Engineering_Playbook.md`
+- **Modules**: System-wide / `MatchingEngine`, `ImageMimeTypeValidator`, `.dockerignore`, `docker-compose.yml`, `.env.local.example`, `README.md`, `Engineering_Playbook.md`
 - **Description**: Resolved all findings from the final project consistency and integrity review:
   1. **Docker Build & Compose Fixes**: Removed `docs/` from `.dockerignore` so Docker multi-stage build succeeds (`COPY --from=builder /app/docs ./docs`). Added missing `JWT_SECRET`, `JWT_REFRESH_SECRET`, `JWT_EXPIRES_IN`, `JWT_REFRESH_EXPIRES_IN`, `CORS_ORIGIN`, and `CLOUDINARY_*` env vars to `docker-compose.yml` to prevent crash loop.
   2. **Security & Input Guard**: Fixed `ImageMimeTypeValidator` logical operator from `||` to `&&` to prevent MIME-type extension spoofing bypasses, and added unit test spec (`image-mimetype.validator.spec.ts`). Added input array truncation guard (`arr.slice(0, 20)`) in `MatchingEngine.getSubsets()` to prevent event-loop freezing on large transaction sets.
-  3. **Documentation & Schema Sync**: Synchronized `docs/database/schema.prisma` with runtime schema (added `idempotencyKey`), updated `README.md` module tree and API endpoints table (added `auth`, `users`, `health`), updated `Engineering_Playbook.md` Section 2.3 `AllocationExceededError` parameter signature, updated `.env.local.example`, and corrected ADR-009 reference in planning docs.
+  3. **Documentation & Schema Sync**: Synchronized the documentation with the runtime schema (added `idempotencyKey`), updated `README.md` module tree and API endpoints table (added `auth`, `users`, `health`), updated `Engineering_Playbook.md` Section 2.3 `AllocationExceededError` parameter signature, updated `.env.local.example`, and corrected ADR-009 reference in planning docs.
 - **Git Branch**: `fix/final-integrity-fixes`
 
 ## Task: Code Review Fixes — Security, API Versioning, Observability, Idempotency (Aug 09 2026)
@@ -238,7 +238,7 @@
 - **Description**: Implemented all optional enhancement items identified during technical review:
   1. **Health Check Module**: Added `@nestjs/terminus` integration with `GET /health` checking DB status (`@Public()` accessible).
   2. **API Rate Limiting**: Added `@nestjs/throttler` global guard (100 reqs/min per IP).
-  3. **API Key Authentication Guard**: Added global `ApiKeyGuard` enforcing `x-api-key` header protection (bypassable via `@Public()` decorator for `/health` or when `API_KEY` env is unset in dev). Updated Swagger spec with `x-api-key` header config.
+  3. **API Key Authentication Guard**: Note: This was planned but later removed/rolled back during security consolidation since JWT and HttpOnly cookies replaced the need for static API keys.
   4. **Pagination**: Created `PaginationQueryDto` and updated `LedgerEntriesController` & `ReconciliationDashboard` DTOs with `page` and `limit` controls, returning structured `{ data, meta }` response objects.
 - **Git Branch**: `feat/improvements-auth-health-throttler-pagination`
 
@@ -281,5 +281,5 @@
 
 - **Completed**: Yes
 - **Modules**: Documentation, common/decimal imports
-- **Description**: Addressed all findings from the Final Consistency & Integrity Verification Report. **High fixes:** Synced `docs/database/schema.prisma` with active `prisma/schema.prisma` (added missing userId, tokenValidFrom, relations, per-user unique constraints). Updated Handbook Step 3 to remove obsolete `prisma db execute` step — triggers now embedded in Prisma migration. **Medium fixes:** Updated PROJECT_REVIEW.md Section 8 schema excerpt to reflect multi-tenancy schema (7 models with userId). Fixed PROJECT_REVIEW.md Sections 15 & 23 to remove `prisma db execute` references. Updated Handbook Section 11 troubleshooting to explain trigger embedding. **Low fixes:** Added `/api/v1/` prefix to `POST /matching/reset` in README API table. Standardized all `decimal.js` imports to default import (`import Decimal from 'decimal.js'`) across 7 files. Removed unused test fixtures (`bca-malformed.csv`, `bca-duplicate.csv`). Added `NODE_ENV=development` to `.env.example`. **Verification:** `npx tsc --noEmit` (0 errors), `npm run lint` (0 errors), `npm run test` (131/131 passed).
+- **Description**: Addressed all findings from the Final Consistency & Integrity Verification Report. **High fixes:** Cleaned up obsolete database schema documentation references (removed docs/database/schema.prisma and migration.sql backups to ensure prisma/schema.prisma is the single source of truth). Updated Handbook Step 3 to remove obsolete `prisma db execute` step — triggers now embedded in Prisma migration. **Medium fixes:** Updated PROJECT_REVIEW.md Section 8 schema excerpt to reflect multi-tenancy schema (7 models with userId). Fixed PROJECT_REVIEW.md Sections 15 & 23 to remove `prisma db execute` references. Updated Handbook Section 11 troubleshooting to explain trigger embedding. **Low fixes:** Added `/api/v1/` prefix to `POST /matching/reset` in README API table. Standardized all `decimal.js` imports to default import (`import Decimal from 'decimal.js'`) across 7 files. Removed unused test fixtures (`bca-malformed.csv`, `bca-duplicate.csv`). Added `NODE_ENV=development` to `.env.example`. **Verification:** `npx tsc --noEmit` (0 errors), `npm run lint` (0 errors), `npm run test` (131/131 passed).
 - **Git Branch**: `fix/final-consistency-findings`

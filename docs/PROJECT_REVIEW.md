@@ -312,7 +312,7 @@ model Allocation {
 }
 ```
 
-### Database Triggers (`docs/database/migration.sql`)
+### Database Triggers
 1. `check_allocation_sum()`: Executes `BEFORE INSERT OR UPDATE` on `allocations`. Acquires a `SELECT ... FOR UPDATE` lock on `bank_transactions` to prevent TOCTOU race conditions.
 2. `sync_transaction_status()`: Executes `AFTER INSERT OR UPDATE OR DELETE` on `allocations`. Recalculates total active allocations and updates `bank_transactions.status`.
 
@@ -498,7 +498,7 @@ A standard operation (e.g., creating a split allocation) proceeds as follows:
 
 1. **`MatchingEngine` (`src/modules/matching/matching-engine.ts`):** Pure TypeScript matching algorithm (EXACT, FUZZY, AGGREGATION). Core business logic.
 2. **`AllocationService` (`src/modules/allocation/allocation.service.ts`):** Controls allocation creation, Decimal total validations, idempotency handling, and soft-revocations.
-3. **PostgreSQL Triggers (`docs/database/migration.sql`):** Database-level concurrency guard and status synchronizer.
+3. **PostgreSQL Triggers:** Database-level concurrency guard and status synchronizer.
 4. **`PostgresTriggerExceptionFilter` (`src/common/filters/postgres-trigger-exception.filter.ts`):** Converts database PL/pgSQL exceptions to structured HTTP 400 domain responses.
 5. **`AuthService` (`src/modules/auth/auth.service.ts`):** Dual-token authentication, token rotation, and bcrypt session store.
 
@@ -506,7 +506,7 @@ A standard operation (e.g., creating a split allocation) proceeds as follows:
 
 ## 21. Unknowns & Ambiguities
 
-1. **Schema File Drift:** `docs/database/schema.prisma` is a documentation copy that lacks the `idempotencyKey` field present in the active `prisma/schema.prisma` file. (Source of truth: `prisma/schema.prisma`).
+1. **Schema File Drift:** The documentation correctly relies on the active `prisma/schema.prisma` file as the single source of truth.
 2. **LedgerEntry Scope:** `LedgerEntry` records are categorized by `Category` and `Branch`, but do not have an explicit `accountId`. Consequently, dashboard `recordedLedgerBalance` represents global recorded totals across all accounts.
 3. **Aggregation Subset Bound:** `MatchingEngine.getSubsets()` caps candidate transaction inputs to a maximum of 20 to prevent exponential combinatorial growth during subset-sum processing.
 
@@ -528,7 +528,7 @@ Financial totals are calculated using `Decimal` (decimal.js), and allocation cap
 1. **Understand First:** Read `docs/05 - Project_Handbook.md` Section 6 ("Architecture at a Glance") to understand the `BankTransaction ↔ Allocation ↔ LedgerEntry` model and the allocation sum invariant.
 2. **Key Files to Read First:**
    - `prisma/schema.prisma` (Data Model)
-   - `docs/database/migration.sql` (PostgreSQL Triggers)
+   - PostgreSQL Triggers
    - `src/modules/matching/matching-engine.ts` (Pure TS Matching Engine)
    - `src/modules/allocation/allocation.service.ts` (Allocation Logic)
    - `src/common/filters/postgres-trigger-exception.filter.ts` (Exception Filter)

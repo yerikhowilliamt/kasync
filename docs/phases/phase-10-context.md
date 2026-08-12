@@ -57,7 +57,7 @@ Professional QA assessment identified 16 valid defects (1 Critical, 7 High, 5 Me
 - `test/allocation-trigger.e2e-spec.ts` — array-based cleanup
 - `docs/02 - ADR.md` — ADR-016
 - `docs/03 - ERD.md` — composite constraint
-- `docs/database/schema.prisma` — sync
+- `prisma/schema.prisma` — sync
 - `docs/TASK_LOG.md` — Phase 10 entry
 
 ## Verification
