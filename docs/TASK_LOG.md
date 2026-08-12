@@ -6,7 +6,7 @@
   1. **DEF-A01 (High → Fixed): Allocation cap violation returned HTTP 500 instead of 400.** Root cause: `AllocationExceededError` thrown inside `prisma.$transaction` callback bypasses the global `PostgresTriggerExceptionFilter` (filter never receives exceptions raised inside async transaction callbacks), defaulting to NestJS generic 500. Resolution: changed to `BadRequestException` in `AllocationService.create()` so it returns HTTP 400.
   2. **Adversarial E2E test suite** (`test/adversarial.e2e-spec.ts`, 9 scenarios): cross-tenant IDOR blocked (404), INFLOW→OUTFLOW type mismatch rejected (400), double-revoke rejected (400), allocation cap enforcement (400), concurrent over-allocation serialized by `FOR UPDATE` lock (exactly 2 of 3 succeed, final status `MATCHED`), zero/negative `amountPortion` rejected, empty allocations array / empty body rejected.
   3. **Unit test sync**: `allocation.service.spec.ts` assertions updated from `AllocationExceededError` to `BadRequestException` (2 occurrences).
-- **Verification**: Unit tests (148/148 passing), adversarial E2E (9/9 passing), coverage 72.87% statement / 63.26% branch / 75.09% line (exceeds >70% target), `npx tsc --noEmit` (0 errors), `npm run lint` (0 errors).
+- **Verification**: Unit tests (148/148 passing), adversarial E2E (9/9 passing), coverage 72.87% statement / 63.26% branch / 75.09% line (exceeds >70% target), `npx tsc --noEmit` (0 errors), `npm run lint` (0 errors, casted `app.getHttpServer()` ke `unknown as http.Server` pada test/adversarial).
 - **Git Branch**: `fix/qa-remediation-full`
 
 ## Task: QA Remediation & Hardening (Phase 2) (Mon Aug 10 2026)
