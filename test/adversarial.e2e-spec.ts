@@ -69,8 +69,11 @@ describe('Adversarial E2E - Financial Integrity & Security', () => {
     const res = await request(app.getHttpServer() as unknown as http.Server)
       .post('/api/v1/accounts')
       .set('Cookie', [accessToken])
-      .send({ name, type })
-      .expect(201);
+      .send({ name, type });
+    if (res.status !== 201) {
+       console.error("Failed to create account:", res.body);
+    }
+    expect(res.status).toBe(201);
     return (res.body as { id: string }).id;
   }
 
