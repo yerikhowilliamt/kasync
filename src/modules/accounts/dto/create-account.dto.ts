@@ -3,11 +3,9 @@ import { IsEnum, IsNotEmpty, IsString } from 'class-validator';
 import { AccountType } from '@prisma/client';
 
 export enum AccountTypeEnum {
-  ASSET = 'ASSET',
-  LIABILITY = 'LIABILITY',
-  EQUITY = 'EQUITY',
-  REVENUE = 'REVENUE',
-  EXPENSE = 'EXPENSE',
+  BANK = 'BANK',
+  CASH = 'CASH',
+  EWALLET = 'EWALLET',
 }
 
 export class CreateAccountDto {
