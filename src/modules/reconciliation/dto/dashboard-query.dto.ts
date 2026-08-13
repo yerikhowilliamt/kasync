@@ -11,6 +11,17 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { TransactionType, TransactionStatus } from '@prisma/client';
 
+export enum TransactionTypeEnum {
+  INFLOW = 'INFLOW',
+  OUTFLOW = 'OUTFLOW',
+}
+
+export enum TransactionStatusEnum {
+  UNRESOLVED = 'UNRESOLVED',
+  PARTIALLY_RESOLVED = 'PARTIALLY_RESOLVED',
+  RESOLVED = 'RESOLVED',
+}
+
 export class DashboardQueryDto {
   @ApiPropertyOptional({ description: 'Filter by Account ID (UUID)' })
   @IsUUID()
@@ -39,17 +50,17 @@ export class DashboardQueryDto {
 
   @ApiPropertyOptional({
     description: 'Filter by Transaction Type',
-    enum: TransactionType,
+    enum: TransactionTypeEnum,
   })
-  @IsEnum(TransactionType)
+  @IsEnum(TransactionTypeEnum)
   @IsOptional()
   type?: TransactionType;
 
   @ApiPropertyOptional({
     description: 'Filter by Transaction Status',
-    enum: TransactionStatus,
+    enum: TransactionStatusEnum,
   })
-  @IsEnum(TransactionStatus)
+  @IsEnum(TransactionStatusEnum)
   @IsOptional()
   status?: TransactionStatus;
 

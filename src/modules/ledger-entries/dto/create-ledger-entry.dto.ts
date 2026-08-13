@@ -12,6 +12,11 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { TransactionType } from '@prisma/client';
 
+export enum TransactionTypeEnum {
+  INFLOW = 'INFLOW',
+  OUTFLOW = 'OUTFLOW',
+}
+
 export class CreateLedgerEntryDto {
   @ApiProperty({ description: 'Category ID (UUID)' })
   @IsUUID()
@@ -34,8 +39,8 @@ export class CreateLedgerEntryDto {
   @IsPositive()
   amount!: number;
 
-  @ApiProperty({ description: 'Transaction Type', enum: TransactionType })
-  @IsEnum(TransactionType)
+  @ApiProperty({ description: 'Transaction Type', enum: TransactionTypeEnum })
+  @IsEnum(TransactionTypeEnum)
   @IsNotEmpty()
   type!: TransactionType;
 
