@@ -16,7 +16,8 @@ RUN npm run build
 # Production runner stage
 FROM node:20-alpine AS runner
 
-RUN apk add --no-cache openssl
+# Install openssl using apk, since the latest node:20-alpine doesn't have it built-in anymore
+RUN apk add --no-cache openssl openssl-dev libc6-compat
 
 WORKDIR /app
 
