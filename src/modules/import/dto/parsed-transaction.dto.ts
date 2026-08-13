@@ -7,6 +7,11 @@ import {
 } from 'class-validator';
 import { TransactionType } from '@prisma/client';
 
+export enum TransactionTypeEnum {
+  INFLOW = 'INFLOW',
+  OUTFLOW = 'OUTFLOW',
+}
+
 export class ParsedTransactionDto {
   @IsString()
   txnDate!: string;
@@ -14,7 +19,7 @@ export class ParsedTransactionDto {
   @IsDecimal()
   amount!: string;
 
-  @IsEnum(TransactionType)
+  @IsEnum(TransactionTypeEnum)
   type!: TransactionType;
 
   @IsString()
